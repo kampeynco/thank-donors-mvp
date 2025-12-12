@@ -97,24 +97,24 @@ const App: React.FC = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Use upsert to handle potential race conditions safely
-      const { data: profileData, error: profileError } = await supabase
+      // Ensure profile exists safely without triggering PGRST116 (0 rows) error
+      // when ignoreDuplicates: true is active and row exists.
+      const { error: upsertError } = await supabase
         .from('profiles')
-        .upsert({ id: userId }, { onConflict: 'id', ignoreDuplicates: true }) // Ensure existence
-        .select()
-        .single();
+        .upsert({ id: userId }, { onConflict: 'id', ignoreDuplicates: true });
         
-      if (profileError) {
-         console.error('Error fetching/creating profile:', JSON.stringify(profileError, null, 2));
-         // If error is just duplicate key (ignoreDuplicates usually handles it), we try select
-         const { data: existing, error: fetchErr } = await supabase.from('profiles').select('*').eq('id', userId).single();
-         if (fetchErr) throw fetchErr;
-         if (!existing) throw new Error("Could not ensure profile existence");
+      if (upsertError) {
+         console.warn('Profile upsert notice:', upsertError.message);
       }
       
-      // Re-fetch to be sure we have latest data
-      const { data: finalProfileData } = await supabase.from('profiles').select('*').eq('id', userId).single();
-      const loadedProfileData = finalProfileData || profileData;
+      // Fetch the latest profile data explicitly
+      const { data: loadedProfileData, error: fetchErr } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (fetchErr) throw fetchErr;
 
       const mappedProfile = { ...loadedProfileData };
       mappedProfile.email = userEmail;

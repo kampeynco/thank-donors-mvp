@@ -11,7 +11,7 @@ const getAiClient = () => {
   } catch (e) {
     console.warn("process.env is not accessible via global scope.");
   }
-
+  
   if (!apiKey) {
       console.warn("Gemini API Key is missing.");
       return null;
@@ -20,13 +20,14 @@ const getAiClient = () => {
 };
 
 export const generateThankYouMessage = async (
-  committeeName: string,
+  committeeName: string, 
   tone: 'formal' | 'warm' | 'urgent' = 'warm'
 ): Promise<string> => {
-  const ai = getAiClient();
-
-  if (!ai) {
+  const genAI = getAiClient();
+  
+  if (!genAI) {
     console.error("Gemini API Key is missing.");
+    // Return a fallback instead of crashing
     return "Thank you so much for your support! Your contribution makes a real difference.";
   }
 
@@ -38,12 +39,13 @@ export const generateThankYouMessage = async (
   `;
 
   try {
-    const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     return response.text() || "Thank you so much for your support!";
   } catch (error) {
     console.error("Gemini generation error:", error);
+    // Return fallback on error
     return "Thank you so much for your support! Your contribution is vital to our campaign.";
   }
 };
