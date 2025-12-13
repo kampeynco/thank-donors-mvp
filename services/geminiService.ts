@@ -1,6 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
-const getAiClient = () => {
+const getApiKey = () => {
   let apiKey = '';
   try {
     // @ts-ignore
@@ -11,25 +11,22 @@ const getAiClient = () => {
   } catch (e) {
     console.warn("process.env is not accessible via global scope.");
   }
-  
-  if (!apiKey) {
-      console.warn("Gemini API Key is missing.");
-      return null;
-  }
-  return new GoogleGenerativeAI(apiKey);
+  return apiKey;
 };
 
 export const generateThankYouMessage = async (
   committeeName: string, 
   tone: 'formal' | 'warm' | 'urgent' = 'warm'
 ): Promise<string> => {
-  const genAI = getAiClient();
+  const apiKey = getApiKey();
   
-  if (!genAI) {
-    console.error("Gemini API Key is missing.");
-    // Return a fallback instead of crashing
-    return "Thank you so much for your support! Your contribution makes a real difference.";
+  if (!apiKey) {
+      console.warn("Gemini API Key is missing.");
+      // Return a fallback instead of crashing
+      return "Thank you so much for your support! Your contribution makes a real difference.";
   }
+
+  const ai = new GoogleGenAI({ apiKey: apiKey });
 
   const prompt = `
     Write a short, sincere thank you message (max 50 words) for a postcard to a political donor.
@@ -39,10 +36,11 @@ export const generateThankYouMessage = async (
   `;
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text() || "Thank you so much for your support!";
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+    return response.text || "Thank you so much for your support!";
   } catch (error) {
     console.error("Gemini generation error:", error);
     // Return fallback on error
