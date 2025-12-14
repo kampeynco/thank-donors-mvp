@@ -362,11 +362,11 @@ const App: React.FC = () => {
   const handleDeleteAccount = async () => {
     if (!currentAccount || currentAccount.id === 'new') return;
 
+    // Use Edge Function to delete, ensuring Hookdeck resources are also cleaned up
     try {
-        const { error } = await supabase
-            .from('actblue_accounts')
-            .delete()
-            .eq('id', currentAccount.id);
+        const { error } = await supabase.functions.invoke('delete-actblue-account', {
+            body: { account_id: currentAccount.id }
+        });
 
         if (error) throw error;
 

@@ -38,6 +38,7 @@ serve(async (req) => {
     const password = crypto.randomUUID().substring(0, 8); // 8 chars
 
     // Helper for Hookdeck API calls
+    // Using 2023-07-01 stable version
     const hookdeckFetch = async (endpoint: string, method: string, body?: any) => {
       const response = await fetch(`https://api.hookdeck.com/2023-07-01${endpoint}`, {
         method,
