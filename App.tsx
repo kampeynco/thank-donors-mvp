@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ViewState, Profile, Donation, ActBlueAccount } from './types';
 import Layout from './components/Layout';
@@ -12,20 +13,6 @@ import Auth from './components/Auth';
 import { supabase } from './services/supabaseClient';
 import { Loader2 } from 'lucide-react';
 import { useToast } from './components/ToastContext';
-
-const generateUUID = () => {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-        return crypto.randomUUID();
-    }
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-};
-
-const generateSecret = () => {
-    return 'sk_' + Math.random().toString(36).substr(2, 16) + Math.random().toString(36).substr(2, 16);
-};
 
 const App: React.FC = () => {
   const { toast } = useToast();
@@ -264,6 +251,7 @@ const App: React.FC = () => {
       
       try {
           if (currentAccount && currentAccount.id !== 'new') {
+              // Update existing account
               const updates: any = { ...accountData };
               if (updates.entity_id) updates.entity_id = Number(updates.entity_id);
               
@@ -282,22 +270,44 @@ const App: React.FC = () => {
               toast("Account details saved", "success");
               
           } else {
-              const newWebhookUser = generateUUID();
-              const newWebhookPass = generateSecret();
-              const newSourceId = 'src_' + generateUUID().split('-')[0];
+              // Create NEW Account - Integrate with Hookdeck Edge Function
               
-              // Use Supabase Edge Function URL format
-              const projectUrl = 'https://rvcyplkgglrrwtsdskyj.supabase.co';
-              const webhookUrl = `${projectUrl}/functions/v1/actblue-webhook`;
+              const entityId = Number(accountData.entity_id) || 0;
+              const committeeName = accountData.committee_name || 'My Campaign';
 
+              if (entityId === 0) {
+                  throw new Error("Valid Entity ID is required.");
+              }
+
+              toast("Provisioning webhook...", "info");
+              
+              // 1. Call Edge Function to create Hookdeck Source/Destination/Connection
+              const { data: hookdeckData, error: hookdeckError } = await supabase.functions.invoke('connect-hookdeck', {
+                  body: { 
+                      committee_name: committeeName,
+                      entity_id: entityId,
+                      profile_id: session.user.id
+                  }
+              });
+
+              if (hookdeckError) {
+                  throw new Error(`Webhook provisioning failed: ${hookdeckError.message}`);
+              }
+
+              if (!hookdeckData?.webhook_url) {
+                  throw new Error("Invalid response from webhook provisioner");
+              }
+
+              // 2. Insert into Database with returned credentials
               const newAccountPayload = {
                   profile_id: session.user.id,
-                  entity_id: Number(accountData.entity_id) || 0,
-                  committee_name: accountData.committee_name || 'My Campaign',
-                  webhook_url: webhookUrl,
-                  webhook_username: newWebhookUser,
-                  webhook_password: newWebhookPass,
-                  webhook_source_id: newSourceId,
+                  entity_id: entityId,
+                  committee_name: committeeName,
+                  webhook_url: hookdeckData.webhook_url,
+                  webhook_username: hookdeckData.webhook_username,
+                  webhook_password: hookdeckData.webhook_password,
+                  webhook_source_id: hookdeckData.webhook_source_id,
+                  webhook_connection_id: hookdeckData.webhook_connection_id,
                   street_address: accountData.street_address,
                   city: accountData.city,
                   state: accountData.state,
@@ -317,7 +327,7 @@ const App: React.FC = () => {
               const createdAccount = data as ActBlueAccount;
               setAccounts([createdAccount, ...accounts]);
               setCurrentAccount(createdAccount);
-              toast("New account created!", "success");
+              toast("New account created with secure webhook!", "success");
           }
 
       } catch (e: any) {

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Sparkles, Eye, Type, Image as ImageIcon, Plus, Loader2, Save, AlertTriangle, CheckCircle, AlertCircle, X, History, RefreshCw } from 'lucide-react';
+import { Upload, Sparkles, Eye, Type, Image as ImageIcon, Plus, Loader2, Save, AlertTriangle, CheckCircle, AlertCircle, X, History, RefreshCw, Crop, Move, ZoomIn, ZoomOut, Check } from 'lucide-react';
 import { generateThankYouMessage } from '../services/geminiService';
 import { Profile, Template, ActBlueAccount } from '../types';
 import { useToast } from './ToastContext';
@@ -36,6 +36,11 @@ const DEMO_DONOR = {
     date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 };
 
+// Postcard dimensions ratio (approx 1.47)
+const TARGET_WIDTH = 1875;
+const TARGET_HEIGHT = 1275;
+const ASPECT_RATIO = TARGET_WIDTH / TARGET_HEIGHT;
+
 const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, template, onSave }) => {
   const { toast } = useToast();
   const [viewSide, setViewSide] = useState<'front' | 'back'>('front');
@@ -60,6 +65,18 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
   const [retryCount, setRetryCount] = useState(0);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Cropping State
+  const [cropState, setCropState] = useState({
+      isOpen: false,
+      imageSrc: '',
+      zoom: 1,
+      offset: { x: 0, y: 0 },
+      originalFile: null as File | null,
+      isDragging: false,
+      dragStart: { x: 0, y: 0 }
+  });
+  const cropContainerRef = useRef<HTMLDivElement>(null);
 
   // Helper to get a fresh signed URL from a potential stale/public URL
   const getFreshSignedUrl = async (oldUrl: string): Promise<string | null> => {
@@ -91,7 +108,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
           const bucket = pathSegments[1];
           const key = decodeURIComponent(pathSegments.slice(2).join('/'));
 
-          // Generate fresh signed URL
+          // 1. Try to create a Signed URL (Secure, works for private buckets)
           const { data, error } = await supabase.storage
               .from(bucket)
               .createSignedUrl(key, 60 * 60 * 24 * 365); // 1 year
@@ -100,6 +117,15 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
               return data.signedUrl;
           }
           
+          // 2. Fallback to Public URL if signing fails
+          const { data: publicData } = supabase.storage
+              .from(bucket)
+              .getPublicUrl(key);
+              
+          if (publicData?.publicUrl) {
+              return publicData.publicUrl;
+          }
+
           return null;
       } catch (e) {
           console.error("Error refreshing signed URL:", e);
@@ -115,7 +141,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
         const { data, error } = await supabase.storage
             .from('images')
             .list(profile.id, {
-                limit: 6,
+                limit: 8,
                 sortBy: { column: 'updated_at', order: 'desc' }
             });
             
@@ -130,7 +156,16 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                  return signedData?.signedUrl;
             }));
 
-            setImageHistory(urls.filter(u => u) as string[]);
+            const validUrls = urls.filter(u => u) as string[];
+            setImageHistory(validUrls);
+
+            // Auto-select the most recent image if:
+            // 1. We have history
+            // 2. There is no template image saved
+            // 3. The user hasn't uploaded/selected anything yet in this session
+            if (validUrls.length > 0 && !template.frontpsc_background_image && !localImage && !uploadedUrl) {
+                 setUploadedUrl(validUrls[0]);
+            }
         }
     } catch (e) {
         console.error("Error fetching history:", e);
@@ -144,6 +179,8 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
     setImageLoadError(false);
     setSaveResult(null);
     setRetryCount(0);
+    // When account changes, we refetch history to potentially auto-select if needed (though profile usually constant)
+    // But mainly we reset state. The next effects will handle sync.
   }, [account?.id]);
 
   // Effect 2: Sync State with Props (Template updates) & Refresh potentially stale URLs
@@ -153,7 +190,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
         if (!incomingImage) {
             setDbImage(null);
         } else {
-            // Optimistically set it first
+            // Optimistically set it first so UI isn't blank while refreshing
             setDbImage(incomingImage);
             
             // Try to refresh it to a fresh signed URL
@@ -186,24 +223,45 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
 
   // Reset error when active image changes
   useEffect(() => {
-      setImageLoadError(false);
-      setRetryCount(0);
+      if (activeImage) {
+          setImageLoadError(false);
+          setRetryCount(0);
+      }
   }, [activeImage]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // --- Image Upload & Crop Handlers ---
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-        toast("Image must be smaller than 5MB", "error");
+    if (file.size > 10 * 1024 * 1024) {
+        toast("Image must be smaller than 10MB", "error");
         return;
     }
 
+    const reader = new FileReader();
+    reader.onloadend = () => {
+         setCropState({
+             isOpen: true,
+             imageSrc: reader.result as string,
+             zoom: 1,
+             offset: { x: 0, y: 0 },
+             originalFile: file,
+             isDragging: false,
+             dragStart: { x: 0, y: 0 }
+         });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = ''; // Reset input
+  };
+
+  const performUpload = async (file: File | Blob, fileName: string) => {
     setIsUploading(true);
     setUploadedUrl(null);
     setImageLoadError(false);
-
-    // 1. Immediate Local Preview
+    
+    // Generate local preview immediately for UX
     const reader = new FileReader();
     reader.onloadend = () => {
          setLocalImage(reader.result as string);
@@ -211,13 +269,14 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
     reader.readAsDataURL(file);
 
     try {
-        const sanitizedName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-        const filePath = `${profile.id}/${sanitizedName}`;
+        const sanitizedName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+        const timestamp = Date.now();
+        const filePath = `${profile.id}/${timestamp}_${sanitizedName}`;
 
         // Attempt upload
         const { error: uploadError } = await supabase.storage
             .from('images')
-            .upload(filePath, file, { upsert: true });
+            .upload(filePath, file, { upsert: true, contentType: file.type });
 
         if (uploadError) throw uploadError;
 
@@ -245,6 +304,93 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
         setIsUploading(false);
     }
   };
+
+  const handleCropSave = async () => {
+    if (!cropState.imageSrc) return;
+
+    // Create a canvas to draw the cropped image
+    const canvas = document.createElement('canvas');
+    canvas.width = TARGET_WIDTH;
+    canvas.height = TARGET_HEIGHT;
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) {
+        toast("Could not initialize image processor", "error");
+        return;
+    }
+
+    const img = new Image();
+    img.src = cropState.imageSrc;
+    
+    await new Promise((resolve) => {
+        img.onload = resolve;
+    });
+
+    // Calculate crop parameters
+    // The view window size:
+    const viewW = 500; // Fixed width of the cropper view
+    const viewH = viewW / ASPECT_RATIO; // ~340px
+    
+    // The scale of the image relative to the view window
+    // We used object-fit: cover logic to display it.
+    // Calculate how the image was rendered in the view:
+    const scaleX = viewW / img.naturalWidth;
+    const scaleY = viewH / img.naturalHeight;
+    const baseScale = Math.max(scaleX, scaleY); // 'Cover' logic
+
+    const renderedW = img.naturalWidth * baseScale * cropState.zoom;
+    const renderedH = img.naturalHeight * baseScale * cropState.zoom;
+
+    const renderedX = (viewW - renderedW) / 2 + cropState.offset.x;
+    const renderedY = (viewH - renderedH) / 2 + cropState.offset.y;
+
+    // Map rendered coordinates to canvas coordinates
+    // Canvas is larger than view, so we scale up
+    const outputScale = TARGET_WIDTH / viewW;
+
+    // We draw the image onto the canvas with the same offsets, scaled up
+    ctx.drawImage(
+        img, 
+        renderedX * outputScale, 
+        renderedY * outputScale, 
+        renderedW * outputScale, 
+        renderedH * outputScale
+    );
+
+    canvas.toBlob((blob) => {
+        if (blob && cropState.originalFile) {
+            performUpload(blob, `cropped_${cropState.originalFile.name}`);
+            setCropState(prev => ({ ...prev, isOpen: false }));
+        } else {
+            toast("Failed to process cropped image", "error");
+        }
+    }, 'image/jpeg', 0.95);
+  };
+
+  const handleCropMouseDown = (e: React.MouseEvent) => {
+      e.preventDefault();
+      setCropState(prev => ({ 
+          ...prev, 
+          isDragging: true, 
+          dragStart: { x: e.clientX - prev.offset.x, y: e.clientY - prev.offset.y } 
+      }));
+  };
+
+  const handleCropMouseMove = (e: React.MouseEvent) => {
+      if (!cropState.isDragging) return;
+      e.preventDefault();
+      setCropState(prev => ({ 
+          ...prev, 
+          offset: { x: e.clientX - prev.dragStart.x, y: e.clientY - prev.dragStart.y } 
+      }));
+  };
+
+  const handleCropMouseUp = () => {
+      setCropState(prev => ({ ...prev, isDragging: false }));
+  };
+
+  // --- End Cropper Handlers ---
+
 
   const handleSelectHistoryImage = (url: string) => {
       setLocalImage(null);
@@ -333,7 +479,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
   const previewText = getPreviewMessage(message);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-serif font-bold text-stone-800">Postcard Design</h2>
@@ -413,12 +559,12 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                             <Upload size={32} />
                         </div>
                         <span className="text-stone-600 font-bold text-lg relative z-10">Click to upload image</span>
-                        <span className="text-stone-400 text-sm mt-2 relative z-10">JPG or PNG supported (Max 5MB)</span>
+                        <span className="text-stone-400 text-sm mt-2 relative z-10">JPG or PNG supported (Max 10MB)</span>
                         <input 
                             type="file" 
                             className="hidden" 
                             accept="image/*" 
-                            onChange={handleImageUpload} 
+                            onChange={handleFileSelect} 
                             onClick={(e) => (e.currentTarget.value = '')}
                         />
                         
@@ -441,28 +587,38 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                             <History size={16} className="text-stone-400" />
                             Recent Uploads
                         </h4>
-                        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-stone-200">
-                            {imageHistory.map((url, idx) => (
-                                <button 
-                                    key={idx}
-                                    onClick={() => handleSelectHistoryImage(url)}
-                                    className={`relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border-2 transition-all ${
-                                        activeImage === url 
-                                        ? 'border-rose-500 ring-2 ring-rose-200' 
-                                        : 'border-stone-200 hover:border-rose-300'
-                                    }`}
-                                >
-                                    <img 
-                                        src={url} 
-                                        className="w-full h-full object-cover" 
-                                        alt="History" 
-                                        onError={(e) => {
-                                            e.currentTarget.style.display = 'none';
-                                            e.currentTarget.parentElement!.style.display = 'none';
-                                        }}
-                                    />
-                                </button>
-                            ))}
+                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                            {imageHistory.map((url, idx) => {
+                                const isActive = activeImage === url;
+                                return (
+                                    <button 
+                                        key={idx}
+                                        onClick={() => handleSelectHistoryImage(url)}
+                                        className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all group ${
+                                            isActive 
+                                            ? 'border-rose-500 ring-2 ring-rose-200 ring-offset-1' 
+                                            : 'border-stone-100 hover:border-rose-300'
+                                        }`}
+                                    >
+                                        <img 
+                                            src={url} 
+                                            className="w-full h-full object-cover transition-transform group-hover:scale-110" 
+                                            alt="History" 
+                                            onError={(e) => {
+                                                e.currentTarget.style.display = 'none';
+                                                e.currentTarget.parentElement!.style.display = 'none';
+                                            }}
+                                        />
+                                        {isActive && (
+                                            <div className="absolute inset-0 bg-rose-500/20 flex items-center justify-center">
+                                                <div className="bg-white rounded-full p-1 shadow-sm">
+                                                    <Check size={12} className="text-rose-600 stroke-[4]" />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 )}
@@ -556,7 +712,6 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                 key={`${activeImage}-${retryCount}`}
                                 src={activeImage} 
                                 alt="Postcard Front" 
-                                crossOrigin="anonymous"
                                 className="w-full h-full object-cover bg-stone-100" 
                                 onError={() => {
                                     console.error("Image load failed for:", activeImage);
@@ -638,6 +793,103 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
             </div>
         </div>
       </div>
+
+      {/* Crop Modal */}
+      {cropState.isOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                  <div className="p-4 border-b border-stone-100 flex justify-between items-center bg-white z-10">
+                      <h3 className="font-bold text-stone-800 flex items-center gap-2">
+                          <Crop size={20} className="text-rose-500" />
+                          Crop Image
+                      </h3>
+                      <button onClick={() => setCropState(prev => ({...prev, isOpen: false}))} className="text-stone-400 hover:text-stone-600">
+                          <X size={24} />
+                      </button>
+                  </div>
+                  
+                  <div className="flex-1 bg-stone-100 relative overflow-hidden flex items-center justify-center p-8 select-none">
+                      {/* The View Window (Fixed Aspect Ratio) */}
+                      <div 
+                        ref={cropContainerRef}
+                        className="relative bg-stone-800 shadow-2xl overflow-hidden cursor-move ring-4 ring-white"
+                        style={{ width: 500, height: 500 / ASPECT_RATIO }}
+                        onMouseDown={handleCropMouseDown}
+                        onMouseMove={handleCropMouseMove}
+                        onMouseUp={handleCropMouseUp}
+                        onMouseLeave={handleCropMouseUp}
+                      >
+                          <img 
+                              src={cropState.imageSrc} 
+                              alt="Crop Target"
+                              className="absolute max-w-none origin-center pointer-events-none"
+                              style={{ 
+                                  // We use object-fit: cover logic to initially size it.
+                                  // But here we need manual control. 
+                                  // Let's assume natural size for transform, but scaled to fit container initially?
+                                  // Easier: CSS transform based on natural dims is hard without knowing them.
+                                  // Let's rely on the container size.
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover', // This creates the "base" view
+                                  transform: `translate(${cropState.offset.x}px, ${cropState.offset.y}px) scale(${cropState.zoom})`,
+                              }}
+                              draggable={false}
+                          />
+                          
+                          {/* Grid Overlay */}
+                          <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none opacity-50">
+                              <div className="border-r border-b border-white/30"></div>
+                              <div className="border-r border-b border-white/30"></div>
+                              <div className="border-b border-white/30"></div>
+                              <div className="border-r border-b border-white/30"></div>
+                              <div className="border-r border-b border-white/30"></div>
+                              <div className="border-b border-white/30"></div>
+                              <div className="border-r border-white/30"></div>
+                              <div className="border-r border-white/30"></div>
+                              <div></div>
+                          </div>
+                      </div>
+                      
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-stone-900/80 text-white text-xs px-3 py-1 rounded-full backdrop-blur-md pointer-events-none flex items-center gap-2">
+                          <Move size={12} /> Drag to reposition
+                      </div>
+                  </div>
+
+                  <div className="p-6 bg-white border-t border-stone-100 flex flex-col gap-4">
+                      <div className="flex items-center gap-4">
+                          <ZoomOut size={20} className="text-stone-400" />
+                          <input 
+                              type="range" 
+                              min="1" 
+                              max="3" 
+                              step="0.1" 
+                              value={cropState.zoom} 
+                              onChange={(e) => setCropState(prev => ({ ...prev, zoom: parseFloat(e.target.value) }))}
+                              className="flex-1 h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-rose-500"
+                          />
+                          <ZoomIn size={20} className="text-stone-400" />
+                      </div>
+                      
+                      <div className="flex justify-end gap-3">
+                          <button 
+                              onClick={() => setCropState(prev => ({...prev, isOpen: false}))}
+                              className="px-6 py-3 font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors"
+                          >
+                              Cancel
+                          </button>
+                          <button 
+                              onClick={handleCropSave}
+                              className="px-6 py-3 font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-colors shadow-lg shadow-rose-200 flex items-center gap-2"
+                          >
+                              <Check size={18} />
+                              Apply Crop & Upload
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      )}
     </div>
   );
 };
