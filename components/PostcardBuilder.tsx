@@ -751,12 +751,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                             </div>
 
                             <div className="w-[45%] h-full relative">
-                                <div className="absolute top-3 right-3 md:top-6 md:right-6 w-[50px] h-[40px] md:w-[70px] md:h-[55px] border border-stone-800 flex flex-col items-center justify-center gap-0.5">
-                                    <span className="text-[5px] md:text-[7px] font-bold uppercase tracking-wider text-stone-800">Postage</span>
-                                    <span className="text-[5px] md:text-[7px] font-bold uppercase tracking-wider text-stone-800">Indicia</span>
-                                </div>
-
-                                <div className="absolute top-[32%] left-2 md:left-4 text-[6px] sm:text-[8px] md:text-[9px] text-stone-600 font-sans leading-tight">
+                                <div className="absolute top-3 right-3 md:top-4 md:right-4 text-[6px] sm:text-[8px] md:text-[9px] text-stone-600 font-sans leading-tight">
                                     <p className="text-stone-900 font-bold uppercase mb-0.5">
                                         {account?.committee_name || 'CAMPAIGN NAME'}
                                     </p>
@@ -771,6 +766,11 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                             <p>CITY, ST 12345</p>
                                         </>
                                     )}
+                                </div>
+
+                                <div className="absolute top-3 left-2 md:top-4 md:left-4 w-[50px] h-[40px] md:w-[70px] md:h-[55px] border border-stone-800 flex flex-col items-center justify-center gap-0.5">
+                                    <span className="text-[5px] md:text-[7px] font-bold uppercase tracking-wider text-stone-800">Postage</span>
+                                    <span className="text-[5px] md:text-[7px] font-bold uppercase tracking-wider text-stone-800">Indicia</span>
                                 </div>
                                 
                                 <div className="absolute bottom-4 left-4 right-2 md:bottom-10 md:left-8 md:right-4 text-[8px] sm:text-[10px] md:text-xs font-sans text-stone-800 leading-snug uppercase tracking-wide">
@@ -787,7 +787,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
             
             <div className="mt-6 text-center text-stone-400 text-xs max-w-xs mx-auto">
                 {viewSide === 'front' 
-                    ? "This image will cover the entire front of the 6x4 inch postcard."
+                    ? "This image will cover the entire front of the 6x9 inch postcard."
                     : "Live preview shows demo data. Actual cards will use real donor info."
                 }
             </div>

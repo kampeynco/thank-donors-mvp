@@ -74,7 +74,26 @@ serve(async (req) => {
         await hookdeckFetch(`/sources/${account.webhook_source_id}`, "DELETE");
     }
 
-    // 4. Delete from Database
+    // 4. Delete Thanks.io Subaccount if exists
+    // @ts-ignore
+    const THANKSIO_API_KEY = Deno.env.get("THANKSIO_API_KEY");
+    if (account.thanksio_subaccount_id && THANKSIO_API_KEY) {
+        console.log(`Deleting Thanks.io Subaccount: ${account.thanksio_subaccount_id}`);
+        try {
+            const thanksioResponse = await fetch(`https://api.thanks.io/api/v2/sub-accounts/${account.thanksio_subaccount_id}`, {
+                method: "DELETE",
+                headers: { "Authorization": `Bearer ${THANKSIO_API_KEY}` }
+            });
+            if (!thanksioResponse.ok && thanksioResponse.status !== 404) {
+                const txt = await thanksioResponse.text();
+                console.error(`Thanks.io delete failed:`, txt);
+            }
+        } catch (thanksioErr) {
+            console.error("Thanks.io delete error:", thanksioErr);
+        }
+    }
+
+    // 5. Delete from Database
     const { error: deleteError } = await supabaseClient
         .from('actblue_accounts')
         .delete()

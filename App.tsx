@@ -62,6 +62,11 @@ const App: React.FC = () => {
           return;
       }
 
+      // Ignore INITIAL_SESSION to prevent reload when returning to tab
+      if (event === 'INITIAL_SESSION') {
+          return;
+      }
+
       if (session) {
         fetchData(session.user.id, session.user.email);
       } else {
@@ -84,24 +89,36 @@ const App: React.FC = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Ensure profile exists safely without triggering PGRST116 (0 rows) error
-      // when ignoreDuplicates: true is active and row exists.
-      const { error: upsertError } = await supabase
+      // Ensure profile exists - use upsert to create if not exists
+      const { data: upsertedProfile, error: upsertError } = await supabase
         .from('profiles')
-        .upsert({ id: userId }, { onConflict: 'id', ignoreDuplicates: true });
+        .upsert({ id: userId }, { onConflict: 'id' })
+        .select('*')
+        .single();
         
       if (upsertError) {
          console.warn('Profile upsert notice:', upsertError.message);
       }
       
-      // Fetch the latest profile data explicitly
-      const { data: loadedProfileData, error: fetchErr } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-        
-      if (fetchErr) throw fetchErr;
+      // Use upserted data or fetch if needed
+      let loadedProfileData = upsertedProfile;
+      
+      if (!loadedProfileData) {
+        const { data: fetchedProfile, error: fetchErr } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+          
+        if (fetchErr) {
+          console.error('Error fetching profile:', fetchErr);
+        }
+        loadedProfileData = fetchedProfile;
+      }
+      
+      if (!loadedProfileData) {
+        loadedProfileData = { id: userId };
+      }
 
       const mappedProfile = { ...loadedProfileData };
       mappedProfile.email = userEmail;
@@ -262,6 +279,25 @@ const App: React.FC = () => {
                 
               if (error) throw error;
               
+              // Update Thanks.io subaccount if it exists
+              if (currentAccount.thanksio_subaccount_id) {
+                  try {
+                      await supabase.functions.invoke('update-thanksio-subaccount', {
+                          body: {
+                              account_id: currentAccount.id,
+                              thanksio_subaccount_id: currentAccount.thanksio_subaccount_id,
+                              committee_name: accountData.committee_name,
+                              street_address: accountData.street_address,
+                              city: accountData.city,
+                              state: accountData.state,
+                              postal_code: accountData.postal_code
+                          }
+                      });
+                  } catch (thanksioErr) {
+                      console.error("Failed to update Thanks.io subaccount:", thanksioErr);
+                  }
+              }
+              
               const updated = { ...currentAccount, ...accountData } as ActBlueAccount;
               if (accountData.entity_id) updated.entity_id = Number(accountData.entity_id);
               
@@ -286,7 +322,12 @@ const App: React.FC = () => {
                   body: { 
                       committee_name: committeeName,
                       entity_id: entityId,
-                      profile_id: session.user.id
+                      profile_id: session.user.id,
+                      street_address: accountData.street_address,
+                      city: accountData.city,
+                      state: accountData.state,
+                      postal_code: accountData.postal_code,
+                      disclaimer: (accountData as any).disclaimer
                   }
               });
 
@@ -294,40 +335,28 @@ const App: React.FC = () => {
                   throw new Error(`Webhook provisioning failed: ${hookdeckError.message}`);
               }
 
-              if (!hookdeckData?.webhook_url) {
+              // Handle response - data can be nested in 'account' or at top level
+              const accountInfo = hookdeckData?.account || hookdeckData;
+              
+              if (!accountInfo?.webhook_url) {
+                  console.error("Hookdeck response:", hookdeckData);
                   throw new Error("Invalid response from webhook provisioner");
               }
 
-              // 2. Insert into Database with returned credentials
-              const newAccountPayload = {
-                  profile_id: session.user.id,
-                  entity_id: entityId,
-                  committee_name: committeeName,
-                  webhook_url: hookdeckData.webhook_url,
-                  webhook_username: hookdeckData.webhook_username,
-                  webhook_password: hookdeckData.webhook_password,
-                  webhook_source_id: hookdeckData.webhook_source_id,
-                  webhook_connection_id: hookdeckData.webhook_connection_id,
-                  street_address: accountData.street_address,
-                  city: accountData.city,
-                  state: accountData.state,
-                  postal_code: accountData.postal_code,
-                  front_image_url: accountData.front_image_url,
-                  back_message: accountData.back_message
-              };
-
-              const { data, error } = await supabase
-                .from('actblue_accounts')
-                .insert([newAccountPayload])
-                .select()
-                .single();
-
-              if (error) throw error;
-
-              const createdAccount = data as ActBlueAccount;
-              setAccounts([createdAccount, ...accounts]);
-              setCurrentAccount(createdAccount);
-              toast("New account created with secure webhook!", "success");
+              // Check if account already exists (edge function handles idempotency)
+              if (hookdeckData?.existing) {
+                  // Account already exists, use the returned data
+                  const existingAccount = accountInfo as ActBlueAccount;
+                  setAccounts([existingAccount, ...accounts.filter(a => a.id !== existingAccount.id)]);
+                  setCurrentAccount(existingAccount);
+                  toast("Account already exists, loaded existing data.", "info");
+              } else {
+                  // New account was created by edge function, use the returned data
+                  const createdAccount = accountInfo as ActBlueAccount;
+                  setAccounts([createdAccount, ...accounts]);
+                  setCurrentAccount(createdAccount);
+                  toast("New account created with secure webhook!", "success");
+              }
           }
 
       } catch (e: any) {
@@ -452,6 +481,18 @@ const App: React.FC = () => {
       );
   }
 
+  if (view === ViewState.ACTBLUE_CONNECT) {
+      return (
+          <ActBlueConnect 
+            profile={profile!}
+            currentAccount={currentAccount}
+            onUpdateProfile={handleUpdateProfile}
+            onSaveAccount={handleSaveAccount}
+            onComplete={() => setView(ViewState.DASHBOARD)} 
+          />
+      );
+  }
+
   return (
     <Layout 
         currentView={view} 
@@ -481,15 +522,7 @@ const App: React.FC = () => {
           }} 
         />
       )}
-      {view === ViewState.ACTBLUE_CONNECT && (
-        <ActBlueConnect 
-          profile={profile!}
-          currentAccount={currentAccount}
-          onUpdateProfile={handleUpdateProfile}
-          onSaveAccount={handleSaveAccount}
-          onComplete={() => setView(ViewState.DASHBOARD)} 
-        />
-      )}
+
       {view === ViewState.BILLING && (
           <BillingView />
       )}

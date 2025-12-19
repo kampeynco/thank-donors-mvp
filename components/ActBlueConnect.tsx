@@ -23,6 +23,7 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
   
   const [entityId, setEntityId] = useState('');
   const [committeeName, setCommitteeName] = useState('');
+  const [disclaimer, setDisclaimer] = useState('');
 
   const [streetAddress, setStreetAddress] = useState('');
   const [city, setCity] = useState('');
@@ -37,6 +38,7 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
       if (currentAccount && currentAccount.id !== 'new') {
           setEntityId(currentAccount.entity_id.toString());
           setCommitteeName(currentAccount.committee_name || '');
+          setDisclaimer((currentAccount as any).disclaimer || '');
           
           if (currentAccount.street_address) setStreetAddress(currentAccount.street_address);
           if (currentAccount.city) setCity(currentAccount.city);
@@ -49,6 +51,7 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
       } else {
           setEntityId('');
           setCommitteeName('');
+          setDisclaimer('');
           setStreetAddress('');
           setCity('');
           setState('');
@@ -69,36 +72,44 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
   };
 
   const handleSaveCampaignDetails = async () => {
-      setLoading(true);
       const numericId = parseInt(entityId);
       if (isNaN(numericId)) {
           toast("Entity ID must be a valid number", "error");
-          setLoading(false);
           return;
       }
-
-      try {
-          await onSaveAccount({
-              entity_id: numericId,
-              committee_name: committeeName
-          });
-          setStep(2);
-      } catch (e) {
-          // Toast handled in App.tsx handleSaveAccount
-      } finally {
-          setLoading(false);
+      if (!committeeName.trim()) {
+          toast("Committee name is required", "error");
+          return;
       }
+      if (!disclaimer.trim()) {
+          toast("Disclaimer is required", "error");
+          return;
+      }
+      // Just move to step 2, don't save to database yet
+      setStep(2);
   };
 
   const handleSaveAddress = async () => {
       setLoading(true);
+      const numericId = parseInt(entityId);
+      
+      if (!streetAddress.trim() || !city.trim() || !state || !zip.trim()) {
+          toast("Please fill in all address fields", "error");
+          setLoading(false);
+          return;
+      }
+      
       try {
+          // Now create the account with all data from step 1 and step 2
           await onSaveAccount({
+              entity_id: numericId,
+              committee_name: committeeName,
+              disclaimer: disclaimer,
               street_address: streetAddress,
               city: city,
               state: state,
               postal_code: zip
-          });
+          } as any);
           setStep(3);
       } catch (e) {
           // Toast handled in App.tsx
@@ -168,12 +179,23 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
                         />
                         <p className="text-xs text-stone-400 mt-1">Found in your ActBlue Dashboard URL or settings.</p>
                     </div>
+                    <div>
+                        <label className="text-sm font-medium text-stone-700 block mb-1">Paid For By Disclaimer</label>
+                        <textarea 
+                            value={disclaimer}
+                            onChange={(e) => setDisclaimer(e.target.value)}
+                            placeholder="e.g. Paid for by Friends of Jane Doe"
+                            rows={2}
+                            className="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none transition-all resize-none"
+                        />
+                        <p className="text-xs text-stone-400 mt-1">This will appear on the back of your postcards.</p>
+                    </div>
                 </div>
 
                 <div className="flex justify-end pt-4">
                     <button 
                         onClick={handleSaveCampaignDetails}
-                        disabled={entityId.length < 1 || committeeName.length < 2 || loading}
+                        disabled={entityId.length < 1 || committeeName.length < 2 || disclaimer.length < 5 || loading}
                         className="w-full bg-stone-800 text-white font-bold py-4 rounded-xl hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                          {loading ? <Loader2 className="animate-spin" /> : <>Next: Return Address <ArrowRight size={18} /></>}
@@ -218,13 +240,69 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="text-sm font-medium text-stone-700 block mb-1">State</label>
-                            <input 
-                                type="text" 
+                            <select 
                                 value={state}
                                 onChange={(e) => setState(e.target.value)}
-                                placeholder="e.g. DC"
-                                className="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none transition-all"
-                            />
+                                className="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none transition-all bg-white"
+                            >
+                                <option value="">Select State</option>
+                                <option value="AL">Alabama</option>
+                                <option value="AK">Alaska</option>
+                                <option value="AZ">Arizona</option>
+                                <option value="AR">Arkansas</option>
+                                <option value="CA">California</option>
+                                <option value="CO">Colorado</option>
+                                <option value="CT">Connecticut</option>
+                                <option value="DE">Delaware</option>
+                                <option value="FL">Florida</option>
+                                <option value="GA">Georgia</option>
+                                <option value="HI">Hawaii</option>
+                                <option value="ID">Idaho</option>
+                                <option value="IL">Illinois</option>
+                                <option value="IN">Indiana</option>
+                                <option value="IA">Iowa</option>
+                                <option value="KS">Kansas</option>
+                                <option value="KY">Kentucky</option>
+                                <option value="LA">Louisiana</option>
+                                <option value="ME">Maine</option>
+                                <option value="MD">Maryland</option>
+                                <option value="MA">Massachusetts</option>
+                                <option value="MI">Michigan</option>
+                                <option value="MN">Minnesota</option>
+                                <option value="MS">Mississippi</option>
+                                <option value="MO">Missouri</option>
+                                <option value="MT">Montana</option>
+                                <option value="NE">Nebraska</option>
+                                <option value="NV">Nevada</option>
+                                <option value="NH">New Hampshire</option>
+                                <option value="NJ">New Jersey</option>
+                                <option value="NM">New Mexico</option>
+                                <option value="NY">New York</option>
+                                <option value="NC">North Carolina</option>
+                                <option value="ND">North Dakota</option>
+                                <option value="OH">Ohio</option>
+                                <option value="OK">Oklahoma</option>
+                                <option value="OR">Oregon</option>
+                                <option value="PA">Pennsylvania</option>
+                                <option value="RI">Rhode Island</option>
+                                <option value="SC">South Carolina</option>
+                                <option value="SD">South Dakota</option>
+                                <option value="TN">Tennessee</option>
+                                <option value="TX">Texas</option>
+                                <option value="UT">Utah</option>
+                                <option value="VT">Vermont</option>
+                                <option value="VA">Virginia</option>
+                                <option value="WA">Washington</option>
+                                <option value="WV">West Virginia</option>
+                                <option value="WI">Wisconsin</option>
+                                <option value="WY">Wyoming</option>
+                                <option value="DC">District of Columbia</option>
+                                <option value="AS">American Samoa</option>
+                                <option value="GU">Guam</option>
+                                <option value="MP">Northern Mariana Islands</option>
+                                <option value="PR">Puerto Rico</option>
+                                <option value="VI">U.S. Virgin Islands</option>
+                            </select>
                         </div>
                         <div>
                             <label className="text-sm font-medium text-stone-700 block mb-1">ZIP</label>
@@ -299,21 +377,12 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
                     </div>
                 </div>
 
-                <div className="bg-blue-50 p-4 rounded-xl flex gap-3 text-sm text-blue-800">
-                    <AlertTriangle size={18} className="shrink-0 mt-0.5" />
-                    <p>Make sure to select "Donation Created" as the event type in ActBlue.</p>
-                </div>
-
                 <button 
                     onClick={onComplete}
                     className="w-full bg-stone-800 text-white font-bold py-4 rounded-xl hover:bg-black transition-all flex items-center justify-center gap-2 mt-4 shadow-lg shadow-stone-200"
                 >
                     Done! Go to Dashboard <ArrowRight size={18} />
                 </button>
-                
-                <div className="text-center">
-                    <button onClick={() => setStep(1)} className="text-xs text-stone-400 hover:text-stone-600">Back to Settings</button>
-                </div>
             </div>
         )}
       </div>
