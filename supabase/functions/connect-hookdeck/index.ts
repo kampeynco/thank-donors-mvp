@@ -192,6 +192,11 @@ Deno.serve(async (request) => {
       entityIdRaw,
       committeeNameRaw,
       platformRaw,
+      disclaimerRaw,
+      streetAddressRaw,
+      cityRaw,
+      stateRaw,
+      postalCodeRaw,
       types: {
         entityId: typeof entityIdRaw,
         committeeName: typeof committeeNameRaw,
@@ -213,6 +218,11 @@ Deno.serve(async (request) => {
       entityId,
       committeeName,
       platform,
+      streetAddress,
+      city,
+      state,
+      postalCode,
+      disclaimer,
       entityIdIsFinite: Number.isFinite(entityId),
       committeeNameLength: committeeName.length,
     });
@@ -495,15 +505,15 @@ Deno.serve(async (request) => {
       webhook_password: password,
       webhook_source_id: source.id,
       webhook_connection_id: connection.id,
+      street_address: streetAddress,
+      city: city,
+      state: state,
+      postal_code: postalCode,
+      disclaimer: disclaimer,
+      thanksio_subaccount_id: thanksioSubaccountId,
     };
     
-    // Add address fields if provided
-    if (streetAddress) insertPayload.street_address = streetAddress;
-    if (city) insertPayload.city = city;
-    if (state) insertPayload.state = state;
-    if (postalCode) insertPayload.postal_code = postalCode;
-    if (disclaimer) insertPayload.disclaimer = disclaimer;
-    if (thanksioSubaccountId) insertPayload.thanksio_subaccount_id = thanksioSubaccountId;
+    console.log("📝 Database insert payload:", insertPayload);
 
     const { data: inserted, error: insertErr } = await supabase
       .from("actblue_accounts")

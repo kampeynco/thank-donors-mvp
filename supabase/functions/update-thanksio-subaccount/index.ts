@@ -26,9 +26,9 @@ Deno.serve(async (request) => {
 
   try {
     // @ts-ignore
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SBASE_URL = Deno.env.get("SBASE_URL");
     // @ts-ignore
-    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+    const SBASE_ANON_KEY = Deno.env.get("SBASE_ANON_KEY");
     // @ts-ignore
     const THANKSIO_API_KEY = Deno.env.get("THANKSIO_API_KEY");
 
@@ -46,7 +46,7 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "Missing Authorization header" }, 401);
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    const supabase = createClient(SBASE_URL, SBASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } },
     });
 
