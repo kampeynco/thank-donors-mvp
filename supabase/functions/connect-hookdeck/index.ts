@@ -1,6 +1,7 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { edgeLogger } from "@shared/logger.ts";
 
 type ConnectHookdeckRequest = {
   entityId: number;
@@ -102,14 +103,14 @@ Deno.serve(async (request) => {
     
     // Validate API key format
     if (!HOOKDECK_API_KEY.trim() || HOOKDECK_API_KEY.length < 20) {
-      console.error("❌ Invalid HOOKDECK_API_KEY format");
+      edgeLogger.error('Invalid HOOKDECK_API_KEY format', { function: 'connect-hookdeck' });
       return jsonResponse({ 
         error: "HOOKDECK_API_KEY appears to be invalid (too short or empty)",
         hint: "Check your Supabase secrets configuration"
       }, 500);
     }
     
-    console.log("✅ HOOKDECK_API_KEY present (length:", HOOKDECK_API_KEY.length, ")");
+    edgeLogger.debug('HOOKDECK_API_KEY present', { function: 'connect-hookdeck', keyLength: HOOKDECK_API_KEY.length });
 
     // 2) Auth Check
     const authHeader = request.headers.get("Authorization");
@@ -129,14 +130,13 @@ Deno.serve(async (request) => {
 
     // 3) Parse Body - FIXED to handle both wrapped and unwrapped formats
     const raw = await request.text();
-    console.log("📦 Raw request body:", raw);
-    console.log("📦 Content-Type:", request.headers.get("content-type"));
+    edgeLogger.debug('Raw request received', { function: 'connect-hookdeck', contentType: request.headers.get("content-type") });
 
     let payload: ConnectHookdeckRequest | null = null;
 
     try {
       if (!raw || raw.trim() === "") {
-        console.error("❌ Empty request body");
+        edgeLogger.error('Empty request body', { function: 'connect-hookdeck' });
         return jsonResponse({ 
           error: "Request body is required",
           hint: "Send JSON with entityId and committeeName"
@@ -144,22 +144,22 @@ Deno.serve(async (request) => {
       }
 
       const parsed = JSON.parse(raw);
-      console.log("✅ Parsed JSON:", JSON.stringify(parsed, null, 2));
+      edgeLogger.debug('Parsed JSON', { function: 'connect-hookdeck' });
 
       // Handle both formats:
       // 1. Direct: { entityId: 123, committeeName: "..." }
       // 2. Wrapped: { body: { entityId: 123, committeeName: "..." } }
       if (parsed.body && typeof parsed.body === 'object') {
-        console.log("📦 Detected wrapped body format");
+        edgeLogger.debug('Detected wrapped body format', { function: 'connect-hookdeck' });
         payload = parsed.body as ConnectHookdeckRequest;
       } else {
-        console.log("📦 Detected direct body format");
+        edgeLogger.debug('Detected direct body format', { function: 'connect-hookdeck' });
         payload = parsed as ConnectHookdeckRequest;
       }
 
-      console.log("✅ Final payload:", JSON.stringify(payload, null, 2));
+      edgeLogger.debug('Final payload extracted', { function: 'connect-hookdeck' });
     } catch (e) {
-      console.error("❌ JSON parse error:", e);
+      edgeLogger.error('JSON parse error', { function: 'connect-hookdeck', receivedBody: raw.substring(0, 500) }, e);
       return jsonResponse(
         { 
           error: "Invalid JSON body", 
@@ -171,7 +171,7 @@ Deno.serve(async (request) => {
     }
 
     if (!payload || typeof payload !== 'object') {
-      console.error("❌ Payload is not a valid object");
+      edgeLogger.error('Payload is not a valid object', { function: 'connect-hookdeck', receivedType: typeof payload });
       return jsonResponse({ 
         error: "Request body must be a JSON object",
         receivedType: typeof payload
@@ -188,21 +188,7 @@ Deno.serve(async (request) => {
     const postalCodeRaw = (payload as any).postalCode ?? (payload as any).postal_code;
     const disclaimerRaw = (payload as any).disclaimer;
 
-    console.log("🔍 Extracted fields:", {
-      entityIdRaw,
-      committeeNameRaw,
-      platformRaw,
-      disclaimerRaw,
-      streetAddressRaw,
-      cityRaw,
-      stateRaw,
-      postalCodeRaw,
-      types: {
-        entityId: typeof entityIdRaw,
-        committeeName: typeof committeeNameRaw,
-        platform: typeof platformRaw,
-      }
-    });
+    edgeLogger.debug('Extracted fields from payload', { function: 'connect-hookdeck', entityIdRaw, committeeNameRaw, platformRaw });
 
     // Convert with validation
     const entityId = Number(entityIdRaw);
@@ -214,22 +200,11 @@ Deno.serve(async (request) => {
     const postalCode = postalCodeRaw ? String(postalCodeRaw).trim() : null;
     const disclaimer = disclaimerRaw ? String(disclaimerRaw).trim() : null;
 
-    console.log("🔄 Converted values:", {
-      entityId,
-      committeeName,
-      platform,
-      streetAddress,
-      city,
-      state,
-      postalCode,
-      disclaimer,
-      entityIdIsFinite: Number.isFinite(entityId),
-      committeeNameLength: committeeName.length,
-    });
+    edgeLogger.debug('Converted values', { function: 'connect-hookdeck', entityId, committeeName, platform });
 
     // Validation
     if (!Number.isFinite(entityId) || entityId <= 0) {
-      console.error("❌ entityId validation failed");
+      edgeLogger.error('entityId validation failed', { function: 'connect-hookdeck', entityIdRaw, type: typeof entityIdRaw });
       return jsonResponse({ 
         error: "entityId is required and must be a positive number",
         received: {
@@ -241,7 +216,7 @@ Deno.serve(async (request) => {
     }
 
     if (!committeeName || committeeName.length === 0) {
-      console.error("❌ committeeName validation failed");
+      edgeLogger.error('committeeName validation failed', { function: 'connect-hookdeck', committeeNameRaw, type: typeof committeeNameRaw });
       return jsonResponse({ 
         error: "committeeName is required and cannot be empty",
         received: {
@@ -252,7 +227,7 @@ Deno.serve(async (request) => {
       }, 400);
     }
 
-    console.log("✅ Validation passed");
+    edgeLogger.info('Validation passed', { function: 'connect-hookdeck', entityId, committeeName });
 
     // 4) Idempotency Check - more comprehensive
     const { data: existing, error: existingError } = await supabase
@@ -263,11 +238,11 @@ Deno.serve(async (request) => {
       .maybeSingle();
 
     if (existingError) {
-      console.error("Error checking existing account:", existingError);
+      edgeLogger.error('Error checking existing account', { function: 'connect-hookdeck' }, existingError);
     }
 
     if (existing) {
-      console.log("✅ Found existing account, returning early");
+      edgeLogger.info('Found existing account', { function: 'connect-hookdeck', accountId: existing.id });
       return jsonResponse({ 
         success: true,
         ok: true, 
@@ -276,7 +251,7 @@ Deno.serve(async (request) => {
       });
     }
 
-    console.log("🔧 No existing account found, creating new resources...");
+    edgeLogger.info("🔧 No existing account found, creating new resources...");
 
     // 5) Ensure Destination Exists
     if (!hookdeckDestinationId) {
@@ -324,7 +299,7 @@ Deno.serve(async (request) => {
     // 6) Create Hookdeck Source with Basic Auth
     const password = generatePassword(12); // 12 characters with symbols
     const sourceName = sanitizeSourceName(committeeName, entityId);
-    console.log("🔧 Creating Hookdeck source:", sourceName);
+    edgeLogger.info("🔧 Creating Hookdeck source:", sourceName);
 
     type HookdeckSource = { id: string; name: string; url: string; config?: any };
     let source: HookdeckSource | null = null;
@@ -346,7 +321,7 @@ Deno.serve(async (request) => {
       },
     );
 
-    console.log("📡 Create Source response:", {
+    edgeLogger.info("📡 Create Source response:", {
       status: createSource.status,
       hasData: !!createSource.data,
       dataId: createSource.data?.id,
@@ -355,9 +330,9 @@ Deno.serve(async (request) => {
 
     if ((createSource.status === 200 || createSource.status === 201) && createSource.data?.id) {
       source = createSource.data;
-      console.log("✅ Source created with Basic Auth:", source.id);
+      edgeLogger.info("✅ Source created with Basic Auth:", source.id);
     } else if (createSource.status === 409) {
-      console.log("⚠️ Source exists, fetching and updating auth...");
+      edgeLogger.info("⚠️ Source exists, fetching and updating auth...");
       const list = await hookdeckRequest<{ models: HookdeckSource[] }>(
         "GET",
         `/sources?name=${encodeURIComponent(sourceName)}`,
@@ -385,11 +360,11 @@ Deno.serve(async (request) => {
         
         if (updateAuth.status === 200 && updateAuth.data?.id) {
           source = updateAuth.data;
-          console.log("✅ Existing source auth updated:", source.id);
+          edgeLogger.info("✅ Existing source auth updated:", source.id);
         }
       }
       
-      console.log("📡 Found existing source:", source?.id);
+      edgeLogger.info("📡 Found existing source:", source?.id);
     } else {
       console.error("❌ Failed to create source:", {
         status: createSource.status,
@@ -406,13 +381,13 @@ Deno.serve(async (request) => {
     }
 
     // Source is now created with Basic Auth configured
-    console.log("✅ Source ready with Basic Auth");
+    edgeLogger.info("✅ Source ready with Basic Auth");
 
     // 8) Create Connection
     type HookdeckConnection = { id: string; name: string };
     const connectionName = platform; // Just use the platform name (e.g., "actblue")
     let connection: HookdeckConnection | null = null;
-    console.log("🔧 Creating connection:", connectionName);
+    edgeLogger.info("🔧 Creating connection:", connectionName);
 
     const createConn = await hookdeckRequest<HookdeckConnection>(
       "POST",
@@ -425,7 +400,7 @@ Deno.serve(async (request) => {
       },
     );
 
-    console.log("📡 Create Connection response:", {
+    edgeLogger.info("📡 Create Connection response:", {
       status: createConn.status,
       hasData: !!createConn.data,
       text: createConn.text?.substring(0, 200),
@@ -433,16 +408,16 @@ Deno.serve(async (request) => {
 
     if ((createConn.status === 200 || createConn.status === 201) && createConn.data?.id) {
       connection = createConn.data;
-      console.log("✅ Connection created:", connection.id);
+      edgeLogger.info("✅ Connection created:", connection.id);
     } else if (createConn.status === 409) {
-      console.log("⚠️ Connection exists, fetching...");
+      edgeLogger.info("⚠️ Connection exists, fetching...");
       const list = await hookdeckRequest<{ models: HookdeckConnection[] }>(
         "GET",
         `/connections?name=${encodeURIComponent(connectionName)}`,
         HOOKDECK_API_KEY,
       );
       connection = list.data?.models?.[0] ?? null;
-      console.log("📡 Found existing connection:", connection?.id);
+      edgeLogger.info("📡 Found existing connection:", connection?.id);
     } else {
       console.error("❌ Failed to create connection");
       return jsonResponse(
@@ -461,7 +436,7 @@ Deno.serve(async (request) => {
     let thanksioSubaccountId: number | null = null;
 
     if (THANKSIO_API_KEY) {
-      console.log("🔧 Creating Thanks.io subaccount...");
+      edgeLogger.info("🔧 Creating Thanks.io subaccount...");
       try {
         const thanksioResponse = await fetch("https://api.thanks.io/api/v2/sub-accounts/", {
           method: "POST",
@@ -482,7 +457,7 @@ Deno.serve(async (request) => {
         if (thanksioResponse.ok) {
           const thanksioData = await thanksioResponse.json();
           thanksioSubaccountId = thanksioData.id;
-          console.log("✅ Thanks.io subaccount created:", thanksioSubaccountId);
+          edgeLogger.info("✅ Thanks.io subaccount created:", thanksioSubaccountId);
         } else {
           const errorText = await thanksioResponse.text();
           console.error("❌ Thanks.io subaccount creation failed:", errorText);
@@ -491,7 +466,7 @@ Deno.serve(async (request) => {
         console.error("❌ Thanks.io API error:", thanksioErr);
       }
     } else {
-      console.log("⚠️ THANKSIO_API_KEY not set, skipping subaccount creation");
+      edgeLogger.info("⚠️ THANKSIO_API_KEY not set, skipping subaccount creation");
     }
 
     // 10) Database Insert
@@ -513,7 +488,7 @@ Deno.serve(async (request) => {
       thanksio_subaccount_id: thanksioSubaccountId,
     };
     
-    console.log("📝 Database insert payload:", insertPayload);
+    edgeLogger.info("📝 Database insert payload:", insertPayload);
 
     const { data: inserted, error: insertErr } = await supabase
       .from("actblue_accounts")
@@ -543,7 +518,7 @@ Deno.serve(async (request) => {
             method: "DELETE",
             headers: { "Authorization": `Bearer ${THANKSIO_API_KEY}` },
           });
-          console.log("✅ Thanks.io subaccount rolled back");
+          edgeLogger.info("✅ Thanks.io subaccount rolled back");
         } catch (thanksioRollbackErr) {
           console.error("Thanks.io rollback failed:", thanksioRollbackErr);
         }
@@ -557,7 +532,7 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: msg, details: insertErr }, 500);
     }
 
-    console.log("✅ Success!");
+    edgeLogger.info("✅ Success!");
     
     // Ensure all required fields are present in the response
     const response = {
@@ -581,7 +556,7 @@ Deno.serve(async (request) => {
       },
     };
     
-    console.log("📤 Returning response:", JSON.stringify(response, null, 2));
+    edgeLogger.info("📤 Returning response:", JSON.stringify(response, null, 2));
     return jsonResponse(response);
   } catch (err: any) {
     console.error("❌ Function Error:", err);

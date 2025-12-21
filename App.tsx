@@ -13,6 +13,7 @@ import Auth from './components/Auth';
 import { supabase } from './services/supabaseClient';
 import { Loader2 } from 'lucide-react';
 import { useToast } from './components/ToastContext';
+import { logger } from './services/errorLogger';
 
 const App: React.FC = () => {
   const { toast } = useToast();
@@ -29,7 +30,7 @@ const App: React.FC = () => {
     // Safety timeout to prevent infinite loading
     const safetyTimer = setTimeout(() => {
         if (loading) {
-            console.warn("Loading timed out, forcing auth view");
+            logger.warn('Loading timed out, forcing auth view', { component: 'App', action: 'initSession' });
             setLoading(false);
             if (!session) setView(ViewState.AUTH);
         }
@@ -47,7 +48,7 @@ const App: React.FC = () => {
                 setView(ViewState.AUTH);
             }
         } catch (e) {
-            console.error("Auth failed:", e);
+            logger.error('Auth initialization failed', { component: 'App', action: 'initSession' }, e);
             setLoading(false);
             setView(ViewState.AUTH);
         }
@@ -97,7 +98,7 @@ const App: React.FC = () => {
         .single();
         
       if (upsertError) {
-         console.warn('Profile upsert notice:', upsertError.message);
+         logger.warn('Profile upsert notice', { component: 'App', action: 'fetchData', userId }, upsertError);
       }
       
       // Use upserted data or fetch if needed
@@ -111,7 +112,7 @@ const App: React.FC = () => {
           .maybeSingle();
           
         if (fetchErr) {
-          console.error('Error fetching profile:', fetchErr);
+          logger.error('Error fetching profile', { component: 'App', action: 'fetchData', userId }, fetchErr);
         }
         loadedProfileData = fetchedProfile;
       }
@@ -164,7 +165,7 @@ const App: React.FC = () => {
       }
 
     } catch (error: any) {
-      console.error('Error loading data:', error);
+      logger.error('Error loading data', { component: 'App', action: 'fetchData', userId }, error);
       toast(`Failed to load data: ${error.message}`, 'error');
     } finally {
       setLoading(false);
@@ -193,7 +194,7 @@ const App: React.FC = () => {
           const { data: donationData, error: donationError } = await query;
 
           if (donationError) {
-              console.error('Error fetching donations:', donationError);
+              logger.error('Error fetching donations', { component: 'App', action: 'fetchDonations', userId, accountId }, donationError);
           } else {
               const mappedDonations: Donation[] = (donationData || []).map((d: any) => ({
                 id: d.id,
@@ -207,7 +208,7 @@ const App: React.FC = () => {
               setDonations(mappedDonations);
           }
       } catch (donErr) {
-          console.error("Donation fetch exception:", donErr);
+          logger.error('Donation fetch exception', { component: 'App', action: 'fetchDonations', userId }, donErr);
       }
   };
 
@@ -233,7 +234,7 @@ const App: React.FC = () => {
 
             if (error) throw error;
         } catch (e: any) {
-            console.error('Error updating profiles table:', e);
+            logger.error('Error updating profiles table', { component: 'App', action: 'handleUpdateProfile', userId: session.user.id }, e);
             errors.push(e.message || 'Database update failed');
         }
     }
@@ -250,7 +251,7 @@ const App: React.FC = () => {
             });
             if (error) throw error;
         } catch (e: any) {
-             console.error('Error updating auth metadata:', e);
+             logger.error('Error updating auth metadata', { component: 'App', action: 'handleUpdateProfile', userId: session.user.id }, e);
              errors.push(e.message || 'User metadata update failed');
         }
     }
@@ -294,7 +295,7 @@ const App: React.FC = () => {
                           }
                       });
                   } catch (thanksioErr) {
-                      console.error("Failed to update Thanks.io subaccount:", thanksioErr);
+                      logger.error('Failed to update Thanks.io subaccount', { component: 'App', action: 'handleSaveAccount', accountId: currentAccount.id }, thanksioErr);
                   }
               }
               
@@ -339,7 +340,7 @@ const App: React.FC = () => {
               const accountInfo = hookdeckData?.account || hookdeckData;
               
               if (!accountInfo?.webhook_url) {
-                  console.error("Hookdeck response:", hookdeckData);
+                  logger.error('Invalid response from webhook provisioner', { component: 'App', action: 'handleSaveAccount', response: hookdeckData });
                   throw new Error("Invalid response from webhook provisioner");
               }
 
@@ -360,7 +361,7 @@ const App: React.FC = () => {
           }
 
       } catch (e: any) {
-          console.error("Failed to save account", e);
+          logger.error('Failed to save account', { component: 'App', action: 'handleSaveAccount' }, e);
           toast(`Error saving account: ${e.message}`, 'error');
           throw e;
       }

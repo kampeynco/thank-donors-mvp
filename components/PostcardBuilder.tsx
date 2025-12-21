@@ -5,6 +5,7 @@ import { generateThankYouMessage } from '../services/geminiService';
 import { Profile, Template, ActBlueAccount } from '../types';
 import { useToast } from './ToastContext';
 import { supabase } from '../services/supabaseClient';
+import { logger } from '@/services/errorLogger';
 
 interface PostcardBuilderProps {
   profile: Profile;
@@ -130,7 +131,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
 
           return null;
       } catch (e) {
-          console.error("Error refreshing signed URL:", e);
+          logger.error('Error refreshing signed URL', { component: 'PostcardBuilder', url: oldUrl }, e);
           return null;
       }
   };
@@ -170,7 +171,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
             }
         }
     } catch (e) {
-        console.error("Error fetching history:", e);
+        logger.error('Error fetching image history', { component: 'PostcardBuilder', userId: profile?.id }, e);
     }
   };
 
@@ -300,7 +301,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
 
     } catch (error: any) {
         const errMsg = error?.message || "Upload failed";
-        console.error("Upload failed:", errMsg);
+        logger.error('Upload failed', { component: 'PostcardBuilder', userId: profile.id }, error);
         toast("Cloud upload failed. Using local preview.", "info");
     } finally {
         setIsUploading(false);
@@ -441,7 +442,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
               setUploadedUrl(null);
           }
       } catch (e) {
-          console.error("Error deleting image:", e);
+          logger.error('Error deleting image', { component: 'PostcardBuilder', url }, e);
           toast("Failed to delete image", "error");
       }
   };
@@ -657,6 +658,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                                 className="w-full h-full object-cover transition-transform group-hover:scale-110" 
                                                 alt="History" 
                                                 onError={(e) => {
+                                                    logger.warn('Image load failed in history', { component: 'PostcardBuilder', url });
                                                     e.currentTarget.style.display = 'none';
                                                     e.currentTarget.parentElement!.parentElement!.style.display = 'none';
                                                 }}
@@ -787,7 +789,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                 alt="Postcard Front" 
                                 className="w-full h-full object-cover bg-stone-100" 
                                 onError={() => {
-                                    console.error("Image load failed for:", activeImage);
+                                    logger.error('Image load failed for preview', { component: 'PostcardBuilder', image: activeImage });
                                     setImageLoadError(true);
                                 }}
                             />

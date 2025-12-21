@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { edgeLogger } from "@shared/logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -82,15 +83,15 @@ async function sendThanksioPostcard(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Thanks.io API error:", errorText);
+      edgeLogger.error('Thanks.io API error', { function: 'webhook-receiver' }, new Error(errorText));
       return { success: false, error: errorText };
     }
 
     const data = await response.json();
-    console.log("Thanks.io response:", data);
+    edgeLogger.info('Thanks.io postcard sent', { function: 'webhook-receiver', orderId: data.id || data.order_id });
     return { success: true, orderId: data.id || data.order_id };
   } catch (error: any) {
-    console.error("Thanks.io request failed:", error);
+    edgeLogger.error('Thanks.io request failed', { function: 'webhook-receiver' }, error);
     return { success: false, error: error.message };
   }
 }
@@ -123,14 +124,14 @@ Deno.serve(async (req) => {
 
     // 2. Parse ActBlue Payload
     const payload = await req.json();
-    console.log("Received Webhook Payload");
+    edgeLogger.info('Received webhook payload', { function: 'webhook-receiver' });
 
     // ActBlue structure: { contribution: { unique_id, donor: {...}, lineitems: [...] } }
     const contribution = payload.contribution;
     
     if (!contribution || !contribution.lineitems) {
       // Return 200 to acknowledge receipt even if invalid, to stop retries
-      console.warn("Invalid payload structure");
+      edgeLogger.warn('Invalid payload structure', { function: 'webhook-receiver' });
       return new Response("Invalid Payload", { status: 200, headers: corsHeaders });
     }
 
@@ -155,11 +156,11 @@ Deno.serve(async (req) => {
             .single();
 
         if (accountError || !account) {
-            console.log(`Entity ID ${entityId} not found in our system. Skipping.`);
+            edgeLogger.info('Entity ID not found in system', { function: 'webhook-receiver', entityId });
             continue;
         }
 
-        console.log(`Processing donation for ${account.committee_name} (Profile: ${account.profile_id})`);
+        edgeLogger.info('Processing donation', { function: 'webhook-receiver', committee: account.committee_name, profileId: account.profile_id });
 
         // Fetch profile for return address
         const { data: profile, error: profileError } = await supabase
@@ -169,7 +170,7 @@ Deno.serve(async (req) => {
             .single();
 
         if (profileError || !profile) {
-            console.error("Could not fetch profile for return address:", profileError);
+            edgeLogger.error('Could not fetch profile for return address', { function: 'webhook-receiver', profileId: account.profile_id }, profileError);
             continue;
         }
 
@@ -196,10 +197,10 @@ Deno.serve(async (req) => {
         if (donationError) {
             // Handle duplicate entry gracefully (idempotency)
             if (donationError.code === '23505') { // Unique violation
-                console.log("Duplicate donation received. Skipping.");
+                edgeLogger.info('Duplicate donation received', { function: 'webhook-receiver', donationId: actBlueId });
                 continue;
             }
-            console.error("Error inserting donation:", donationError);
+            edgeLogger.error('Error inserting donation', { function: 'webhook-receiver' }, donationError);
             throw donationError;
         }
 
@@ -244,9 +245,9 @@ Deno.serve(async (req) => {
             });
 
         if (postcardError) {
-            console.error("Error creating postcard record:", postcardError);
+            edgeLogger.error('Error creating postcard record', { function: 'webhook-receiver', donationId: donation.id }, postcardError);
         } else {
-            console.log(`Postcard ${postcardStatus} - Order ID: ${thanksioResult.orderId || 'N/A'}`);
+            edgeLogger.info('Postcard processed', { function: 'webhook-receiver', status: postcardStatus, orderId: thanksioResult.orderId || 'N/A' });
         }
 
         // Update donation status based on postcard result
@@ -262,7 +263,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error: any) {
-    console.error("Webhook processing error:", error);
+    edgeLogger.error('Webhook processing error', { function: 'webhook-receiver' }, error);
     // We often still return 200 to Hookdeck to prevent it from retrying indefinitely on logic errors
     // unless it's a transient error.
     return new Response(
