@@ -1,13 +1,13 @@
-
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+// @ts-ignore
+Deno.serve(async (req) => {
   // Handle CORS preflight request
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -16,15 +16,15 @@ serve(async (req) => {
   try {
     // 1. Setup Supabase Client (Service Role required for data ingestion bypassing RLS)
     // @ts-ignore
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SBASE_URL = Deno.env.get("SBASE_URL");
     // @ts-ignore
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const SBASE_SERVICE_KEY = Deno.env.get("SBASE_SERVICE_KEY");
 
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    if (!SBASE_URL || !SBASE_SERVICE_KEY) {
       throw new Error("Missing Supabase Service Role configuration.");
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const supabase = createClient(SBASE_URL, SBASE_SERVICE_KEY);
 
     // 2. Parse ActBlue Payload
     const payload = await req.json();

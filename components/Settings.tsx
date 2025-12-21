@@ -16,6 +16,7 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, onUpdate, 
   const [copiedField, setCopiedField] = useState<string | null>(null);
   
   const [committeeName, setCommitteeName] = useState('');
+  const [disclaimer, setDisclaimer] = useState('');
   
   const [address, setAddress] = useState({
       street_address: '',
@@ -31,6 +32,7 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, onUpdate, 
   useEffect(() => {
       if (currentAccount && currentAccount.id !== 'new') {
           setCommitteeName(currentAccount.committee_name || '');
+          setDisclaimer((currentAccount as any).disclaimer || '');
           setAddress({
             street_address: currentAccount.street_address || '',
             city: currentAccount.city || '',
@@ -39,6 +41,7 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, onUpdate, 
           });
       } else {
           setCommitteeName('');
+          setDisclaimer('');
           setAddress({ street_address: '', city: '', state: '', postal_code: '' });
       }
   }, [currentAccount]);
@@ -65,11 +68,12 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, onUpdate, 
     try {
         await onSaveAccount({ 
             committee_name: committeeName,
+            disclaimer: disclaimer,
             street_address: address.street_address,
             city: address.city,
             state: address.state,
             postal_code: address.postal_code
-        });
+        } as any);
         
         toast('Settings updated successfully!', 'success');
     } catch (e) {
@@ -121,6 +125,18 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, onUpdate, 
                     {(!currentAccount || currentAccount.id === 'new') && (
                         <p className="text-xs text-amber-600 mt-2">Note: Please create or select an account to save campaign details.</p>
                     )}
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-2">Paid For By Disclaimer</label>
+                    <textarea 
+                        value={disclaimer}
+                        onChange={(e) => setDisclaimer(e.target.value)}
+                        className="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none" 
+                        placeholder="e.g. Paid for by Friends of Jane Doe"
+                        rows={2}
+                        disabled={!currentAccount || currentAccount.id === 'new'}
+                    />
+                    <p className="text-xs text-stone-400 mt-1">This will appear on the back of your postcards.</p>
                 </div>
             </div>
 

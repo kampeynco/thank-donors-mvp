@@ -23,6 +23,7 @@ const VARIABLE_OPTIONS = [
     { label: 'State', value: '%STATE%' },
     { label: 'Zip Code', value: '%ZIP%' },
     { label: 'Donation Date', value: '%DONATION_DAY%' },
+    { label: 'Donation Amount', value: '%DONATION_AMOUNT%' },
 ];
 
 const DEMO_DONOR = {
@@ -33,7 +34,8 @@ const DEMO_DONOR = {
     city: 'Washington',
     state: 'DC',
     zip: '20001',
-    date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+    amount: '$50.00'
 };
 
 // Postcard dimensions ratio (approx 1.47)
@@ -358,8 +360,11 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
     );
 
     canvas.toBlob((blob) => {
-        if (blob && cropState.originalFile) {
-            performUpload(blob, `cropped_${cropState.originalFile.name}`);
+        if (blob) {
+            const fileName = cropState.originalFile 
+                ? `cropped_${cropState.originalFile.name}` 
+                : `cropped_${Date.now()}.jpg`;
+            performUpload(blob, fileName);
             setCropState(prev => ({ ...prev, isOpen: false }));
         } else {
             toast("Failed to process cropped image", "error");
@@ -396,6 +401,49 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
       setLocalImage(null);
       setUploadedUrl(url);
       setImageLoadError(false);
+  };
+
+  const handleOpenCropForHistoryImage = (url: string) => {
+      setCropState({
+          isOpen: true,
+          imageSrc: url,
+          zoom: 1,
+          offset: { x: 0, y: 0 },
+          originalFile: null,
+          isDragging: false,
+          dragStart: { x: 0, y: 0 }
+      });
+  };
+
+  const handleDeleteHistoryImage = async (url: string) => {
+      try {
+          const urlObj = new URL(url);
+          const parts = urlObj.pathname.split('/object/');
+          if (parts.length < 2) return;
+
+          const pathSegments = parts[1].split('/');
+          if (pathSegments.length < 3) return;
+
+          const bucket = pathSegments[1];
+          const key = decodeURIComponent(pathSegments.slice(2).join('/'));
+
+          const { error } = await supabase.storage.from(bucket).remove([key]);
+          
+          if (error) {
+              toast("Failed to delete image", "error");
+              return;
+          }
+
+          toast("Image deleted", "success");
+          setImageHistory(prev => prev.filter(u => u !== url));
+          
+          if (uploadedUrl === url) {
+              setUploadedUrl(null);
+          }
+      } catch (e) {
+          console.error("Error deleting image:", e);
+          toast("Failed to delete image", "error");
+      }
   };
 
   const handleAiGenerate = async () => {
@@ -473,6 +521,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
         .replace(/%STATE%/g, DEMO_DONOR.state)
         .replace(/%ZIP%/g, DEMO_DONOR.zip)
         .replace(/%DONATION_DAY%/g, DEMO_DONOR.date)
+        .replace(/%DONATION_AMOUNT%/g, DEMO_DONOR.amount)
         .replace(/%CURRENT_DAY%/g, DEMO_DONOR.date);
   };
 
@@ -591,32 +640,56 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                             {imageHistory.map((url, idx) => {
                                 const isActive = activeImage === url;
                                 return (
-                                    <button 
+                                    <div 
                                         key={idx}
-                                        onClick={() => handleSelectHistoryImage(url)}
                                         className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all group ${
                                             isActive 
                                             ? 'border-rose-500 ring-2 ring-rose-200 ring-offset-1' 
                                             : 'border-stone-100 hover:border-rose-300'
                                         }`}
                                     >
-                                        <img 
-                                            src={url} 
-                                            className="w-full h-full object-cover transition-transform group-hover:scale-110" 
-                                            alt="History" 
-                                            onError={(e) => {
-                                                e.currentTarget.style.display = 'none';
-                                                e.currentTarget.parentElement!.style.display = 'none';
-                                            }}
-                                        />
+                                        <button 
+                                            onClick={() => handleOpenCropForHistoryImage(url)}
+                                            className="w-full h-full"
+                                        >
+                                            <img 
+                                                src={url} 
+                                                className="w-full h-full object-cover transition-transform group-hover:scale-110" 
+                                                alt="History" 
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                    e.currentTarget.parentElement!.parentElement!.style.display = 'none';
+                                                }}
+                                            />
+                                        </button>
                                         {isActive && (
-                                            <div className="absolute inset-0 bg-rose-500/20 flex items-center justify-center">
+                                            <div className="absolute inset-0 bg-rose-500/20 flex items-center justify-center pointer-events-none">
                                                 <div className="bg-white rounded-full p-1 shadow-sm">
                                                     <Check size={12} className="text-rose-600 stroke-[4]" />
                                                 </div>
                                             </div>
                                         )}
-                                    </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteHistoryImage(url);
+                                            }}
+                                            className="absolute top-1 right-1 bg-stone-800/70 hover:bg-rose-600 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                            title="Delete image"
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleOpenCropForHistoryImage(url);
+                                            }}
+                                            className="absolute bottom-1 right-1 bg-stone-800/70 hover:bg-rose-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                            title="Adjust crop"
+                                        >
+                                            <Crop size={10} />
+                                        </button>
+                                    </div>
                                 );
                             })}
                         </div>
@@ -751,7 +824,8 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                             </div>
 
                             <div className="w-[45%] h-full relative">
-                                <div className="absolute top-3 right-3 md:top-4 md:right-4 text-[6px] sm:text-[8px] md:text-[9px] text-stone-600 font-sans leading-tight">
+                                {/* Return Address - Left side, above recipient */}
+                                <div className="absolute top-[40%] left-2 md:left-4 text-[6px] sm:text-[8px] md:text-[9px] text-stone-600 font-sans leading-tight">
                                     <p className="text-stone-900 font-bold uppercase mb-0.5">
                                         {account?.committee_name || 'CAMPAIGN NAME'}
                                     </p>
@@ -768,12 +842,14 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                     )}
                                 </div>
 
-                                <div className="absolute top-3 left-2 md:top-4 md:left-4 w-[50px] h-[40px] md:w-[70px] md:h-[55px] border border-stone-800 flex flex-col items-center justify-center gap-0.5">
+                                {/* Postage Indicia - Right side, above recipient */}
+                                <div className="absolute top-[38%] right-2 md:right-4 w-[50px] h-[40px] md:w-[70px] md:h-[55px] border border-stone-800 flex flex-col items-center justify-center gap-0.5">
                                     <span className="text-[5px] md:text-[7px] font-bold uppercase tracking-wider text-stone-800">Postage</span>
                                     <span className="text-[5px] md:text-[7px] font-bold uppercase tracking-wider text-stone-800">Indicia</span>
                                 </div>
                                 
-                                <div className="absolute bottom-4 left-4 right-2 md:bottom-10 md:left-8 md:right-4 text-[8px] sm:text-[10px] md:text-xs font-sans text-stone-800 leading-snug uppercase tracking-wide">
+                                {/* Recipient Address */}
+                                <div className="absolute bottom-4 left-2 right-2 md:bottom-6 md:left-4 md:right-4 text-[8px] sm:text-[10px] md:text-xs font-sans text-stone-800 leading-snug uppercase tracking-wide">
                                     <p className="font-bold text-[9px] sm:text-[11px] md:text-sm mb-0.5 md:mb-1">{DEMO_DONOR.firstname} {DEMO_DONOR.lastname}</p>
                                     <p>{DEMO_DONOR.addr1}</p>
                                     <p>{DEMO_DONOR.addr2}</p>

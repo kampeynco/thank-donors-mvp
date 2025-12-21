@@ -18,9 +18,9 @@ serve(async (req) => {
     // @ts-ignore
     const HOOKDECK_API_KEY = Deno.env.get("HOOKDECK_API_KEY");
     // @ts-ignore
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SBASE_URL = Deno.env.get("SBASE_URL");
     // @ts-ignore
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const SBASE_SERVICE_ROLE_KEY = Deno.env.get("SBASE_SERVICE_ROLE_KEY");
 
     if (!HOOKDECK_API_KEY) throw new Error("Missing HOOKDECK_API_KEY");
 

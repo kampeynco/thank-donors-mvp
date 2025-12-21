@@ -81,10 +81,10 @@ Deno.serve(async (request) => {
   try {
     // 1) Env Var Setup
     // @ts-ignore
-    const SBASE_URL = Deno.env.get("SBASE_URL") ?? Deno.env.get("SUPABASE_URL");
+    const SBASE_URL = Deno.env.get("SBASE_URL") ?? Deno.env.get("SBASE_URL");
     // @ts-ignore
     const SBASE_ANON_KEY =
-      Deno.env.get("SBASE_ANON_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY");
+      Deno.env.get("SBASE_ANON_KEY") ?? Deno.env.get("SBASE_ANON_KEY");
     // @ts-ignore
     const HOOKDECK_API_KEY = Deno.env.get("HOOKDECK_API_KEY");
     // @ts-ignore
@@ -92,7 +92,7 @@ Deno.serve(async (request) => {
 
     if (!SBASE_URL || !SBASE_ANON_KEY) {
       return jsonResponse(
-        { error: "Missing env vars: SBASE_URL/SUPABASE_URL or SBASE_ANON_KEY/SUPABASE_ANON_KEY" },
+        { error: "Missing env vars: SBASE_URL/SBASE_URL or SBASE_ANON_KEY/SBASE_ANON_KEY" },
         500,
       );
     }

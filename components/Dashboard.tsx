@@ -1,7 +1,60 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Donation } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { CheckCircle2, Clock, AlertCircle, TrendingUp } from 'lucide-react';
+import { CheckCircle2, Clock, AlertCircle, TrendingUp, ChevronDown } from 'lucide-react';
+
+const StatusDropdown: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors cursor-pointer"
+      >
+        <span className="w-2 h-2 mr-2 bg-emerald-500 rounded-full animate-pulse"></span>
+        Status
+        <ChevronDown size={14} className={`ml-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-stone-100 z-50 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+          <div className="px-3 py-2 border-b border-stone-100 bg-stone-50">
+            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Status Legend</span>
+          </div>
+          <div className="p-2 space-y-1">
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
+              <span className="w-3 h-3 bg-emerald-500 rounded-full"></span>
+              <span className="text-sm font-medium text-stone-700">Live</span>
+              <span className="text-xs text-stone-400 ml-auto">All systems operational</span>
+            </div>
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
+              <span className="w-3 h-3 bg-amber-500 rounded-full"></span>
+              <span className="text-sm font-medium text-stone-700">System Issues</span>
+              <span className="text-xs text-stone-400 ml-auto">Partial outage</span>
+            </div>
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
+              <span className="w-3 h-3 bg-rose-500 rounded-full"></span>
+              <span className="text-sm font-medium text-stone-700">System Down</span>
+              <span className="text-xs text-stone-400 ml-auto">Major outage</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface DashboardProps {
   donations: Donation[];
@@ -45,12 +98,7 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
           <h2 className="text-3xl font-serif font-bold text-stone-800">Campaign Overview</h2>
           <p className="text-stone-500 mt-2">Welcome back! Here's how your gratitude campaign is performing.</p>
         </div>
-        <div className="flex gap-2">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                <span className="w-2 h-2 mr-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                System Operational
-            </span>
-        </div>
+        <StatusDropdown />
       </div>
 
       {/* Stats Grid */}

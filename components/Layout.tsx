@@ -250,7 +250,7 @@ const Layout: React.FC<LayoutProps> = ({
                                 }`}
                             >
                                 <User size={16} />
-                                Account
+                                My Profile
                             </button>
 
                         </div>
