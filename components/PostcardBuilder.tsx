@@ -398,6 +398,64 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
       setImageLoadError(false);
   };
 
+  const handleHistoryImageCrop = async (url: string) => {
+      // Fetch the image and convert to base64 for cropping
+      try {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              setCropState({
+                  isOpen: true,
+                  imageSrc: reader.result as string,
+                  zoom: 1,
+                  offset: { x: 0, y: 0 },
+                  originalFile: new File([blob], 'history_image.jpg', { type: blob.type }),
+                  isDragging: false,
+                  dragStart: { x: 0, y: 0 }
+              });
+          };
+          reader.readAsDataURL(blob);
+      } catch (e) {
+          toast("Failed to load image for cropping", "error");
+      }
+  };
+
+  const handleDeleteHistoryImage = async (url: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+
+      try {
+          // Parse the URL to get the file path
+          const urlObj = new URL(url);
+          const pathSegments = urlObj.pathname.split('/object/');
+          if (pathSegments.length < 2) return;
+
+          const parts = pathSegments[1].split('/');
+          if (parts.length < 3) return;
+
+          const bucket = parts[1];
+          const key = decodeURIComponent(parts.slice(2).join('/'));
+
+          const { error } = await supabase.storage.from(bucket).remove([key]);
+
+          if (error) throw error;
+
+          // If deleted image was active, clear it
+          if (activeImage === url) {
+              setLocalImage(null);
+              setUploadedUrl(null);
+              setDbImage(null);
+          }
+
+          // Refresh history
+          await fetchImageHistory();
+          toast("Image deleted", "info");
+      } catch (e) {
+          console.error("Delete failed:", e);
+          toast("Failed to delete image", "error");
+      }
+  };
+
   const handleAiGenerate = async () => {
     setIsGenerating(true);
     const cName = account?.committee_name || 'My Campaign';
@@ -591,32 +649,46 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                             {imageHistory.map((url, idx) => {
                                 const isActive = activeImage === url;
                                 return (
-                                    <button 
+                                    <div
                                         key={idx}
-                                        onClick={() => handleSelectHistoryImage(url)}
                                         className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all group ${
-                                            isActive 
-                                            ? 'border-rose-500 ring-2 ring-rose-200 ring-offset-1' 
+                                            isActive
+                                            ? 'border-rose-500 ring-2 ring-rose-200 ring-offset-1'
                                             : 'border-stone-100 hover:border-rose-300'
                                         }`}
                                     >
-                                        <img 
-                                            src={url} 
-                                            className="w-full h-full object-cover transition-transform group-hover:scale-110" 
-                                            alt="History" 
-                                            onError={(e) => {
-                                                e.currentTarget.style.display = 'none';
-                                                e.currentTarget.parentElement!.style.display = 'none';
-                                            }}
-                                        />
+                                        <button
+                                            onClick={() => handleHistoryImageCrop(url)}
+                                            className="w-full h-full"
+                                        >
+                                            <img
+                                                src={url}
+                                                className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                                                alt="History"
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                    e.currentTarget.parentElement!.style.display = 'none';
+                                                }}
+                                            />
+                                        </button>
+
+                                        {/* Delete Button */}
+                                        <button
+                                            onClick={(e) => handleDeleteHistoryImage(url, e)}
+                                            className="absolute top-1 right-1 bg-rose-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-rose-600 z-10"
+                                            title="Delete image"
+                                        >
+                                            <X size={10} />
+                                        </button>
+
                                         {isActive && (
-                                            <div className="absolute inset-0 bg-rose-500/20 flex items-center justify-center">
+                                            <div className="absolute inset-0 bg-rose-500/20 flex items-center justify-center pointer-events-none">
                                                 <div className="bg-white rounded-full p-1 shadow-sm">
                                                     <Check size={12} className="text-rose-600 stroke-[4]" />
                                                 </div>
                                             </div>
                                         )}
-                                    </button>
+                                    </div>
                                 );
                             })}
                         </div>
@@ -750,13 +822,15 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                 </div>
                             </div>
 
-                            <div className="w-[45%] h-full relative">
+                            <div className="w-[45%] h-full relative flex flex-col justify-between py-4 md:py-8">
+                                {/* Postage Indicia - Top Right */}
                                 <div className="absolute top-3 right-3 md:top-6 md:right-6 w-[50px] h-[40px] md:w-[70px] md:h-[55px] border border-stone-800 flex flex-col items-center justify-center gap-0.5">
                                     <span className="text-[5px] md:text-[7px] font-bold uppercase tracking-wider text-stone-800">Postage</span>
                                     <span className="text-[5px] md:text-[7px] font-bold uppercase tracking-wider text-stone-800">Indicia</span>
                                 </div>
 
-                                <div className="absolute top-[32%] left-2 md:left-4 text-[6px] sm:text-[8px] md:text-[9px] text-stone-600 font-sans leading-tight">
+                                {/* Return Address - Above Recipient */}
+                                <div className="absolute bottom-[45%] left-2 md:left-4 text-[6px] sm:text-[8px] md:text-[9px] text-stone-600 font-sans leading-tight">
                                     <p className="text-stone-900 font-bold uppercase mb-0.5">
                                         {account?.committee_name || 'CAMPAIGN NAME'}
                                     </p>
@@ -772,7 +846,8 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                         </>
                                     )}
                                 </div>
-                                
+
+                                {/* Recipient Address - Bottom */}
                                 <div className="absolute bottom-4 left-4 right-2 md:bottom-10 md:left-8 md:right-4 text-[8px] sm:text-[10px] md:text-xs font-sans text-stone-800 leading-snug uppercase tracking-wide">
                                     <p className="font-bold text-[9px] sm:text-[11px] md:text-sm mb-0.5 md:mb-1">{DEMO_DONOR.firstname} {DEMO_DONOR.lastname}</p>
                                     <p>{DEMO_DONOR.addr1}</p>

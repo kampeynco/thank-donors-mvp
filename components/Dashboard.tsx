@@ -1,18 +1,32 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Donation } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { CheckCircle2, Clock, AlertCircle, TrendingUp } from 'lucide-react';
+import { CheckCircle2, Clock, AlertCircle, TrendingUp, ChevronDown } from 'lucide-react';
 
 interface DashboardProps {
   donations: Donation[];
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
+
   // Calculate Stats
   const sentCount = donations.filter(d => d.status === 'SENT').length;
   const pendingCount = donations.filter(d => d.status === 'PENDING').length;
   const failedCount = donations.filter(d => d.status === 'FAILED').length;
   const totalRaised = donations.reduce((acc, curr) => acc + curr.amount, 0);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
+        setIsStatusDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Mock data for the chart
   const chartData = [
@@ -45,11 +59,46 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
           <h2 className="text-3xl font-serif font-bold text-stone-800">Campaign Overview</h2>
           <p className="text-stone-500 mt-2">Welcome back! Here's how your gratitude campaign is performing.</p>
         </div>
-        <div className="flex gap-2">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                <span className="w-2 h-2 mr-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                System Operational
-            </span>
+        <div className="relative" ref={statusDropdownRef}>
+            <button
+                onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors cursor-pointer gap-1"
+            >
+                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                Status
+                <ChevronDown size={12} className={`transition-transform ${isStatusDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isStatusDropdownOpen && (
+                <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-stone-100 z-50 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+                    <div className="p-4">
+                        <h4 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">Status Legend</h4>
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                                <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+                                <div>
+                                    <p className="text-sm font-bold text-stone-800">Live</p>
+                                    <p className="text-xs text-stone-500">All systems operational</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
+                                <div>
+                                    <p className="text-sm font-bold text-stone-800">System Issues</p>
+                                    <p className="text-xs text-stone-500">Partial service disruption</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-3 h-3 bg-rose-500 rounded-full"></div>
+                                <div>
+                                    <p className="text-sm font-bold text-stone-800">System Down</p>
+                                    <p className="text-xs text-stone-500">Service unavailable</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
       </div>
 

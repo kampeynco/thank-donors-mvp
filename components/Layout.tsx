@@ -236,7 +236,7 @@ const Layout: React.FC<LayoutProps> = ({
                                 </div>
                             </div>
 
-                            {/* Account / Profile Item */}
+                            {/* My Profile Item */}
                             <button
                                 onClick={() => {
                                     onChangeView(ViewState.PROFILE);
@@ -250,7 +250,7 @@ const Layout: React.FC<LayoutProps> = ({
                                 }`}
                             >
                                 <User size={16} />
-                                Account
+                                My Profile
                             </button>
 
                         </div>
