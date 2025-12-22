@@ -29,6 +29,7 @@ export interface ActBlueAccount {
   // Design fields
   front_image_url?: string;
   back_message?: string;
+  disclaimer?: string;
 }
 
 export interface Donation {
