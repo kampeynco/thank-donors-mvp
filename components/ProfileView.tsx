@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Profile } from '../types';
-import { User, Lock, Loader2, AlertTriangle, Save, Info } from 'lucide-react';
+import { User, Lock, Loader2, AlertCircle, AlertTriangle, Save } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useToast } from './ToastContext';
 
@@ -82,14 +82,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onUpdate, onDeleteUs
       <div>
         <h2 className="text-3xl font-serif font-bold text-stone-800">My Profile</h2>
         <p className="text-stone-500 mt-2">Manage your personal details and login credentials.</p>
-      </div>
-
-      <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-start gap-3">
-        <Info size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
-        <div>
-          <h4 className="font-bold text-blue-900 text-sm mb-1">Account Settings Disclaimer</h4>
-          <p className="text-sm text-blue-800">Your account information is securely stored and encrypted. Any changes you make will be saved immediately. If you notice any unauthorized activity, please reset your password and contact support right away.</p>
-        </div>
       </div>
 
       <div className="space-y-6">
