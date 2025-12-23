@@ -24,6 +24,70 @@ function substituteVariables(template: string, donor: any, donationDate: string)
     .replace(/%CURRENT_DAY%/g, new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }));
 }
 
+// Helper function to generate HTML for the postcard back
+function generatePostcardHtml(message: string, disclaimer: string | null): string {
+  // This HTML mimics the frontend preview while adhering to Lob's 4x6 specifications
+  return `
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      width: 6in;
+      height: 4in;
+      margin: 0;
+      padding: 0;
+      background: white;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .back-container {
+      width: 6in;
+      height: 4in;
+      position: relative;
+      background: white;
+      overflow: hidden;
+    }
+    .message-section {
+      position: absolute;
+      top: 0.4in;
+      left: 0.4in;
+      width: 2.8in; /* Adjusted to leave margin for center and address block */
+      height: 3.2in;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+    .text-body {
+      font-size: 11pt;
+      line-height: 1.5;
+      color: #1c1917;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .disclaimer {
+      margin-top: auto;
+      font-size: 8pt;
+      color: #78716c;
+      font-style: italic;
+      line-height: 1.3;
+      padding-top: 0.2in;
+    }
+    /* The right 45% of the card is reserved for the address block and indicia */
+  </style>
+</head>
+<body>
+  <div class="back-container">
+    <div class="message-section">
+      <div class="text-body">${message}</div>
+      ${disclaimer ? `<div class="disclaimer">${disclaimer}</div>` : ''}
+    </div>
+  </div>
+</body>
+</html>
+`.trim();
+}
+
 // Helper function to send postcard via Lob.com API
 async function sendPostcardViaLob(
   normalizedDonor: any,
@@ -48,11 +112,6 @@ async function sendPostcardViaLob(
     ? substituteVariables(account.back_message, normalizedDonor, donationDate)
     : `Dear ${normalizedDonor.firstname},\n\nThank you for your generous support!`;
 
-  // Add disclaimer if present
-  const finalBackMessage = account.disclaimer
-    ? `${backMessage}\n\n${account.disclaimer}`
-    : backMessage;
-
   // Prepare Lob API payload
   const lobPayload = {
     description: `Thank you postcard for ${normalizedDonor.firstname} ${normalizedDonor.lastname}`,
@@ -72,7 +131,7 @@ async function sendPostcardViaLob(
       address_zip: account.postal_code || "12345",
     },
     front: account.front_image_url || "https://via.placeholder.com/1875x1275",
-    back: finalBackMessage,
+    back: generatePostcardHtml(backMessage, account.disclaimer),
     size: "4x6",
     mail_type: "usps_first_class",
   };
