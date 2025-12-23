@@ -6,7 +6,7 @@ interface TooltipProps {
     position?: 'top' | 'bottom' | 'left' | 'right';
 }
 
-const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 'top' }) => {
+const StatusTooltip: React.FC<TooltipProps> = ({ content, children, position = 'top' }) => {
     const [isVisible, setIsVisible] = useState(false);
 
     if (!content) return <>{children}</>;
@@ -42,4 +42,4 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 'top' }
     );
 };
 
-export default Tooltip;
+export default StatusTooltip;
