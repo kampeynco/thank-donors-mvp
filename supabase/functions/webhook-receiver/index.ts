@@ -256,7 +256,7 @@ serve(async (req) => {
           donor_firstname: donorFirstName,
           donor_lastname: donorLastName,
           donor_email: donorEmail,
-          donor_address: donorAddr1,
+          donor_addr1: donorAddr1,
           donor_city: donorCity,
           donor_state: donorState,
           donor_zip: donorZip,
