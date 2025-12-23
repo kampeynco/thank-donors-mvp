@@ -91,6 +91,7 @@ function generatePostcardFrontHtml(imageUrl: string, disclaimer: string | null):
       margin: 0;
       padding: 0;
       overflow: hidden;
+      background: #f8fafc;
     }
     .front-container {
       width: 6in;
@@ -99,19 +100,22 @@ function generatePostcardFrontHtml(imageUrl: string, disclaimer: string | null):
       background-image: url('${imageUrl}');
       background-size: cover;
       background-position: center;
+      background-repeat: no-repeat;
     }
     .disclaimer-overlay {
       position: absolute;
       bottom: 0;
       left: 0;
       right: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 70%, rgba(0,0,0,0) 100%);
+      background-color: rgba(0, 0, 10, 0.45); /* Subtle transparency */
+      backdrop-filter: blur(2px); /* Soften the background if supported */
       color: white;
-      padding: 0.6in 0.4in 0.2in 0.4in;
-      font-family: 'Inter', sans-serif;
-      font-size: 8pt;
-      line-height: 1.2;
+      padding: 0.15in 0.2in;
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 8.5pt;
+      line-height: 1.3;
       text-align: center;
+      letter-spacing: 0.01em;
     }
   </style>
 </head>
