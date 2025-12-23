@@ -60,8 +60,8 @@ function generatePostcardHtml(message: string): string {
       box-sizing: border-box;
     }
     .text-body {
-      width: 95%;
-      max-width: 100%;
+      width: 100%;
+      max-width: 95%;
       font-size: 11pt;
       line-height: 1.5;
       color: #1c1917;
