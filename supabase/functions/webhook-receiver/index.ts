@@ -62,7 +62,7 @@ function generatePostcardHtml(message: string): string {
     .text-body {
       width: 100%;
       max-width: 100%;
-      font-size: 10pt;
+      font-size: 11pt;
       line-height: 1.5;
       color: #1c1917;
       white-space: pre-wrap;
