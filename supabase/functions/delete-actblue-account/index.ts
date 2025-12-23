@@ -1,42 +1,62 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
+// Setup type definitions for built-in Supabase Runtime APIs
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-serve(async (req) => {
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+// @ts-ignore
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {
     const { account_id } = await req.json();
 
+    if (!account_id) {
+      return jsonResponse({ error: "account_id is required" }, 400);
+    }
+
     // @ts-ignore
     const HOOKDECK_API_KEY = Deno.env.get("HOOKDECK_API_KEY");
     // @ts-ignore
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const THANKSIO_API_KEY = Deno.env.get("THANKSIO_API_KEY");
     // @ts-ignore
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? Deno.env.get("SBASE_URL");
+    // @ts-ignore
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SBASE_SERVICE_ROLE_KEY");
 
     if (!HOOKDECK_API_KEY) throw new Error("Missing HOOKDECK_API_KEY");
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) throw new Error("Missing Supabase configuration");
 
     // 1. Validate User & Fetch Account Details
-    // We need the Authorization header to ensure the user requesting deletion owns the account
-    const authHeader = req.headers.get('Authorization')!;
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return jsonResponse({ error: "Missing Authorization header" }, 401);
+    }
+
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Get user from JWT
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''));
 
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+      return jsonResponse({ error: "Unauthorized" }, 401);
     }
 
-    // Fetch the account to get Hookdeck IDs
+    // Fetch the account to get Hookdeck IDs and Thanks.io ID
     const { data: account, error: fetchError } = await supabaseClient
       .from('actblue_accounts')
       .select('*')
@@ -45,36 +65,56 @@ serve(async (req) => {
       .single();
 
     if (fetchError || !account) {
-      return new Response(JSON.stringify({ error: "Account not found or access denied" }), { status: 404, headers: corsHeaders });
+      console.error("Account fetch error or not found:", fetchError);
+      return jsonResponse({ error: "Account not found or access denied" }, 404);
     }
 
     // 2. Helper for Hookdeck API
     const hookdeckFetch = async (endpoint: string, method: string) => {
-      const response = await fetch(`https://api.hookdeck.com/2023-07-01${endpoint}`, {
+      console.log(`Hookdeck ${method} ${endpoint}`);
+      const response = await fetch(`https://api.hookdeck.com/2025-07-01${endpoint}`, {
         method,
         headers: { "Authorization": `Bearer ${HOOKDECK_API_KEY}` }
       });
       // We don't throw on 404 (resource already gone)
       if (!response.ok && response.status !== 404) {
         const txt = await response.text();
-        console.error(`Hookdeck delete failed [${endpoint}]:`, txt);
+        console.error(`❌ Hookdeck delete failed [${endpoint}]:`, txt);
+      } else if (response.ok) {
+        console.log(`✅ Hookdeck resource deleted: ${endpoint}`);
       }
     };
 
     // 3. Delete Hookdeck Resources
-    // Delete Connection first to stop routing
+    // Delete Connection first
     if (account.webhook_connection_id) {
-      console.log(`Deleting Connection: ${account.webhook_connection_id}`);
       await hookdeckFetch(`/connections/${account.webhook_connection_id}`, "DELETE");
     }
 
-    // Delete Source next to remove the URL
+    // Delete Source next
     if (account.webhook_source_id) {
-      console.log(`Deleting Source: ${account.webhook_source_id}`);
       await hookdeckFetch(`/sources/${account.webhook_source_id}`, "DELETE");
     }
 
-    // 4. Delete from Database
+    // 4. Delete Thanks.io Subaccount
+    if (account.thanksio_subaccount_id && THANKSIO_API_KEY) {
+      console.log(`Deleting Thanks.io subaccount: ${account.thanksio_subaccount_id}`);
+      try {
+        const thanksResponse = await fetch(`https://api.thanks.io/api/v2/sub-accounts/${account.thanksio_subaccount_id}`, {
+          method: "DELETE",
+          headers: { "Authorization": `Bearer ${THANKSIO_API_KEY}` }
+        });
+        if (!thanksResponse.ok && thanksResponse.status !== 404) {
+          console.error(`❌ Thanks.io delete failed:`, await thanksResponse.text());
+        } else {
+          console.log(`✅ Thanks.io subaccount deleted`);
+        }
+      } catch (e) {
+        console.error("❌ Thanks.io API error:", e);
+      }
+    }
+
+    // 5. Delete from Database
     const { error: deleteError } = await supabaseClient
       .from('actblue_accounts')
       .delete()
@@ -82,16 +122,10 @@ serve(async (req) => {
 
     if (deleteError) throw deleteError;
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-    );
+    return jsonResponse({ success: true });
 
   } catch (error: any) {
     console.error("Delete Error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-    );
+    return jsonResponse({ error: error.message }, 500);
   }
 });

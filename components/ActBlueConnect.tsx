@@ -23,6 +23,7 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
 
     const [entityId, setEntityId] = useState('');
     const [committeeName, setCommitteeName] = useState('');
+    const [disclaimer, setDisclaimer] = useState('');
 
     const [streetAddress, setStreetAddress] = useState('');
     const [city, setCity] = useState('');
@@ -37,6 +38,7 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
         if (currentAccount && currentAccount.id !== 'new') {
             setEntityId(currentAccount.entity_id.toString());
             setCommitteeName(currentAccount.committee_name || '');
+            setDisclaimer(currentAccount.disclaimer || '');
 
             if (currentAccount.street_address) setStreetAddress(currentAccount.street_address);
             if (currentAccount.city) setCity(currentAccount.city);
@@ -49,6 +51,7 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
         } else {
             setEntityId('');
             setCommitteeName('');
+            setDisclaimer('');
             setStreetAddress('');
             setCity('');
             setState('');
@@ -90,6 +93,7 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
             await onSaveAccount({
                 entity_id: numericId,
                 committee_name: committeeName,
+                disclaimer: disclaimer,
                 street_address: streetAddress,
                 city: city,
                 state: state,
@@ -163,6 +167,17 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
                                     className="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none transition-all font-mono"
                                 />
                                 <p className="text-xs text-stone-400 mt-1">Found in your ActBlue Dashboard URL or settings.</p>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-stone-700 block mb-1">Postcard Disclaimer</label>
+                                <textarea
+                                    value={disclaimer}
+                                    onChange={(e) => setDisclaimer(e.target.value)}
+                                    placeholder="Paid for by..."
+                                    rows={2}
+                                    className="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none transition-all resize-none"
+                                />
+                                <p className="text-xs text-stone-400 mt-1">Required by law on political mailings.</p>
                             </div>
                         </div>
 
