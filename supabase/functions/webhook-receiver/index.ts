@@ -491,11 +491,47 @@ serve(async (req) => {
         });
 
         // 8. Handle Auto-topup if balance is low
-        if (newBalance < 1000 && profile.auto_topup_enabled) {
-          console.log(`⚡ Balance low (${newBalance}c). Auto-topup enabled. Triggering recharge...`);
-          // Note: In a real production app, you might trigger an async Edge Function here 
-          // that calls Stripe to charge the saved payment method.
-          // For now, we'll just log it. 
+        if (newBalance < 1000 && profile.auto_topup_enabled && profile.stripe_customer_id) {
+          console.log(`⚡ Balance low (${newBalance}c). Auto-topup enabled for customer ${profile.stripe_customer_id}. Triggering $50 recharge...`);
+
+          try {
+            const refillAmount = profile.auto_topup_amount_cents || 5000;
+
+            // Trigger off-session payment
+            const intent = await stripe.paymentIntents.create({
+              amount: refillAmount,
+              currency: "usd",
+              customer: profile.stripe_customer_id,
+              confirm: true,
+              off_session: true,
+              payment_method_types: ["card"],
+              // We rely on the customer having a default payment method from a previous checkout
+            });
+
+            if (intent.status === 'succeeded') {
+              console.log(`✅ Auto-topup succeeded! intent: ${intent.id}`);
+
+              // Update balance again with the refill
+              const finalBalance = newBalance + refillAmount;
+              await supabase
+                .from('profiles')
+                .update({ balance_cents: finalBalance })
+                .eq('id', account.profile_id);
+
+              // Record the top-up transaction
+              await supabase.from('billing_transactions').insert({
+                profile_id: account.profile_id,
+                amount_cents: refillAmount,
+                type: 'topup',
+                description: `Auto-topup recharge (Low balance)`,
+                stripe_payment_intent_id: intent.id
+              });
+            } else {
+              console.warn(`⚠️ Auto-topup intent status: ${intent.status}. Further action might be needed.`);
+            }
+          } catch (stripeErr: any) {
+            console.error(`❌ Auto-topup failed: ${stripeErr.message}`);
+          }
         }
       }
     }

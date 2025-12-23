@@ -44,6 +44,23 @@ const BillingView: React.FC = () => {
     }
   };
 
+  const handleToggleAutoTopup = async () => {
+    if (!profile) return;
+    try {
+      const newValue = !profile.auto_topup_enabled;
+      const { error } = await supabase
+        .from('profiles')
+        .update({ auto_topup_enabled: newValue })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+      setProfile({ ...profile, auto_topup_enabled: newValue });
+    } catch (err) {
+      console.error('Error toggling auto-topup:', err);
+      alert('Failed to update settings.');
+    }
+  };
+
   const handleStripeCheckout = async (type: 'topup' | 'subscription') => {
     try {
       setProcessing(type);
@@ -108,10 +125,18 @@ const BillingView: React.FC = () => {
               <span>Cost per Postcard</span>
               <span className="font-bold">${profile?.tier === 'pro' ? '0.89' : '1.29'}</span>
             </div>
-            <div className="flex justify-between text-sm opacity-90 border-b border-white/20 pb-2">
-              <span>Auto-topup $50</span>
-              <span className="font-bold">{profile?.auto_topup_enabled ? 'Enabled' : 'Disabled'}</span>
-            </div>
+            <button
+              onClick={handleToggleAutoTopup}
+              className="w-full flex justify-between items-center text-sm opacity-90 border-b border-white/20 pb-2 hover:opacity-100 transition-opacity group"
+            >
+              <span>Auto-topup ($50 trigger)</span>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-xs uppercase tracking-wider">{profile?.auto_topup_enabled ? 'On' : 'Off'}</span>
+                <div className={`w-9 h-5 rounded-full transition-colors relative flex items-center ${profile?.auto_topup_enabled ? 'bg-emerald-500' : 'bg-white/30'}`}>
+                  <div className={`absolute w-3.5 h-3.5 bg-white rounded-full transition-all shadow-sm ${profile?.auto_topup_enabled ? 'translate-x-4.5' : 'translate-x-1'}`} />
+                </div>
+              </div>
+            </button>
           </div>
 
           <button
