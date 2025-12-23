@@ -69,6 +69,19 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Account not found or access denied" }, 404);
     }
 
+    // Check if this is the last user for this entity
+    const { count: userCount, error: countError } = await supabaseClient
+      .from('actblue_accounts')
+      .select('*', { count: 'exact', head: true })
+      .eq('entity_id', account.entity_id);
+
+    if (countError) {
+      console.error("Error checking user count for entity:", countError);
+    }
+
+    const isLastUser = (userCount === 1);
+    console.log(`Entity ${account.entity_id} user count: ${userCount}. Last user? ${isLastUser}`);
+
     // 2. Helper for Hookdeck API
     const hookdeckFetch = async (endpoint: string, method: string) => {
       console.log(`Hookdeck ${method} ${endpoint}`);
@@ -114,13 +127,44 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 5. Delete from Database
-    const { error: deleteError } = await supabaseClient
-      .from('actblue_accounts')
-      .delete()
-      .eq('id', account_id);
+    // 5. Delete Storage Files (If last user)
+    if (isLastUser) {
+      const folder = `entity_${account.entity_id}`;
+      console.log(`Cleaning up storage for folder: ${folder}`);
+      try {
+        const { data: files, error: listError } = await supabaseClient.storage.from('images').list(folder);
+        if (listError) throw listError;
 
-    if (deleteError) throw deleteError;
+        if (files && files.length > 0) {
+          const filesToRemove = files.map(f => `${folder}/${f.name}`);
+          console.log(`Removing files:`, filesToRemove);
+          const { error: removeError } = await supabaseClient.storage.from('images').remove(filesToRemove);
+          if (removeError) throw removeError;
+          console.log(`✅ Storage cleanup complete for ${folder}`);
+        } else {
+          console.log(`ℹ️ No files found in folder ${folder}`);
+        }
+      } catch (e) {
+        console.error(`❌ Storage cleanup failed for ${folder}:`, e);
+      }
+    }
+
+    // 6. Delete from Database
+    if (isLastUser) {
+      console.log(`Deleting entity ${account.entity_id} (and cascading to account)`);
+      const { error: deleteError } = await supabaseClient
+        .from('actblue_entities')
+        .delete()
+        .eq('entity_id', account.entity_id);
+      if (deleteError) throw deleteError;
+    } else {
+      console.log(`Deleting account ${account_id} (entity remains)`);
+      const { error: deleteError } = await supabaseClient
+        .from('actblue_accounts')
+        .delete()
+        .eq('id', account_id);
+      if (deleteError) throw deleteError;
+    }
 
     return jsonResponse({ success: true });
 
