@@ -292,6 +292,14 @@ Deno.serve(async (request) => {
 
       if (listDest.data?.models && listDest.data.models.length > 0) {
         hookdeckDestinationId = listDest.data.models[0].id;
+        // Force update the URL to ensure it points to the correct webhook-receiver
+        console.log("🔄 Updating existing destination URL...");
+        await hookdeckRequest(
+          "PUT",
+          `/destinations/${hookdeckDestinationId}`,
+          HOOKDECK_API_KEY,
+          { url: webhookReceiverUrl }
+        );
       } else {
         const createDest = await hookdeckRequest<{ id: string }>(
           "POST",
