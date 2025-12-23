@@ -57,6 +57,7 @@ const App: React.FC = () => {
     initSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('AuthStateChange:', event, session?.user?.id);
       setSession(session);
 
       if (event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
@@ -65,12 +66,15 @@ const App: React.FC = () => {
 
       // Prevent reloading if the user is already logged in
       if (event === 'SIGNED_IN' && session?.user?.id && loadedUserIdRef.current === session.user.id) {
+        console.log('Already loaded for user:', session.user.id);
         return;
       }
 
       if (session) {
+        console.log('Session exists, fetching data for:', session.user.id);
         fetchData(session.user.id, session.user.email);
       } else {
+        console.log('No session, resetting view');
         loadedUserIdRef.current = null;
         setView(ViewState.AUTH);
         setProfile(null);
@@ -87,6 +91,7 @@ const App: React.FC = () => {
   }, []);
 
   const fetchData = async (userId: string, userEmail?: string) => {
+    console.log('fetchData called for:', userId);
     setLoading(true);
     loadedUserIdRef.current = userId; // Mark as loading/loaded for this user
     try {
@@ -134,11 +139,14 @@ const App: React.FC = () => {
       setAccounts(fetchedAccounts);
 
       const isUserProfileComplete = mappedProfile.full_name && mappedProfile.organization;
+      console.log('Profile loaded:', { id: userId, complete: isUserProfileComplete, accounts: fetchedAccounts.length });
 
       if (!isUserProfileComplete) {
+        console.log('Redirecting to ONBOARDING');
         setView(ViewState.USER_ONBOARDING);
         setCurrentAccount(null);
       } else if (fetchedAccounts.length > 0) {
+        console.log('Redirecting to DASHBOARD');
         const recent = fetchedAccounts[0];
         setCurrentAccount(recent);
         await fetchDonations(userId, recent.id);
@@ -147,6 +155,7 @@ const App: React.FC = () => {
           setView(ViewState.DASHBOARD);
         }
       } else {
+        console.log('Redirecting to ACTBLUE_CONNECT');
         handleAddAccount(userId);
 
         if (view === ViewState.AUTH) {
@@ -158,6 +167,7 @@ const App: React.FC = () => {
       console.error('Error loading data:', error);
       toast(`Failed to load data: ${error.message}`, 'error');
     } finally {
+      console.log('fetchData finished, setting loading=false');
       setLoading(false);
     }
   };
