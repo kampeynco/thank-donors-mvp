@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Donation } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { CheckCircle2, Clock, AlertCircle, TrendingUp, ChevronDown, ExternalLink } from 'lucide-react';
+import Tooltip from './Tooltip';
 
 interface DashboardProps {
   donations: Donation[];
@@ -183,9 +184,11 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
                           </span>
                         )}
                         {['failed', 'returned_to_sender'].includes(donation.status) && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800 cursor-help" title={donation.error_message}>
-                            {donation.status === 'failed' ? 'Failed' : 'Returned'}
-                          </span>
+                          <Tooltip content={donation.error_message} position="left">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800 cursor-help">
+                              {donation.status === 'failed' ? 'Failed' : 'Returned'}
+                            </span>
+                          </Tooltip>
                         )}
                       </td>
                       <td className="py-4 px-6 text-right">
