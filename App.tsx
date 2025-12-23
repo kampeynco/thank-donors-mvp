@@ -301,34 +301,17 @@ const App: React.FC = () => {
           console.error("Invalid Hookdeck Response:", hookdeckData);
           throw new Error("Invalid response from webhook provisioner");
         }
+        // 2. Update Local State with returned account (DB insert handled by Edge Function)
 
-        // 2. Insert into Database with returned credentials
-        const newAccountPayload = {
-          profile_id: session.user.id,
-          entity_id: entityId,
-          committee_name: committeeName,
-          webhook_url: accountDataFromFn.webhook_url,
-          webhook_username: accountDataFromFn.webhook_username,
-          webhook_password: accountDataFromFn.webhook_password,
-          webhook_source_id: accountDataFromFn.webhook_source_id,
-          webhook_connection_id: accountDataFromFn.webhook_connection_id,
-          street_address: accountData.street_address,
-          city: accountData.city,
-          state: accountData.state,
-          postal_code: accountData.postal_code,
-          front_image_url: accountData.front_image_url,
-          back_message: accountData.back_message
-        };
+        // The connect-hookdeck function returns the full account object as 'account'
+        const createdAccount = accountDataFromFn;
 
-        const { data, error } = await supabase
-          .from('actblue_accounts')
-          .insert([newAccountPayload])
-          .select()
-          .single();
+        // Ensure we have a valid account object before updating state
+        if (!createdAccount || !createdAccount.id) {
+          throw new Error("Failed to receive valid account data from server");
+        }
 
-        if (error) throw error;
-
-        const createdAccount = data as ActBlueAccount;
+        // Update local state
         setAccounts([createdAccount, ...accounts]);
         setCurrentAccount(createdAccount);
         toast("New account created with secure webhook!", "success");
