@@ -63,7 +63,7 @@ serve(async (req) => {
                     quantity: 1,
                 },
             ],
-            mode: type === 'subscription' ? "payment" : "payment",
+            mode: type === 'subscription' ? "subscription" : "payment",
             payment_intent_data: type === 'topup' ? {
                 setup_future_usage: "off_session",
             } : undefined,
