@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Donation } from '../types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { CheckCircle2, Clock, AlertCircle, TrendingUp, ChevronDown, ExternalLink, Activity } from 'lucide-react';
+import { CheckCircle2, Clock, AlertCircle, TrendingUp, ChevronDown, ExternalLink, Activity, Search } from 'lucide-react';
 import StatusTooltip from './StatusTooltip';
 import PostcardTrackingCard from './PostcardTrackingCard';
 
@@ -13,6 +12,13 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [selectedDonationId, setSelectedDonationId] = useState<string | null>(null);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Auto-select first donation if none selected
+  useEffect(() => {
+    if (!selectedDonationId && donations.length > 0) {
+      setSelectedDonationId(donations[0].id);
+    }
+  }, [donations, selectedDonationId]);
 
   const selectedDonation = donations.find(d => d.id === selectedDonationId);
 
@@ -32,17 +38,6 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  // Mock data for the chart
-  const chartData = [
-    { name: 'Mon', sent: 4 },
-    { name: 'Tue', sent: 7 },
-    { name: 'Wed', sent: 3 },
-    { name: 'Thu', sent: 12 },
-    { name: 'Fri', sent: 8 },
-    { name: 'Sat', sent: 15 },
-    { name: 'Sun', sent: 10 },
-  ];
 
   const StatCard = ({ title, value, icon: Icon, color, subtext }: any) => (
     <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm flex items-start justify-between">
@@ -141,11 +136,11 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Activity Feed */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-stone-100">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden flex flex-col">
+          <div className="p-6 border-b border-stone-100 flex items-center justify-between">
             <h3 className="font-bold text-lg text-stone-800">Recent Activity</h3>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto flex-1">
             <table className="w-full">
               <thead className="bg-stone-50">
                 <tr>
@@ -159,13 +154,18 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
               <tbody className="divide-y divide-stone-100">
                 {donations.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-stone-400 text-sm">No donations found.</td>
+                    <td colSpan={5} className="py-12 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <Activity className="w-12 h-12 text-stone-100 mb-4" />
+                        <p className="text-stone-400 text-sm">Waiting for your first donation...</p>
+                      </div>
+                    </td>
                   </tr>
                 ) : (
                   donations.map((donation) => (
                     <tr
                       key={donation.id}
-                      className={`hover:bg-stone-50 transition-colors cursor-pointer ${selectedDonationId === donation.id ? 'bg-stone-50' : ''}`}
+                      className={`hover:bg-stone-50 transition-colors cursor-pointer group ${selectedDonationId === donation.id ? 'bg-rose-50/50' : ''}`}
                       onClick={() => setSelectedDonationId(donation.id)}
                     >
                       <td className="py-4 px-6 text-sm text-stone-600">
@@ -200,25 +200,17 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
                         )}
                       </td>
                       <td className="py-4 px-6 text-right">
-                        <div className="flex items-center justify-end gap-3">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedDonationId(donation.id);
-                            }}
-                            className="inline-flex items-center gap-1.5 text-stone-400 hover:text-rose-600 font-medium text-sm transition-colors"
-                          >
-                            Tracking <Activity size={14} />
-                          </button>
+                        <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                           {donation.lob_url && (
                             <a
                               href={donation.lob_url}
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1.5 text-rose-600 hover:text-rose-700 font-medium text-sm transition-colors"
+                              className="p-1.5 hover:bg-stone-100 rounded-lg text-rose-600 transition-colors"
+                              title="View Proof"
                             >
-                              View <ExternalLink size={14} />
+                              <ExternalLink size={16} />
                             </a>
                           )}
                         </div>
@@ -231,35 +223,22 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
           </div>
         </div>
 
-        {/* Volume / Tracking Side Panel */}
-        <div className="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
+        {/* Tracking Side Panel */}
+        <div className="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
           {selectedDonation ? (
             <PostcardTrackingCard
               donation={selectedDonation}
               onClose={() => setSelectedDonationId(null)}
             />
           ) : (
-            <div className="p-6 h-full flex flex-col">
-              <h3 className="font-bold text-lg text-stone-800 mb-6">Volume Sent</h3>
-              <div className="flex-1 min-h-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} />
-                    <Tooltip
-                      cursor={{ fill: '#fff1f2' }}
-                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    />
-                    <Bar dataKey="sent" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={20} />
-                  </BarChart>
-                </ResponsiveContainer>
+            <div className="p-12 h-full flex flex-col items-center justify-center text-center">
+              <div className="w-20 h-20 bg-stone-50 rounded-full flex items-center justify-center mb-6">
+                <Search className="w-10 h-10 text-stone-200" />
               </div>
-              <div className="mt-6 p-4 bg-stone-50 rounded-xl border border-stone-100">
-                <p className="text-xs text-stone-500 text-center">
-                  Select a donation from the list to view its real-time shipping progress.
-                </p>
-              </div>
+              <h4 className="text-stone-800 font-bold text-lg mb-2">No Postcard Selected</h4>
+              <p className="text-stone-400 text-sm max-w-xs mx-auto">
+                Select a donation from the list to see real-time tracking updates and carrier live-proofs.
+              </p>
             </div>
           )}
         </div>
