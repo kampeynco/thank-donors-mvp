@@ -138,7 +138,7 @@ async function sendPostcardViaLob(
   account: any,
   donationDate: string,
   isTestMode: boolean
-): Promise<{ success: boolean; lobId?: string; error?: string }> {
+): Promise<{ success: boolean; lobId?: string; url?: string; lobStatus?: string; error?: string }> {
   // @ts-ignore
   const LOB_API_KEY = isTestMode
     ? Deno.env.get("LOB_TEST_API_KEY")
@@ -227,7 +227,12 @@ async function sendPostcardViaLob(
       }
 
       console.log(`✅ Postcard created successfully! Lob ID: ${result.id}`);
-      return { success: true, lobId: result.id };
+      return {
+        success: true,
+        lobId: result.id,
+        url: result.url,
+        lobStatus: result.status
+      };
 
     } catch (error: any) {
       console.warn(`⚠️ Attempt ${attempt} failed: ${error.message}`);
@@ -394,9 +399,11 @@ serve(async (req) => {
           donation_id: donation.id,
           profile_id: account.profile_id,
           status: postcardStatus,
+          lob_status: lobResult.lobStatus || null,
           front_image_url: account.front_image_url,
           back_message: account.back_message,
           lob_postcard_id: lobResult.lobId || null,
+          lob_url: lobResult.url || null,
           error_message: lobResult.error || null
         });
 
