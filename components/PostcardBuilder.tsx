@@ -870,7 +870,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
 
                     <div className="mt-6 text-center text-stone-400 text-xs max-w-xs mx-auto">
                         {viewSide === 'front'
-                            ? "This image will cover the entire front of the 6x4 inch postcard."
+                            ? "This image will cover the entire front of the 4x6 inch postcard."
                             : "Live preview shows demo data. Actual cards will use real donor info."
                         }
                     </div>
