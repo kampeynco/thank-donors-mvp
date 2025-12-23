@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Donation } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { CheckCircle2, Clock, AlertCircle, TrendingUp, ChevronDown, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Clock, AlertCircle, TrendingUp, ChevronDown, ExternalLink, Activity } from 'lucide-react';
 import StatusTooltip from './StatusTooltip';
+import PostcardTrackingCard from './PostcardTrackingCard';
 
 interface DashboardProps {
   donations: Donation[];
@@ -10,7 +11,10 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const [selectedDonationId, setSelectedDonationId] = useState<string | null>(null);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
+
+  const selectedDonation = donations.find(d => d.id === selectedDonationId);
 
   // Calculate Stats
   const sentCount = donations.filter(d => ['processed', 'mailed', 'in_transit', 'in_local_area', 'processed_for_delivery', 'delivered'].includes(d.status)).length;
@@ -159,7 +163,11 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
                   </tr>
                 ) : (
                   donations.map((donation) => (
-                    <tr key={donation.id} className="hover:bg-stone-50 transition-colors">
+                    <tr
+                      key={donation.id}
+                      className={`hover:bg-stone-50 transition-colors cursor-pointer ${selectedDonationId === donation.id ? 'bg-stone-50' : ''}`}
+                      onClick={() => setSelectedDonationId(donation.id)}
+                    >
                       <td className="py-4 px-6 text-sm text-stone-600">
                         {new Date(donation.created_at).toLocaleDateString()}
                       </td>
@@ -192,16 +200,28 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
                         )}
                       </td>
                       <td className="py-4 px-6 text-right">
-                        {donation.lob_url && (
-                          <a
-                            href={donation.lob_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 text-rose-600 hover:text-rose-700 font-medium text-sm transition-colors"
+                        <div className="flex items-center justify-end gap-3">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDonationId(donation.id);
+                            }}
+                            className="inline-flex items-center gap-1.5 text-stone-400 hover:text-rose-600 font-medium text-sm transition-colors"
                           >
-                            View <ExternalLink size={14} />
-                          </a>
-                        )}
+                            Tracking <Activity size={14} />
+                          </button>
+                          {donation.lob_url && (
+                            <a
+                              href={donation.lob_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1.5 text-rose-600 hover:text-rose-700 font-medium text-sm transition-colors"
+                            >
+                              View <ExternalLink size={14} />
+                            </a>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -211,23 +231,37 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
           </div>
         </div>
 
-        {/* Chart */}
-        <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 flex flex-col">
-          <h3 className="font-bold text-lg text-stone-800 mb-6">Volume Sent</h3>
-          <div className="flex-1 min-h-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} />
-                <Tooltip
-                  cursor={{ fill: '#fff1f2' }}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                />
-                <Bar dataKey="sent" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={20} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        {/* Volume / Tracking Side Panel */}
+        <div className="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
+          {selectedDonation ? (
+            <PostcardTrackingCard
+              donation={selectedDonation}
+              onClose={() => setSelectedDonationId(null)}
+            />
+          ) : (
+            <div className="p-6 h-full flex flex-col">
+              <h3 className="font-bold text-lg text-stone-800 mb-6">Volume Sent</h3>
+              <div className="flex-1 min-h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#a8a29e', fontSize: 12 }} />
+                    <Tooltip
+                      cursor={{ fill: '#fff1f2' }}
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Bar dataKey="sent" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={20} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-6 p-4 bg-stone-50 rounded-xl border border-stone-100">
+                <p className="text-xs text-stone-500 text-center">
+                  Select a donation from the list to view its real-time shipping progress.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

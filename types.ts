@@ -47,6 +47,14 @@ export interface ActBlueAccount {
   disclaimer?: string;
 }
 
+export interface PostcardEvent {
+  id: string;
+  postcard_id: string;
+  status: string;
+  description?: string;
+  created_at: string;
+}
+
 export interface Donation {
   id: string;
   donor_firstname?: string;
@@ -57,6 +65,12 @@ export interface Donation {
   error_message?: string;
   actblue_account_id?: string;
   lob_url?: string;
+  lob_postcard_id?: string;
+  address_street?: string;
+  address_city?: string;
+  address_state?: string;
+  address_zip?: string;
+  events?: PostcardEvent[];
 }
 
 export interface Template {
@@ -86,4 +100,5 @@ export interface Postcard {
   lob_url?: string;
   error_message?: string;
   created_at: string;
+  events?: PostcardEvent[];
 }

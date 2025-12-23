@@ -182,7 +182,23 @@ const App: React.FC = () => {
               donor_lastname,
               amount,
               created_at,
-              postcards ( status, error_message, lob_url )
+              donor_addr1,
+              donor_city,
+              donor_state,
+              donor_zip,
+              postcards ( 
+                id,
+                status, 
+                error_message, 
+                lob_url, 
+                lob_postcard_id,
+                postcard_events (
+                  id,
+                  status,
+                  description,
+                  created_at
+                )
+              )
             `)
         .eq('profile_id', userId)
         .order('created_at', { ascending: false });
@@ -196,16 +212,25 @@ const App: React.FC = () => {
       if (donationError) {
         console.error('Error fetching donations:', donationError);
       } else {
-        const mappedDonations: Donation[] = (donationData || []).map((d: any) => ({
-          id: d.id,
-          donor_firstname: d.donor_firstname,
-          donor_lastname: d.donor_lastname,
-          amount: d.amount,
-          created_at: d.created_at,
-          status: d.postcards?.[0]?.status || 'pending',
-          error_message: d.postcards?.[0]?.error_message,
-          lob_url: d.postcards?.[0]?.lob_url
-        }));
+        const mappedDonations: Donation[] = (donationData || []).map((d: any) => {
+          const postcard = d.postcards?.[0];
+          return {
+            id: d.id,
+            donor_firstname: d.donor_firstname,
+            donor_lastname: d.donor_lastname,
+            amount: d.amount,
+            created_at: d.created_at,
+            status: postcard?.status || 'pending',
+            error_message: postcard?.error_message,
+            lob_url: postcard?.lob_url,
+            lob_postcard_id: postcard?.lob_postcard_id,
+            address_street: d.donor_addr1,
+            address_city: d.donor_city,
+            address_state: d.donor_state,
+            address_zip: d.donor_zip,
+            events: postcard?.postcard_events || []
+          };
+        });
         setDonations(mappedDonations);
       }
     } catch (donErr) {

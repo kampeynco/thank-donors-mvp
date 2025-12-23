@@ -77,6 +77,16 @@ serve(async (req) => {
             throw error;
         }
 
+        if (data && data.length > 0) {
+            const postcard = data[0];
+            // Record tracking event
+            await supabase.from('postcard_events').insert({
+                postcard_id: postcard.id,
+                status: newStatus,
+                description: `Tracking update: ${newStatus.replace(/_/g, ' ')}`
+            });
+        }
+
         if (!data || data.length === 0) {
             console.warn(`No postcard found with Lob ID ${resourceId}`);
             // Return 200 to Lob anyway to acknowledge receipt

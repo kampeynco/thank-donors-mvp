@@ -451,7 +451,7 @@ serve(async (req) => {
       // 6. Create Postcard Record with result
       console.log(`📝 Recording postcard status: ${lobResult.success ? 'processed' : 'failed'}`);
       const postcardStatus = lobResult.success ? 'processed' : 'failed';
-      const { error: postcardError } = await supabase
+      const { data: postcardData, error: postcardError } = await supabase
         .from('postcards')
         .insert({
           donation_id: donation.id,
@@ -462,10 +462,19 @@ serve(async (req) => {
           lob_postcard_id: lobResult.lobId || null,
           lob_url: lobResult.url || null,
           error_message: lobResult.error || null
-        });
+        })
+        .select()
+        .single();
 
       if (postcardError) {
         console.error("❌ Error creating postcard record:", JSON.stringify(postcardError));
+      } else if (postcardData) {
+        // Record initial event
+        await supabase.from('postcard_events').insert({
+          postcard_id: postcardData.id,
+          status: postcardStatus,
+          description: lobResult.success ? 'Postcard sent to Lob.com for processing' : `Postcard creation failed: ${lobResult.error}`
+        });
       }
 
       // 7. Deduct balance and record transaction on success
