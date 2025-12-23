@@ -821,7 +821,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                 )
                             ) : (
                                 <div className="w-full h-full flex bg-white relative">
-                                    <div className="w-[41.6%] h-full p-4 md:p-8 flex flex-col">
+                                    <div className="w-[45%] h-full p-4 md:p-8 flex flex-col">
                                         <div
                                             className="flex-1 font-sans text-stone-800 leading-relaxed whitespace-pre-wrap overflow-hidden break-words"
                                             style={{ fontSize: '11pt' }}
