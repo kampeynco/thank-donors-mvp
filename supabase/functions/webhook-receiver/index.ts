@@ -158,45 +158,39 @@ serve(async (req) => {
     console.log("Received Webhook Payload. Keys:", Object.keys(payload));
 
     // Check if Hookdeck wrapped the body
-    if (payload.body && !payload.contribution) {
+    if (payload.body && !payload.contribution && !payload.donor) {
       console.log("📦 Detected wrapped body format (Hookdeck)");
       payload = typeof payload.body === 'string' ? JSON.parse(payload.body) : payload.body;
     }
 
-    // ActBlue structure: { contribution: { unique_id, donor: {...}, lineitems: [...] } }
-    // ActBlue structure seems to be flattened or top-level mainly: { contribution: {...}, lineitems: [...], donor: {...} }
     const contribution = payload.contribution;
+    const donor = payload.donor || contribution?.donor;
+    const lineItems = payload.lineitems || payload.lineItems || contribution?.lineitems || contribution?.lineItems || [];
 
-    // Check for lineitems at ROOT or inside contribution
-    const lineItems = payload.lineitems || payload.lineItems || contribution?.lineitems || contribution?.lineItems;
-
-    // Check for orderNumber (primary ActBlue ID) 
-    const orderNumber = contribution?.orderNumber || contribution?.order_number;
-    const createdAt = contribution?.created_at || contribution?.createdAt;
+    // Check for orderNumber (primary ActBlue ID)
+    const orderNumber = contribution?.orderNumber || contribution?.order_number || payload.orderNumber;
+    const createdAt = contribution?.createdAt || contribution?.created_at || payload.createdAt;
 
     // We strictly require orderNumber as the main ID
-    if (!contribution || !lineItems || !orderNumber || !createdAt) {
+    if (!contribution || !donor || lineItems.length === 0 || !orderNumber || !createdAt) {
       console.warn("Invalid payload structure. Payload keys:", Object.keys(payload));
-      if (contribution) {
-        console.warn("Contribution keys:", Object.keys(contribution));
-        console.warn("Missing fields - orderNumber:", !orderNumber, "createdAt:", !createdAt, "lineItems:", !lineItems);
-      }
+      console.warn("Details - hasContribution:", !!contribution, "hasDonor:", !!donor, "lineItemsCount:", lineItems.length, "orderNumber:", orderNumber, "createdAt:", createdAt);
 
-      // Return debug info in response
       return new Response(JSON.stringify({
         error: "Invalid Payload Structure",
         receivedKeys: Object.keys(payload),
-        bodyType: typeof payload,
-        hasBodyProp: !!payload.body,
-        contributionKeys: contribution ? Object.keys(contribution) : null,
-        missing: { orderNumber: !orderNumber, createdAt: !createdAt, lineItems: !lineItems }
+        missing: {
+          contribution: !contribution,
+          donor: !donor,
+          lineItems: lineItems.length === 0,
+          orderNumber: !orderNumber,
+          createdAt: !createdAt
+        }
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Use orderNumber as the primary ID
     const actBlueId = orderNumber;
-    // Donor might be at root or in contribution
-    const donor = payload.donor || contribution.donor;
 
     // Format the date nicely for the postcard
     let donationDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
