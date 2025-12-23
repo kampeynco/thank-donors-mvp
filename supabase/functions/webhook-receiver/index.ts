@@ -10,10 +10,12 @@ const corsHeaders = {
 // Helper function to substitute variables in message template
 function substituteVariables(template: string, donor: any, donationDate: string): string {
   return template
-    .replace(/%FULL_NAME%/g, `${donor.firstname} ${donor.lastname}`)
-    .replace(/%FIRST_NAME%/g, donor.firstname || '')
+    .replace(/%FIRST_NAME%/g, donor.firstname || 'Friend')
     .replace(/%LAST_NAME%/g, donor.lastname || '')
-    .replace(/%ADDRESS%/g, donor.addr1 || '')
+    .replace(/%FULL_NAME%/g, `${donor.firstname || 'Friend'} ${donor.lastname || ''}`) // Keep FULL_NAME for backward compatibility
+    .replace(/%AMOUNT%/g, donor.amount ? `$${donor.amount.toFixed(2)}` : '') // This should be the specific line item amount
+    .replace(/%EMAIL%/g, donor.email || '')
+    .replace(/%ADDRESS1%/g, donor.addr1 || '')
     .replace(/%ADDRESS2%/g, donor.addr2 || '')
     .replace(/%CITY%/g, donor.city || '')
     .replace(/%STATE%/g, donor.state || '')
@@ -24,7 +26,7 @@ function substituteVariables(template: string, donor: any, donationDate: string)
 
 // Helper function to send postcard via Lob.com API
 async function sendPostcardViaLob(
-  donor: any,
+  normalizedDonor: any,
   account: any,
   donationDate: string,
   isTestMode: boolean
@@ -35,13 +37,16 @@ async function sendPostcardViaLob(
     : Deno.env.get("LOB_LIVE_API_KEY");
 
   if (!LOB_API_KEY) {
+    console.error("❌ Lob API key not found in environment variables");
     return { success: false, error: "Lob API key not configured" };
   }
 
+  console.log(`📡 Preparing Lob request for ${normalizedDonor.firstname} ${normalizedDonor.lastname} (Mode: ${isTestMode ? 'TEST' : 'LIVE'})`);
+
   // Prepare the back message with variable substitution
   const backMessage = account.back_message
-    ? substituteVariables(account.back_message, donor, donationDate)
-    : `Dear ${donor.firstname},\n\nThank you for your generous support!`;
+    ? substituteVariables(account.back_message, normalizedDonor, donationDate)
+    : `Dear ${normalizedDonor.firstname},\n\nThank you for your generous support!`;
 
   // Add disclaimer if present
   const finalBackMessage = account.disclaimer
@@ -50,14 +55,14 @@ async function sendPostcardViaLob(
 
   // Prepare Lob API payload
   const lobPayload = {
-    description: `Thank you postcard for ${donor.firstname} ${donor.lastname}`,
+    description: `Thank you postcard for ${normalizedDonor.firstname} ${normalizedDonor.lastname}`,
     to: {
-      name: `${donor.firstname} ${donor.lastname}`,
-      address_line1: donor.addr1,
-      address_line2: donor.addr2 || undefined,
-      address_city: donor.city,
-      address_state: donor.state,
-      address_zip: donor.zip,
+      name: `${normalizedDonor.firstname} ${normalizedDonor.lastname}`.trim() || "Donor",
+      address_line1: normalizedDonor.addr1,
+      address_line2: normalizedDonor.addr2 || undefined,
+      address_city: normalizedDonor.city,
+      address_state: normalizedDonor.state,
+      address_zip: normalizedDonor.zip,
     },
     from: {
       name: account.committee_name || "Campaign",
@@ -68,7 +73,7 @@ async function sendPostcardViaLob(
     },
     front: account.front_image_url || "https://via.placeholder.com/1875x1275",
     back: finalBackMessage,
-    size: "6x4",
+    size: "4x6",
     mail_type: "usps_first_class",
   };
 
@@ -77,6 +82,7 @@ async function sendPostcardViaLob(
 
   for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
     try {
+      console.log(`🚀 Lob API Call (Attempt ${attempt})...`);
       const response = await fetch("https://api.lob.com/v1/postcards", {
         method: "POST",
         headers: {
@@ -94,7 +100,7 @@ async function sendPostcardViaLob(
         // We generally assume 4xx are permanent errors (e.g. invalid address, bad template).
         // 429 and 5xx are worth retrying.
         if (response.status >= 400 && response.status < 500 && response.status !== 429 && response.status !== 408) {
-          console.error("Lob API Client Error (Non-Retryable):", result);
+          console.error(`❌ Lob API Client Error (${response.status}):`, JSON.stringify(result));
           return {
             success: false,
             error: result.error?.message || `Lob API returned ${response.status}`
@@ -106,7 +112,7 @@ async function sendPostcardViaLob(
           throw new Error(`Lob API Error ${response.status}: ${result.error?.message || 'Unknown error'}`);
         } else {
           // No retries left
-          console.error("Lob API Error (Final Attempt):", result);
+          console.error("❌ Lob API Error (Final Attempt):", JSON.stringify(result));
           return {
             success: false,
             error: result.error?.message || `Lob API returned ${response.status} after ${attempt} attempts`
@@ -114,16 +120,16 @@ async function sendPostcardViaLob(
         }
       }
 
-      console.log("Postcard sent via Lob:", result.id);
+      console.log(`✅ Postcard created successfully! Lob ID: ${result.id}`);
       return { success: true, lobId: result.id };
 
     } catch (error: any) {
-      console.warn(`Attempt ${attempt} failed: ${error.message}`);
+      console.warn(`⚠️ Attempt ${attempt} failed: ${error.message}`);
 
       if (attempt <= MAX_RETRIES) {
         // Exponential backoff: 1s, 2s, 4s
         const backoff = RETRY_DELAY_MS * Math.pow(2, attempt - 1);
-        console.log(`Waiting ${backoff}ms before retry...`);
+        console.log(`Retrying in ${backoff}ms...`);
         await new Promise(resolve => setTimeout(resolve, backoff));
       } else {
         return { success: false, error: `Failed after ${MAX_RETRIES} retries: ${error.message}` };
@@ -210,13 +216,11 @@ serve(async (req) => {
     // We loop through to find the entity ID that matches one of our accounts.
 
     for (const item of lineItems) {
-      // Handle both camelCase and snake_case for item fields if needed, 
-      // but code previously assumed entityId (camel). fallback to entity_id just in case.
       const entityId = item.entityId || item.entity_id;
-      const amount = item.amount; // The amount specific to this entity
+      const amount = parseFloat(item.amount || "0");
+      console.log(`🔍 Checking line item. Entity ID: ${entityId}, Amount: ${amount}`);
 
       // Find the account in our DB
-      // Fetch design templates and address info for the postcard
       const { data: account, error: accountError } = await supabase
         .from('actblue_accounts')
         .select('id, profile_id, committee_name, front_image_url, back_message, disclaimer, street_address, city, state, postal_code')
@@ -224,55 +228,59 @@ serve(async (req) => {
         .single();
 
       if (accountError || !account) {
-        console.log(`Entity ID ${entityId} not found in our system. Skipping.`);
+        console.log(`⚠️ Entity ID ${entityId} not found in actblue_accounts. Skipping this line item.`);
         continue;
       }
 
-      console.log(`Processing donation for ${account.committee_name} (Profile: ${account.profile_id})`);
+      console.log(`✅ Found account: ${account.committee_name} (ID: ${account.id})`);
 
-      // Normalize donor fields
-      const donorFirstName = donor.firstname || donor.firstName;
-      const donorLastName = donor.lastname || donor.lastName;
-      const donorEmail = donor.email;
-      const donorAddr1 = donor.addr1 || donor.address_line1 || donor.addressLine1;
-      const donorCity = donor.city;
-      const donorState = donor.state;
-      const donorZip = donor.zip || donor.postalCode || donor.postal_code;
+      // Create normalized donor object for this specific contribution
+      const normalizedDonor = {
+        firstname: donor.firstname || donor.firstName || 'Donor',
+        lastname: donor.lastname || donor.lastName || '',
+        email: donor.email || '',
+        addr1: donor.addr1 || donor.address_line1 || donor.addressLine1 || '',
+        addr2: donor.addr2 || donor.address_line2 || donor.addressLine2 || '',
+        city: donor.city || '',
+        state: donor.state || '',
+        zip: donor.zip || donor.postalCode || donor.postal_code || '',
+        amount: amount // Store the specific line item amount for templating
+      };
 
       // 4. Insert Donation Record
+      console.log("💾 Saving donation record to database...");
       const { data: donation, error: donationError } = await supabase
         .from('donations')
         .insert({
           profile_id: account.profile_id,
           actblue_account_id: account.id,
           actblue_donation_id: actBlueId,
-          amount: parseFloat(amount),
-          donor_firstname: donorFirstName,
-          donor_lastname: donorLastName,
-          donor_email: donorEmail,
-          donor_addr1: donorAddr1,
-          donor_city: donorCity,
-          donor_state: donorState,
-          donor_zip: donorZip
+          amount: amount,
+          donor_firstname: normalizedDonor.firstname,
+          donor_lastname: normalizedDonor.lastname,
+          donor_email: normalizedDonor.email,
+          donor_addr1: normalizedDonor.addr1,
+          donor_city: normalizedDonor.city,
+          donor_state: normalizedDonor.state,
+          donor_zip: normalizedDonor.zip
         })
         .select()
         .single();
 
       if (donationError) {
-        // Handle duplicate entry gracefully (idempotency)
-        if (donationError.code === '23505') { // Unique violation
-          console.log("Duplicate donation received. Skipping.");
+        if (donationError.code === '23505') {
+          console.log("ℹ️ Duplicate donation received (ActBlue ID: " + actBlueId + "). Skipping.");
           continue;
         }
-        console.error("Error inserting donation:", donationError);
+        console.error("❌ Error inserting donation:", JSON.stringify(donationError));
         throw donationError;
       }
 
       // 5. Send Postcard via Lob.com API
-      console.log("Sending postcard via Lob.com...");
-      const lobResult = await sendPostcardViaLob(donor, account, donationDate, isTestMode);
+      const lobResult = await sendPostcardViaLob(normalizedDonor, account, donationDate, isTestMode);
 
       // 6. Create Postcard Record with result
+      console.log(`📝 Recording postcard status: ${lobResult.success ? 'SENT' : 'FAILED'}`);
       const postcardStatus = lobResult.success ? 'SENT' : 'FAILED';
       const { error: postcardError } = await supabase
         .from('postcards')
@@ -287,13 +295,7 @@ serve(async (req) => {
         });
 
       if (postcardError) {
-        console.error("Error creating postcard record:", postcardError);
-      } else {
-        if (lobResult.success) {
-          console.log(`Postcard sent successfully! Lob ID: ${lobResult.lobId}`);
-        } else {
-          console.error(`Postcard failed: ${lobResult.error}`);
-        }
+        console.error("❌ Error creating postcard record:", JSON.stringify(postcardError));
       }
     }
 
@@ -304,13 +306,11 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error("Webhook processing error:", error);
-    // We often still return 200 to Hookdeck to prevent it from retrying indefinitely on logic errors
-    // unless it's a transient error.
     return new Response(
       JSON.stringify({ error: error.message }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400, // Or 500 if we want retries
+        status: 400,
       }
     );
   }
