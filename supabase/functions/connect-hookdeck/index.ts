@@ -456,46 +456,7 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "Connection creation failed" }, 500);
     }
 
-    // 9) Create Thanks.io Subaccount
-    // @ts-ignore
-    const THANKSIO_API_KEY = Deno.env.get("THANKSIO_API_KEY");
-    let thanksioSubaccountId: number | null = null;
-
-    if (THANKSIO_API_KEY) {
-      console.log("🔧 Creating Thanks.io subaccount...");
-      try {
-        const thanksioResponse = await fetch("https://api.thanks.io/api/v2/sub-accounts/", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${THANKSIO_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            title: committeeName,
-            return_name: committeeName,
-            return_address: streetAddress || "",
-            return_city: city || "",
-            return_state: state || "",
-            return_postal_code: postalCode || "",
-          }),
-        });
-
-        if (thanksioResponse.ok) {
-          const thanksioData = await thanksioResponse.json();
-          thanksioSubaccountId = thanksioData.id;
-          console.log("✅ Thanks.io subaccount created:", thanksioSubaccountId);
-        } else {
-          const errorText = await thanksioResponse.text();
-          console.error("❌ Thanks.io subaccount creation failed:", errorText);
-        }
-      } catch (thanksioErr) {
-        console.error("❌ Thanks.io API error:", thanksioErr);
-      }
-    } else {
-      console.log("⚠️ THANKSIO_API_KEY not set, skipping subaccount creation");
-    }
-
-    // 10) Database Insert
+    // 9) Database Insert
     const insertPayload: Record<string, any> = {
       profile_id: user.id,
       entity_id: entityId,
@@ -510,8 +471,7 @@ Deno.serve(async (request) => {
       city: city,
       state: state,
       postal_code: postalCode,
-      disclaimer: disclaimer,
-      thanksio_subaccount_id: thanksioSubaccountId,
+      disclaimer: disclaimer
     };
 
     console.log("📝 Database insert payload:", insertPayload);
@@ -535,19 +495,6 @@ Deno.serve(async (request) => {
         }
       } catch (rollbackErr) {
         console.error("Rollback failed:", rollbackErr);
-      }
-
-      // rollback Thanks.io subaccount
-      if (thanksioSubaccountId && THANKSIO_API_KEY) {
-        try {
-          await fetch(`https://api.thanks.io/api/v2/sub-accounts/${thanksioSubaccountId}`, {
-            method: "DELETE",
-            headers: { "Authorization": `Bearer ${THANKSIO_API_KEY}` },
-          });
-          console.log("✅ Thanks.io subaccount rolled back");
-        } catch (thanksioRollbackErr) {
-          console.error("Thanks.io rollback failed:", thanksioRollbackErr);
-        }
       }
 
       let msg = `Database Insert Failed: ${insertErr.message}`;
