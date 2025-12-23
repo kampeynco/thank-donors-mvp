@@ -418,8 +418,26 @@ const App: React.FC = () => {
     toast("Logged out", "info");
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     toast("Welcome back!", "success");
+    console.log("Manual login trigger - ensuring data fetch");
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      setSession(session);
+      // Determine if we need to fetch data
+      if (loadedUserIdRef.current !== session.user.id) {
+        fetchData(session.user.id, session.user.email);
+      } else {
+        // If data is already loaded or loading for this user, we might just need to update view
+        console.log("User data already loaded/loading, checking view state");
+        if (view === ViewState.AUTH) {
+          // We can't easily know where to go without checking profile/accounts again or storing result.
+          // Safe bet: just run fetchData again, it's cheap enough (DB select) or rely on existing state?
+          // Actually fetchData is safe to re-run.
+          fetchData(session.user.id, session.user.email);
+        }
+      }
+    }
   };
 
   const handleUserOnboardingComplete = () => {
