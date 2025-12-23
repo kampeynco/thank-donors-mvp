@@ -170,15 +170,17 @@ serve(async (req) => {
     // Check for lineitems at ROOT or inside contribution
     const lineItems = payload.lineitems || payload.lineItems || contribution?.lineitems || contribution?.lineItems;
 
-    // Check for unique_id OR uniqueIdentifier, created_at OR createdAt inside contribution
+    // Check for orderNumber (primary ActBlue ID) OR unique_id/uniqueIdentifier
+    const orderNumber = contribution?.orderNumber || contribution?.order_number;
     const uniqueId = contribution?.unique_id || contribution?.uniqueIdentifier;
     const createdAt = contribution?.created_at || contribution?.createdAt;
 
-    if (!contribution || !lineItems || !uniqueId || !createdAt) {
+    // We prioritize orderNumber as the main ID
+    if (!contribution || !lineItems || (!orderNumber && !uniqueId) || !createdAt) {
       console.warn("Invalid payload structure. Payload keys:", Object.keys(payload));
       if (contribution) {
         console.warn("Contribution keys:", Object.keys(contribution));
-        console.warn("Missing fields - uniqueId:", !uniqueId, "createdAt:", !createdAt, "lineItems:", !lineItems);
+        console.warn("Missing fields - orderNumber:", !orderNumber, "uniqueId:", !uniqueId, "createdAt:", !createdAt, "lineItems:", !lineItems);
       }
 
       // Return debug info in response
@@ -188,11 +190,12 @@ serve(async (req) => {
         bodyType: typeof payload,
         hasBodyProp: !!payload.body,
         contributionKeys: contribution ? Object.keys(contribution) : null,
-        missing: { uniqueId: !uniqueId, createdAt: !createdAt, lineItems: !lineItems }
+        missing: { orderNumber: !orderNumber, uniqueId: !uniqueId, createdAt: !createdAt, lineItems: !lineItems }
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const actBlueId = uniqueId || contribution?.orderNumber;
+    // Use orderNumber as the primary ID, fallback to uniqueId if absolutely necessary (though user insists on orderNumber)
+    const actBlueId = orderNumber || uniqueId;
     // Donor might be at root or in contribution
     const donor = payload.donor || contribution.donor;
 
