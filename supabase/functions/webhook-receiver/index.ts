@@ -154,15 +154,23 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // 2. Parse ActBlue Payload
-    const payload = await req.json();
-    console.log("Received Webhook Payload");
+    let payload = await req.json();
+    console.log("Received Webhook Payload. Keys:", Object.keys(payload));
+
+    // Check if Hookdeck wrapped the body
+    if (payload.body && !payload.contribution) {
+      console.log("📦 Detected wrapped body format (Hookdeck)");
+      payload = typeof payload.body === 'string' ? JSON.parse(payload.body) : payload.body;
+    }
 
     // ActBlue structure: { contribution: { unique_id, donor: {...}, lineitems: [...] } }
     const contribution = payload.contribution;
 
     if (!contribution || !contribution.lineitems) {
+      console.warn("Invalid payload structure. Payload keys:", Object.keys(payload));
+      if (payload.contribution) console.warn("Contribution keys:", Object.keys(payload.contribution));
+
       // Return 200 to acknowledge receipt even if invalid, to stop retries
-      console.warn("Invalid payload structure");
       return new Response("Invalid Payload", { status: 200, headers: corsHeaders });
     }
 
