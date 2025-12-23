@@ -37,9 +37,10 @@ export interface Donation {
   donor_lastname?: string;
   amount: number;
   created_at: string;
-  status: 'PENDING' | 'SENT' | 'FAILED';
+  status: string; // Will hold enum values like 'processed', 'delivered', etc.
   error_message?: string;
   actblue_account_id?: string;
+  lob_url?: string;
 }
 
 export interface Template {
@@ -64,8 +65,9 @@ export interface Postcard {
   id: string;
   donation_id: string;
   profile_id: string;
-  status: 'SENT' | 'FAILED' | 'IN_TRANSIT' | 'DELIVERED';
+  status: string;
   lob_postcard_id?: string;
+  lob_url?: string;
   error_message?: string;
   created_at: string;
 }

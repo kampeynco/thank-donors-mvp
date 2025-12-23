@@ -182,7 +182,7 @@ const App: React.FC = () => {
               donor_lastname,
               amount,
               created_at,
-              postcards ( status, error_message )
+              postcards ( status, error_message, lob_url )
             `)
         .eq('profile_id', userId)
         .order('created_at', { ascending: false });
@@ -202,8 +202,9 @@ const App: React.FC = () => {
           donor_lastname: d.donor_lastname,
           amount: d.amount,
           created_at: d.created_at,
-          status: d.postcards?.[0]?.status || 'PENDING',
-          error_message: d.postcards?.[0]?.error_message
+          status: d.postcards?.[0]?.status || 'pending',
+          error_message: d.postcards?.[0]?.error_message,
+          lob_url: d.postcards?.[0]?.lob_url
         }));
         setDonations(mappedDonations);
       }
