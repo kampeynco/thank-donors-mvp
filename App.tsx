@@ -520,7 +520,10 @@ const App: React.FC = () => {
         />
       )}
       {view === ViewState.BILLING && (
-        <BillingView />
+        <BillingView
+          profile={profile!}
+          onUpdate={handleUpdateProfile}
+        />
       )}
       {view === ViewState.SETTINGS && (
         <Settings
