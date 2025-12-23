@@ -399,7 +399,6 @@ serve(async (req) => {
           donation_id: donation.id,
           profile_id: account.profile_id,
           status: postcardStatus,
-          lob_status: lobResult.lobStatus || null,
           front_image_url: account.front_image_url,
           back_message: account.back_message,
           lob_postcard_id: lobResult.lobId || null,
