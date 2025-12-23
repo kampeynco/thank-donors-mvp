@@ -135,12 +135,14 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
 
     // Fetch recent uploads
     const fetchImageHistory = async () => {
-        if (!profile?.id) return;
+        const entityId = account?.entity_id;
+        const storagePath = entityId ? `entity_${entityId}` : profile.id;
+        if (!storagePath) return;
 
         try {
             const { data, error } = await supabase.storage
                 .from('images')
-                .list(profile.id, {
+                .list(storagePath, {
                     limit: 8,
                     sortBy: { column: 'updated_at', order: 'desc' }
                 });
@@ -152,7 +154,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                 const urls = await Promise.all(validFiles.map(async f => {
                     const { data: signedData } = await supabase.storage
                         .from('images')
-                        .createSignedUrl(`${profile.id}/${f.name}`, 60 * 60 * 24 * 365);
+                        .createSignedUrl(`${storagePath}/${f.name}`, 60 * 60 * 24 * 365);
                     return signedData?.signedUrl;
                 }));
 
@@ -217,7 +219,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
     // Effect 3: Fetch history on mount/profile change
     useEffect(() => {
         fetchImageHistory();
-    }, [profile.id]);
+    }, [profile.id, account?.entity_id]);
 
     const activeImage = localImage || uploadedUrl || dbImage;
 
@@ -271,7 +273,9 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
         try {
             const sanitizedName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, '_');
             const timestamp = Date.now();
-            const filePath = `${profile.id}/${timestamp}_${sanitizedName}`;
+            const entityId = account?.entity_id;
+            const storagePath = entityId ? `entity_${entityId}` : profile.id;
+            const filePath = `${storagePath}/${timestamp}_${sanitizedName}`;
 
             // Attempt upload
             const { error: uploadError } = await supabase.storage
