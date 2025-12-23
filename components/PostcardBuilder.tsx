@@ -548,8 +548,8 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                     <button
                         onClick={() => setViewSide('front')}
                         className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${viewSide === 'front'
-                                ? 'bg-white text-stone-800 shadow-sm transform scale-[1.02]'
-                                : 'text-stone-500 hover:text-stone-700'
+                            ? 'bg-white text-stone-800 shadow-sm transform scale-[1.02]'
+                            : 'text-stone-500 hover:text-stone-700'
                             }`}
                     >
                         Front Side
@@ -557,8 +557,8 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                     <button
                         onClick={() => setViewSide('back')}
                         className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${viewSide === 'back'
-                                ? 'bg-white text-stone-800 shadow-sm transform scale-[1.02]'
-                                : 'text-stone-500 hover:text-stone-700'
+                            ? 'bg-white text-stone-800 shadow-sm transform scale-[1.02]'
+                            : 'text-stone-500 hover:text-stone-700'
                             }`}
                     >
                         Back Side
@@ -568,8 +568,8 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
 
             {saveResult && (
                 <div className={`p-4 rounded-xl border flex items-start gap-3 animate-in fade-in slide-in-from-top-2 ${saveResult.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
-                        saveResult.type === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-800' :
-                            'bg-rose-50 border-rose-200 text-rose-800'
+                    saveResult.type === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-800' :
+                        'bg-rose-50 border-rose-200 text-rose-800'
                     }`}>
                     <div className="mt-0.5">
                         {saveResult.type === 'success' && <CheckCircle size={20} className="text-emerald-600" />}
@@ -649,8 +649,8 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                                 <div
                                                     key={idx}
                                                     className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all group ${isActive
-                                                            ? 'border-rose-500 ring-2 ring-rose-200 ring-offset-1'
-                                                            : 'border-stone-100 hover:border-rose-300'
+                                                        ? 'border-rose-500 ring-2 ring-rose-200 ring-offset-1'
+                                                        : 'border-stone-100 hover:border-rose-300'
                                                         }`}
                                                 >
                                                     <button
@@ -788,8 +788,8 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                             }}
                                         />
                                         {account?.disclaimer && (
-                                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent backdrop-blur-[1px] px-2 py-2 md:px-3 md:py-2.5">
-                                                <p className="text-white text-[6px] sm:text-[7px] md:text-[8px] text-center font-sans leading-tight opacity-90">
+                                            <div className="absolute bottom-2 left-0 right-0 px-2 py-2 md:px-3 md:py-2.5">
+                                                <p className="text-white text-[6px] sm:text-[7px] md:text-[8px] text-center font-sans leading-tight opacity-90 [text-shadow:0_1px_2px_rgba(0,0,0,0.8)]">
                                                     {account.disclaimer}
                                                 </p>
                                             </div>
@@ -821,8 +821,11 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                 )
                             ) : (
                                 <div className="w-full h-full flex bg-white relative">
-                                    <div className="w-[55%] h-full p-4 md:p-8 flex flex-col">
-                                        <div className="flex-1 font-sans text-[8px] sm:text-[10px] md:text-xs text-stone-800 leading-relaxed whitespace-pre-wrap overflow-hidden">
+                                    <div className="w-[41.6%] h-full p-4 md:p-8 flex flex-col">
+                                        <div
+                                            className="flex-1 font-sans text-stone-800 leading-relaxed whitespace-pre-wrap overflow-hidden break-words"
+                                            style={{ fontSize: '11pt' }}
+                                        >
                                             {previewText}
                                         </div>
                                     </div>
