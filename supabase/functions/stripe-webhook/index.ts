@@ -46,6 +46,7 @@ serve(async (req) => {
             case "checkout.session.completed": {
                 const session = event.data.object;
                 const profileId = session.metadata?.profile_id;
+                const entityId = session.metadata?.entity_id;
                 const type = session.metadata?.type; // 'topup' or 'subscription'
 
                 if (!profileId) {
@@ -55,31 +56,52 @@ serve(async (req) => {
 
                 if (type === "topup") {
                     const amountCents = session.amount_total; // This is the total charged
-                    console.log(`💰 Fulfilling topup for ${profileId}: ${amountCents} cents`);
+                    console.log(`💰 Fulfilling topup for ${entityId ? 'entity ' + entityId : 'profile ' + profileId}: ${amountCents} cents`);
 
-                    // Update balance
-                    const { data: profile, error: fetchError } = await supabase
-                        .from('profiles')
-                        .select('balance_cents')
-                        .eq('id', profileId)
-                        .single();
+                    if (entityId) {
+                        // Update Entity Balance
+                        const { data: entity, error: fetchError } = await supabase
+                            .from('actblue_entities')
+                            .select('balance_cents')
+                            .eq('entity_id', Number(entityId))
+                            .single();
 
-                    if (fetchError) throw fetchError;
+                        if (fetchError) throw fetchError;
 
-                    const newBalance = (profile.balance_cents || 0) + amountCents;
-                    const { error: updateError } = await supabase
-                        .from('profiles')
-                        .update({
-                            balance_cents: newBalance,
-                            stripe_customer_id: session.customer as string
-                        })
-                        .eq('id', profileId);
+                        const newBalance = (entity.balance_cents || 0) + amountCents;
+                        const { error: updateError } = await supabase
+                            .from('actblue_entities')
+                            .update({
+                                balance_cents: newBalance,
+                                stripe_customer_id: session.customer as string
+                            })
+                            .eq('entity_id', Number(entityId));
 
-                    if (updateError) throw updateError;
+                        if (updateError) throw updateError;
+                    } else {
+                        // Fallback to Profile Balance (Legacy)
+                        const { data: profile, error: fetchError } = await supabase
+                            .from('profiles')
+                            .select('balance_cents')
+                            .eq('id', profileId)
+                            .single();
+
+                        if (fetchError) throw fetchError;
+
+                        const newBalance = (profile.balance_cents || 0) + amountCents;
+                        await supabase
+                            .from('profiles')
+                            .update({
+                                balance_cents: newBalance,
+                                stripe_customer_id: session.customer as string
+                            })
+                            .eq('id', profileId);
+                    }
 
                     // Record transaction
                     await supabase.from('billing_transactions').insert({
                         profile_id: profileId,
+                        entity_id: entityId ? Number(entityId) : null,
                         amount_cents: amountCents,
                         type: 'topup',
                         description: `Credit top-up via Stripe`,
@@ -88,34 +110,59 @@ serve(async (req) => {
                 }
 
                 if (type === "subscription") {
-                    console.log(`🚀 Upgrading user ${profileId} to Pro tier`);
-                    const { error: updateError } = await supabase
-                        .from('profiles')
-                        .update({
-                            tier: 'pro',
-                            stripe_customer_id: session.customer as string
-                        })
-                        .eq('id', profileId);
-
-                    if (updateError) throw updateError;
+                    console.log(`🚀 Upgrading ${entityId ? 'entity ' + entityId : 'profile ' + profileId} to Pro tier`);
+                    if (entityId) {
+                        await supabase
+                            .from('actblue_entities')
+                            .update({
+                                tier: 'pro',
+                                stripe_customer_id: session.customer as string
+                            })
+                            .eq('entity_id', Number(entityId));
+                    } else {
+                        await supabase
+                            .from('profiles')
+                            .update({
+                                tier: 'pro',
+                                stripe_customer_id: session.customer as string
+                            })
+                            .eq('id', profileId);
+                    }
                 }
                 break;
             }
 
             case "customer.subscription.deleted": {
                 const subscription = event.data.object;
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('id')
+
+                // Check if it's an entity subscription
+                const { data: entity } = await supabase
+                    .from('actblue_entities')
+                    .select('entity_id')
                     .eq('stripe_customer_id', subscription.customer)
                     .single();
 
-                if (profile) {
-                    console.log(`📉 Downgrading user ${profile.id} to Free tier (subscription deleted)`);
+                if (entity) {
+                    console.log(`📉 Downgrading entity ${entity.entity_id} to Free tier`);
                     await supabase
-                        .from('profiles')
+                        .from('actblue_entities')
                         .update({ tier: 'free' })
-                        .eq('id', profile.id);
+                        .eq('entity_id', entity.entity_id);
+                } else {
+                    // Fallback to profile
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('id')
+                        .eq('stripe_customer_id', subscription.customer)
+                        .single();
+
+                    if (profile) {
+                        console.log(`📉 Downgrading user ${profile.id} to Free tier`);
+                        await supabase
+                            .from('profiles')
+                            .update({ tier: 'free' })
+                            .eq('id', profile.id);
+                    }
                 }
                 break;
             }

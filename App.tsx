@@ -552,7 +552,28 @@ const App: React.FC = () => {
       {view === ViewState.BILLING && (
         <BillingView
           profile={profile!}
-          onUpdate={handleUpdateProfile}
+          account={currentAccount}
+          onUpdateAccount={async (updates) => {
+            // Re-use handleSaveAccount logic or direct update to actblue_entities
+            if (!currentAccount) return;
+            const { error } = await supabase
+              .from('actblue_entities')
+              .update(updates)
+              .eq('entity_id', currentAccount.entity_id);
+
+            if (error) {
+              toast("Failed to update billing settings", "error");
+              throw error;
+            }
+
+            // Update local state
+            const updated = { ...currentAccount, ...updates } as any;
+            if (currentAccount.entity) {
+              updated.entity = { ...currentAccount.entity, ...updates };
+            }
+            setCurrentAccount(updated);
+            setAccounts(accounts.map(a => a.id === updated.id ? updated : a));
+          }}
         />
       )}
       {view === ViewState.SETTINGS && (

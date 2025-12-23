@@ -297,11 +297,8 @@ serve(async (req) => {
     // We strictly require orderNumber as the main ID
     if (!contribution || !donor || lineItems.length === 0 || !orderNumber || !createdAt) {
       console.warn("Invalid payload structure. Payload keys:", Object.keys(payload));
-      console.warn("Details - hasContribution:", !!contribution, "hasDonor:", !!donor, "lineItemsCount:", lineItems.length, "orderNumber:", orderNumber, "createdAt:", createdAt);
-
       return new Response(JSON.stringify({
         error: "Invalid Payload Structure",
-        receivedKeys: Object.keys(payload),
         missing: {
           contribution: !contribution,
           donor: !donor,
@@ -329,15 +326,14 @@ serve(async (req) => {
     const isTestMode = !!Deno.env.get("LOB_TEST_API_KEY");
 
     // 3. Process Line Items
-    // A single donation might be split, or specific to one entity.
-    // We loop through to find the entity ID that matches one of our accounts.
-
+    // A single donation might be split across multiple entities (e.g., tandem fundraiser).
+    // We process each line item that belongs to an entity we manage.
     for (const item of lineItems) {
       const entityId = item.entityId || item.entity_id;
       const amount = parseFloat(item.amount || "0");
       console.log(`🔍 Checking line item. Entity ID: ${entityId}, Amount: ${amount}`);
 
-      // 1. Fetch the Entity (for template design)
+      // 1. Fetch the Entity (for template design and billing)
       const { data: entity, error: entityError } = await supabase
         .from('actblue_entities')
         .select('*')
@@ -351,90 +347,53 @@ serve(async (req) => {
 
       console.log(`✅ Found entity: ${entity.committee_name} (ID: ${entity.entity_id})`);
 
-      // 2. Fetch all linked profiles for billing
+      // 2. Fetch a representative account for profile_id linkage in donation records
+      // We still use profile_id for UI visibility of which account "owns" the donation data
       const { data: linkedAccounts, error: linkedError } = await supabase
         .from('actblue_accounts')
         .select('profile_id, id')
-        .eq('entity_id', entityId);
+        .eq('entity_id', entityId)
+        .limit(1);
 
       if (linkedError || !linkedAccounts || linkedAccounts.length === 0) {
         console.log(`⚠️ No users linked to Entity ${entityId}. Skipping.`);
         continue;
       }
+      const account = linkedAccounts[0];
 
-      // 3. Find a user to bill (highest balance or first with pro etc)
-      const profileIds = linkedAccounts.map(a => a.profile_id);
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, tier, balance_cents, auto_topup_enabled, auto_topup_amount_cents')
-        .in('id', profileIds);
+      // 3. Billing Check & Deduction
+      // Centralized Billing: Deduct from the entity balance directly
+      const priceCents = entity.tier === 'pro' ? 85 : 100;
 
-      if (profilesError || !profiles || profiles.length === 0) {
-        console.log(`⚠️ Failed to fetch profiles for Entity ${entityId}.`);
+      if (entity.balance_cents < priceCents) {
+        console.warn(`❌ Entity ${entityId} has insufficient balance (${entity.balance_cents}c). Need ${priceCents}c.`);
+        // Record failed donation/postcard record could go here if needed.
         continue;
       }
 
-      // Sort profiles to find best billing candidate: Pro first, then highest balance
-      const billingProfile = profiles.sort((a, b) => {
-        if (a.tier === 'pro' && b.tier !== 'pro') return -1;
-        if (b.tier === 'pro' && a.tier !== 'pro') return 1;
-        return b.balance_cents - a.balance_cents;
-      })[0];
+      // Deduct balance from entity
+      const { error: deductError } = await supabase
+        .from('actblue_entities')
+        .update({ balance_cents: entity.balance_cents - priceCents })
+        .eq('entity_id', entityId);
 
-      // Match the billing profile back to an account record
-      const account = linkedAccounts.find(a => a.profile_id === billingProfile.id);
-      if (!account) {
-        console.log(`⚠️ Linked account record not found for profile ${billingProfile.id}.`);
+      if (deductError) {
+        console.error("❌ Failed to deduct balance from entity:", JSON.stringify(deductError));
         continue;
       }
 
-      // --- Billing Logic Start ---
-      // 1. Use the selected billingProfile (formerly "profile")
-      const profile = billingProfile;
-      // --- Billing Logic End ---
+      // Record transaction linked to entity
+      await supabase.from('billing_transactions').insert({
+        entity_id: entityId,
+        profile_id: account.profile_id,
+        amount_cents: -priceCents,
+        type: 'postcard_deduction',
+        description: `Postcard for donor ${donor.firstname} ${donor.lastname}`
+      });
 
-      // 2. Determine Price per Postcard
-      const priceCents = profile.tier === 'pro' ? 89 : 129;
-      console.log(`💰 User Tier: ${profile.tier}, Price: ${priceCents} cents, Current Balance: ${profile.balance_cents} cents`);
-
-      // 3. Check for Insufficient Funds
-      if (profile.balance_cents < priceCents) {
-        console.warn(`🛑 Insufficient funds for user ${account.profile_id}. Required: ${priceCents}, Available: ${profile.balance_cents}`);
-
-        // Log a failed donation/postcard record so the user sees it in the dashboard
-        const { data: donation, error: donationError } = await supabase
-          .from('donations')
-          .insert({
-            profile_id: account.profile_id,
-            actblue_account_id: account.id,
-            actblue_donation_id: actBlueId,
-            amount: amount,
-            donor_firstname: donor.firstname || 'Donor',
-            donor_lastname: donor.lastname || '',
-            donor_email: donor.email || '',
-            donor_addr1: donor.addr1 || '',
-            donor_city: donor.city || '',
-            donor_state: donor.state || '',
-            donor_zip: donor.zip || ''
-          })
-          .select()
-          .single();
-
-        if (!donationError) {
-          await supabase.from('postcards').insert({
-            donation_id: donation.id,
-            profile_id: account.profile_id,
-            status: 'failed',
-            error_message: 'Insufficient balance. Please top up your account.'
-          });
-        }
-        continue;
-      }
-      // --- Billing Logic End ---
-
-      // Create normalized donor object for this specific contribution
+      // 4. Create normalized donor object for this specific contribution
       const normalizedDonor = {
-        firstname: donor.firstname || donor.firstName || 'Donor',
+        firstname: donor.firstname || donor.firstName || 'Friend',
         lastname: donor.lastname || donor.lastName || '',
         email: donor.email || '',
         addr1: donor.addr1 || donor.address_line1 || donor.addressLine1 || '',
@@ -442,17 +401,20 @@ serve(async (req) => {
         city: donor.city || '',
         state: donor.state || '',
         zip: donor.zip || donor.postalCode || donor.postal_code || '',
-        amount: amount // Store the specific line item amount for templating
+        amount: amount
       };
 
-      // 4. Insert Donation Record
-      console.log("💾 Saving donation record to database...");
+      // 5. Insert Donation Record
+      // We append entityId to actblue_donation_id to ensure uniqueness for split donations
+      const donationUid = `${actBlueId}_${entityId}`;
+      console.log(`💾 Saving donation record ${donationUid} to database...`);
+
       const { data: donation, error: donationError } = await supabase
         .from('donations')
         .insert({
           profile_id: account.profile_id,
           actblue_account_id: account.id,
-          actblue_donation_id: actBlueId,
+          actblue_donation_id: donationUid,
           amount: amount,
           donor_firstname: normalizedDonor.firstname,
           donor_lastname: normalizedDonor.lastname,
@@ -467,27 +429,32 @@ serve(async (req) => {
 
       if (donationError) {
         if (donationError.code === '23505') {
-          console.log("ℹ️ Duplicate donation received (ActBlue ID: " + actBlueId + "). Skipping.");
+          console.log(`ℹ️ Duplicate donation item received (${donationUid}). Skipping.`);
+          // Refund the balance if it's a duplicate and we already deducted it
+          await supabase.from('actblue_entities')
+            .update({ balance_cents: entity.balance_cents })
+            .eq('entity_id', entityId);
           continue;
         }
         console.error("❌ Error inserting donation:", JSON.stringify(donationError));
-        throw donationError;
+        continue;
       }
 
-      // 5. Send Postcard via Lob.com API
+      // 6. Send Postcard via Lob.com API
       const lobResult = await sendPostcardViaLob(normalizedDonor, entity, donationDate, isTestMode);
 
-      // 6. Create Postcard Record with result
+      // 7. Create Postcard Record with result
       console.log(`📝 Recording postcard status: ${lobResult.success ? 'processed' : 'failed'}`);
       const postcardStatus = lobResult.success ? 'processed' : 'failed';
+
       const { data: postcardData, error: postcardError } = await supabase
         .from('postcards')
         .insert({
           donation_id: donation.id,
           profile_id: account.profile_id,
           status: postcardStatus,
-          front_image_url: account.front_image_url,
-          back_message: account.back_message,
+          front_image_url: entity.front_image_url,
+          back_message: entity.back_message,
           lob_postcard_id: lobResult.lobId || null,
           lob_url: lobResult.url || null,
           error_message: lobResult.error || null
@@ -502,91 +469,19 @@ serve(async (req) => {
         await supabase.from('postcard_events').insert({
           postcard_id: postcardData.id,
           status: postcardStatus,
-          description: lobResult.success ? 'Postcard sent to Lob.com for processing' : `Postcard creation failed: ${lobResult.error}`
+          details: lobResult.success ? 'Postcard successfully sent to Lob.com' : `Failed to send to Lob.com: ${lobResult.error}`
         });
-      }
-
-      // 7. Deduct balance and record transaction on success
-      if (lobResult.success) {
-        console.log(`💸 Deducting ${priceCents} cents from balance...`);
-        const newBalance = profile.balance_cents - priceCents;
-
-        const { error: balanceUpdateError } = await supabase
-          .from('profiles')
-          .update({ balance_cents: newBalance })
-          .eq('id', account.profile_id);
-
-        if (balanceUpdateError) {
-          console.error("❌ Error updating balance:", JSON.stringify(balanceUpdateError));
-        }
-
-        // Record the transaction
-        await supabase.from('billing_transactions').insert({
-          profile_id: account.profile_id,
-          amount_cents: -priceCents,
-          type: 'postcard_deduction',
-          description: `Postcard for ${normalizedDonor.firstname} ${normalizedDonor.lastname} (${actBlueId})`
-        });
-
-        // 8. Handle Auto-topup if balance is low ($10 / 1000c)
-        if (newBalance < 1000 && profile.stripe_customer_id) {
-          console.log(`⚡ Balance low (${newBalance}c). Mandatory auto-topup triggering for customer ${profile.stripe_customer_id}...`);
-
-          try {
-            const refillAmount = profile.auto_topup_amount_cents || 5000;
-
-            // Trigger off-session payment
-            const intent = await stripe.paymentIntents.create({
-              amount: refillAmount,
-              currency: "usd",
-              customer: profile.stripe_customer_id,
-              confirm: true,
-              off_session: true,
-              payment_method_types: ["card"],
-              // We rely on the customer having a default payment method from a previous checkout
-            });
-
-            if (intent.status === 'succeeded') {
-              console.log(`✅ Auto-topup succeeded! intent: ${intent.id}`);
-
-              // Update balance again with the refill
-              const finalBalance = newBalance + refillAmount;
-              await supabase
-                .from('profiles')
-                .update({ balance_cents: finalBalance })
-                .eq('id', account.profile_id);
-
-              // Record the top-up transaction
-              await supabase.from('billing_transactions').insert({
-                profile_id: account.profile_id,
-                amount_cents: refillAmount,
-                type: 'topup',
-                description: `Auto-topup recharge (Low balance)`,
-                stripe_payment_intent_id: intent.id
-              });
-            } else {
-              console.warn(`⚠️ Auto-topup intent status: ${intent.status}. Further action might be needed.`);
-            }
-          } catch (stripeErr: any) {
-            console.error(`❌ Auto-topup failed: ${stripeErr.message}`);
-          }
-        }
       }
     }
 
-    return new Response(JSON.stringify({ received: true }), {
+    return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
     });
-
   } catch (error: any) {
-    console.error("Webhook processing error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      }
-    );
+    console.error("❌ Critical Webhook Error:", error.message);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

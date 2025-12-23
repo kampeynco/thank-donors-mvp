@@ -7,17 +7,14 @@ export interface Profile {
   full_name?: string;
   organization?: string;
   job_title?: string;
-  // Billing fields
-  tier: user_tier;
-  balance_cents: number;
-  auto_topup_enabled: boolean;
-  auto_topup_amount_cents: number;
-  stripe_customer_id?: string;
+  // Personal settings only
+  onboarding_completed?: boolean;
 }
 
 export interface BillingTransaction {
   id: string;
   profile_id: string;
+  entity_id?: number; // Linked to entity if it's an account transaction
   amount_cents: number;
   type: 'topup' | 'postcard_deduction' | 'subscription_fee' | 'refund';
   description: string;
@@ -41,6 +38,12 @@ export interface ActBlueEntity {
   webhook_password: string;
   webhook_source_id: string;
   webhook_connection_id?: string;
+  // Shared Billing fields
+  tier: user_tier;
+  balance_cents: number;
+  auto_topup_enabled: boolean;
+  auto_topup_amount_cents: number;
+  stripe_customer_id?: string;
   created_at: string;
   updated_at: string;
 }

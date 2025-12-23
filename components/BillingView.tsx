@@ -2,29 +2,35 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, DollarSign, Clock, ArrowUpRight, Shield, Zap, Loader2 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
-import { Profile, BillingTransaction } from '../types';
+import { Profile, BillingTransaction, ActBlueAccount, ActBlueEntity } from '../types';
 
 interface BillingViewProps {
   profile: Profile;
-  onUpdate: (updates: Partial<Profile>) => Promise<void>;
+  account: ActBlueAccount | null;
+  onUpdateAccount: (updates: Partial<ActBlueEntity>) => Promise<void>;
 }
 
-const BillingView: React.FC<BillingViewProps> = ({ profile, onUpdate }) => {
+const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAccount }) => {
   const [transactions, setTransactions] = useState<BillingTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
 
+  const entity = account?.entity || account; // Fallback to flattened fields
+
   useEffect(() => {
-    fetchBillingData();
-  }, [profile.id]);
+    if (account?.entity_id) {
+      fetchBillingData();
+    }
+  }, [account?.entity_id]);
 
   const fetchBillingData = async () => {
+    if (!account?.entity_id) return;
     try {
       setLoading(true);
       const { data: transData } = await supabase
         .from('billing_transactions')
         .select('*')
-        .eq('profile_id', profile.id)
+        .eq('entity_id', account.entity_id)
         .order('created_at', { ascending: false });
 
       if (transData) setTransactions(transData);
@@ -47,7 +53,10 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, onUpdate }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`
         },
-        body: JSON.stringify({ type })
+        body: JSON.stringify({
+          type,
+          entity_id: account?.entity_id
+        })
       });
 
       const { url, error } = await response.json();
@@ -77,9 +86,9 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, onUpdate }) => {
           <p className="text-stone-500 mt-2">Manage your account balance and subscription tier.</p>
         </div>
         <div className="text-right">
-          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${profile?.tier === 'pro' ? 'bg-amber-100 text-amber-700' : 'bg-stone-100 text-stone-600'
+          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${entity?.tier === 'pro' ? 'bg-amber-100 text-amber-700' : 'bg-stone-100 text-stone-600'
             }`}>
-            {profile?.tier || 'Free'} Tier
+            {entity?.tier || 'Free'} Tier
           </span>
         </div>
       </div>
@@ -89,16 +98,16 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, onUpdate }) => {
         <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-8 text-white shadow-lg shadow-rose-200">
           <h3 className="font-bold flex items-center gap-2 mb-2 opacity-90 text-sm">
             <DollarSign size={18} />
-            Available Balance
+            Campaign Available Balance
           </h3>
           <div className="text-4xl font-serif font-bold mb-6">
-            ${((profile?.balance_cents || 0) / 100).toFixed(2)}
+            ${((entity?.balance_cents || 0) / 100).toFixed(2)}
           </div>
 
           <div className="space-y-3 mb-8">
             <div className="flex justify-between text-sm opacity-90 border-b border-white/20 pb-2">
               <span>Cost per Postcard</span>
-              <span className="font-bold">${profile?.tier === 'pro' ? '0.89' : '1.29'}</span>
+              <span className="font-bold">${entity?.tier === 'pro' ? '0.89' : '1.29'}</span>
             </div>
             <div className="flex justify-between items-center text-sm opacity-90 border-b border-white/20 pb-2">
               <span>Auto-topup trigger</span>
@@ -107,8 +116,8 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, onUpdate }) => {
             <div className="flex justify-between items-center text-sm opacity-90 border-b border-white/20 pb-2">
               <span>Top-up refill amount</span>
               <select
-                value={profile?.auto_topup_amount_cents || 5000}
-                onChange={(e) => onUpdate({ auto_topup_amount_cents: parseInt(e.target.value) })}
+                value={entity?.auto_topup_amount_cents || 5000}
+                onChange={(e) => onUpdateAccount({ auto_topup_amount_cents: parseInt(e.target.value) })}
                 className="bg-transparent font-bold text-right outline-none cursor-pointer border-none focus:ring-0 p-0"
               >
                 <option value={5000} className="text-stone-800">$50.00</option>
@@ -150,7 +159,7 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, onUpdate }) => {
             </ul>
           </div>
 
-          {profile?.tier === 'pro' ? (
+          {entity?.tier === 'pro' ? (
             <button className="w-full bg-stone-100 text-stone-500 font-bold py-3 rounded-xl cursor-default">
               Current Plan
             </button>

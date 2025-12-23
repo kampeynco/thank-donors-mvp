@@ -39,7 +39,7 @@ serve(async (req) => {
         }
 
         // 2. Parse Body
-        const { type, success_url, cancel_url } = await req.json();
+        const { type, entity_id, success_url, cancel_url } = await req.json();
 
         if (!type || !['topup', 'subscription'].includes(type)) {
             return new Response("Invalid purchase type", { status: 400 });
@@ -53,7 +53,7 @@ serve(async (req) => {
             : "price_1ShPw5BVTET8Q6FvdQASRy5n";
 
         // 4. Create Checkout Session
-        console.log(`🛒 Creating checkout session for ${user.id} (${type})`);
+        console.log(`🛒 Creating checkout session for ${user.id} (${type}) on entity ${entity_id}`);
 
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ["card"],
@@ -71,6 +71,7 @@ serve(async (req) => {
             cancel_url: cancel_url || `${req.headers.get("origin")}/billing?canceled=true`,
             metadata: {
                 profile_id: user.id,
+                entity_id: entity_id,
                 type: type,
             },
             customer_email: user.email,
