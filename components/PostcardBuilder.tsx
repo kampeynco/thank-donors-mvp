@@ -79,65 +79,10 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
     const cropContainerRef = useRef<HTMLDivElement>(null);
 
     // Helper to get a fresh signed URL from a potential stale/public URL
-    const getFreshSignedUrl = async (oldUrl: string): Promise<string | null> => {
+    const getFreshSignedUrl = async (oldUrl: string | null): Promise<string | null> => {
         if (!oldUrl) return null;
         if (oldUrl.startsWith('data:')) return oldUrl;
         if (oldUrl.startsWith('blob:')) return null;
-
-        try {
-            // Robust parsing using URL object
-            let urlObj: URL;
-            try {
-                urlObj = new URL(oldUrl);
-            } catch {
-                return null;
-            }
-
-            // Check if it's a Supabase Storage URL
-            if (!urlObj.pathname.includes('/object/')) return null;
-
-            // Split pathname to find bucket and key
-            // Format: /storage/v1/object/[public|sign]/[BUCKET]/[KEY...]
-            const parts = urlObj.pathname.split('/object/');
-            if (parts.length < 2) return null;
-
-            const pathSegments = parts[1].split('/'); // e.g. ['public', 'images', 'folder', 'file.jpg']
-            if (pathSegments.length < 3) return null;
-
-            // pathSegments[0] is 'public' or 'sign'
-            const bucket = pathSegments[1];
-            const key = decodeURIComponent(pathSegments.slice(2).join('/'));
-
-            // 1. Try to create a Signed URL (Secure, works for private buckets)
-            const { data, error } = await supabase.storage
-                .from(bucket)
-                .createSignedUrl(key, 60 * 60 * 24 * 365); // 1 year
-
-            if (data?.signedUrl) {
-                return data.signedUrl;
-            }
-
-            // 2. Fallback to Public URL if signing fails
-            const { data: publicData } = supabase.storage
-                .from(bucket)
-                .getPublicUrl(key);
-
-            if (publicData?.publicUrl) {
-                return publicData.publicUrl;
-            }
-
-            return null;
-        } catch (e) {
-            console.error("Error refreshing signed URL:", e);
-            return null;
-        }
-    };
-
-    // Fetch recent uploads
-    const fetchImageHistory = async () => {
-        const entityId = account?.entity_id;
-        const storagePath = entityId ? `entity_${entityId}` : profile.id;
-        if (!storagePath) return;
 
         try {
             const { data, error } = await supabase.storage
