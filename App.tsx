@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [view, setView] = useState<ViewState>(ViewState.AUTH);
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const loadedUserIdRef = React.useRef<string | null>(null);
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [accounts, setAccounts] = useState<ActBlueAccount[]>([]);
@@ -62,9 +63,15 @@ const App: React.FC = () => {
         return;
       }
 
+      // Prevent reloading if the user is already logged in
+      if (event === 'SIGNED_IN' && session?.user?.id && loadedUserIdRef.current === session.user.id) {
+        return;
+      }
+
       if (session) {
         fetchData(session.user.id, session.user.email);
       } else {
+        loadedUserIdRef.current = null;
         setView(ViewState.AUTH);
         setProfile(null);
         setAccounts([]);
@@ -81,6 +88,7 @@ const App: React.FC = () => {
 
   const fetchData = async (userId: string, userEmail?: string) => {
     setLoading(true);
+    loadedUserIdRef.current = userId; // Mark as loading/loaded for this user
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
