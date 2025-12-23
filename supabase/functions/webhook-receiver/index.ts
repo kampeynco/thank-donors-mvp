@@ -490,9 +490,9 @@ serve(async (req) => {
           description: `Postcard for ${normalizedDonor.firstname} ${normalizedDonor.lastname} (${actBlueId})`
         });
 
-        // 8. Handle Auto-topup if balance is low
-        if (newBalance < 1000 && profile.auto_topup_enabled && profile.stripe_customer_id) {
-          console.log(`⚡ Balance low (${newBalance}c). Auto-topup enabled for customer ${profile.stripe_customer_id}. Triggering $50 recharge...`);
+        // 8. Handle Auto-topup if balance is low ($10 / 1000c)
+        if (newBalance < 1000 && profile.stripe_customer_id) {
+          console.log(`⚡ Balance low (${newBalance}c). Mandatory auto-topup triggering for customer ${profile.stripe_customer_id}...`);
 
           try {
             const refillAmount = profile.auto_topup_amount_cents || 5000;

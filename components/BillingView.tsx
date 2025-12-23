@@ -35,14 +35,6 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, onUpdate }) => {
     }
   };
 
-  const handleToggleAutoTopup = async () => {
-    try {
-      const newValue = !profile.auto_topup_enabled;
-      await onUpdate({ auto_topup_enabled: newValue });
-    } catch (err) {
-      console.error('Error toggling auto-topup:', err);
-    }
-  };
 
   const handleStripeCheckout = async (type: 'topup' | 'subscription') => {
     try {
@@ -108,18 +100,23 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, onUpdate }) => {
               <span>Cost per Postcard</span>
               <span className="font-bold">${profile?.tier === 'pro' ? '0.89' : '1.29'}</span>
             </div>
-            <button
-              onClick={handleToggleAutoTopup}
-              className="w-full flex justify-between items-center text-sm opacity-90 border-b border-white/20 pb-2 hover:opacity-100 transition-opacity group"
-            >
-              <span>Auto-topup ($50 trigger)</span>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-xs uppercase tracking-wider">{profile?.auto_topup_enabled ? 'On' : 'Off'}</span>
-                <div className={`w-9 h-5 rounded-full transition-colors relative flex items-center ${profile?.auto_topup_enabled ? 'bg-emerald-500' : 'bg-white/30'}`}>
-                  <div className={`absolute w-3.5 h-3.5 bg-white rounded-full transition-all shadow-sm ${profile?.auto_topup_enabled ? 'translate-x-[1.125rem]' : 'translate-x-1'}`} />
-                </div>
-              </div>
-            </button>
+            <div className="flex justify-between items-center text-sm opacity-90 border-b border-white/20 pb-2">
+              <span>Auto-topup trigger</span>
+              <span className="font-bold">$10.00 balance</span>
+            </div>
+            <div className="flex justify-between items-center text-sm opacity-90 border-b border-white/20 pb-2">
+              <span>Top-up refill amount</span>
+              <select
+                value={profile?.auto_topup_amount_cents || 5000}
+                onChange={(e) => onUpdate({ auto_topup_amount_cents: parseInt(e.target.value) })}
+                className="bg-transparent font-bold text-right outline-none cursor-pointer border-none focus:ring-0 p-0"
+              >
+                <option value={5000} className="text-stone-800">$50.00</option>
+                <option value={10000} className="text-stone-800">$100.00</option>
+                <option value={25000} className="text-stone-800">$250.00</option>
+                <option value={50000} className="text-stone-800">$500.00</option>
+              </select>
+            </div>
           </div>
 
           <button
