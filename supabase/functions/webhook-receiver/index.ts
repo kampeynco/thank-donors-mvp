@@ -192,10 +192,18 @@ serve(async (req) => {
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const actBlueId = uniqueId;
+    const actBlueId = uniqueId || contribution?.orderNumber;
     // Donor might be at root or in contribution
     const donor = payload.donor || contribution.donor;
-    const donationDate = createdAt; // Assuming ISO string or compatible format
+
+    // Format the date nicely for the postcard
+    let donationDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    if (createdAt) {
+      const dateObj = new Date(createdAt);
+      if (!isNaN(dateObj.getTime())) {
+        donationDate = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      }
+    }
 
     // Determine if we should use test mode (check for test API key presence)
     // @ts-ignore
