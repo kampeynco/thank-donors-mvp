@@ -171,7 +171,13 @@ serve(async (req) => {
       if (payload.contribution) console.warn("Contribution keys:", Object.keys(payload.contribution));
 
       // Return 200 to acknowledge receipt even if invalid, to stop retries
-      return new Response("Invalid Payload", { status: 200, headers: corsHeaders });
+      return new Response(JSON.stringify({
+        error: "Invalid Payload Structure",
+        receivedKeys: Object.keys(payload),
+        bodyType: typeof payload,
+        hasBodyProp: !!payload.body,
+        contributionKeys: payload.contribution ? Object.keys(payload.contribution) : null
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const actBlueId = contribution.unique_id;
