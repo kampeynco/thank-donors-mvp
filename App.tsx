@@ -294,7 +294,12 @@ const App: React.FC = () => {
           body: {
             committee_name: committeeName,
             entity_id: entityId,
-            profile_id: session.user.id
+            profile_id: session.user.id,
+            disclaimer: accountData.disclaimer,
+            street_address: accountData.street_address,
+            city: accountData.city,
+            state: accountData.state,
+            postal_code: accountData.postal_code
           }
         });
 
