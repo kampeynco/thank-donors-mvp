@@ -25,7 +25,7 @@ function substituteVariables(template: string, donor: any, donationDate: string)
 }
 
 // Helper function to generate HTML for the postcard back
-function generatePostcardHtml(message: string, disclaimer: string | null): string {
+function generatePostcardHtml(message: string): string {
   // This HTML mimics the frontend preview while adhering to Lob's 4x6 specifications
   return `
 <html>
@@ -65,14 +65,6 @@ function generatePostcardHtml(message: string, disclaimer: string | null): strin
       white-space: pre-wrap;
       word-wrap: break-word;
     }
-    .disclaimer {
-      margin-top: auto;
-      font-size: 8pt;
-      color: #78716c;
-      font-style: italic;
-      line-height: 1.3;
-      padding-top: 0.2in;
-    }
     /* The right 45% of the card is reserved for the address block and indicia */
   </style>
 </head>
@@ -80,8 +72,52 @@ function generatePostcardHtml(message: string, disclaimer: string | null): strin
   <div class="back-container">
     <div class="message-section">
       <div class="text-body">${message}</div>
-      ${disclaimer ? `<div class="disclaimer">${disclaimer}</div>` : ''}
     </div>
+  </div>
+</body>
+</html>
+`.trim();
+}
+
+// Helper function to generate HTML for the postcard front with disclaimer overlay
+function generatePostcardFrontHtml(imageUrl: string, disclaimer: string | null): string {
+  return `
+<html>
+<head>
+  <style>
+    body {
+      width: 6in;
+      height: 4in;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    .front-container {
+      width: 6in;
+      height: 4in;
+      position: relative;
+      background-image: url('${imageUrl}');
+      background-size: cover;
+      background-position: center;
+    }
+    .disclaimer-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 70%, rgba(0,0,0,0) 100%);
+      color: white;
+      padding: 0.6in 0.4in 0.2in 0.4in;
+      font-family: 'Inter', sans-serif;
+      font-size: 8pt;
+      line-height: 1.2;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="front-container">
+    ${disclaimer ? `<div class="disclaimer-overlay">${disclaimer}</div>` : ''}
   </div>
 </body>
 </html>
@@ -130,8 +166,11 @@ async function sendPostcardViaLob(
       address_state: account.state || "ST",
       address_zip: account.postal_code || "12345",
     },
-    front: account.front_image_url || "https://via.placeholder.com/1875x1275",
-    back: generatePostcardHtml(backMessage, account.disclaimer),
+    front: generatePostcardFrontHtml(
+      account.front_image_url || "https://via.placeholder.com/1875x1275",
+      account.disclaimer
+    ),
+    back: generatePostcardHtml(backMessage),
     size: "4x6",
     mail_type: "usps_first_class",
   };
