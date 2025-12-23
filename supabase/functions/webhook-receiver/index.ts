@@ -253,8 +253,7 @@ serve(async (req) => {
           donor_addr1: donorAddr1,
           donor_city: donorCity,
           donor_state: donorState,
-          donor_zip: donorZip,
-          status: 'PENDING' // Donation tracked, postcard pending
+          donor_zip: donorZip
         })
         .select()
         .single();
