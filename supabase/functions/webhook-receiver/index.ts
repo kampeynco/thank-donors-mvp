@@ -164,12 +164,13 @@ serve(async (req) => {
     }
 
     // ActBlue structure: { contribution: { unique_id, donor: {...}, lineitems: [...] } }
-    // ActBlue structure: { contribution: { unique_id, donor: {...}, lineitems: [...] } }
+    // ActBlue structure seems to be flattened or top-level mainly: { contribution: {...}, lineitems: [...], donor: {...} }
     const contribution = payload.contribution;
-    // Handle camelCase vs snake_case for lineitems
-    const lineItems = contribution?.lineitems || contribution?.lineItems;
 
-    // Check for unique_id OR uniqueIdentifier, created_at OR createdAt
+    // Check for lineitems at ROOT or inside contribution
+    const lineItems = payload.lineitems || payload.lineItems || contribution?.lineitems || contribution?.lineItems;
+
+    // Check for unique_id OR uniqueIdentifier, created_at OR createdAt inside contribution
     const uniqueId = contribution?.unique_id || contribution?.uniqueIdentifier;
     const createdAt = contribution?.created_at || contribution?.createdAt;
 
@@ -192,7 +193,8 @@ serve(async (req) => {
     }
 
     const actBlueId = uniqueId;
-    const donor = contribution.donor;
+    // Donor might be at root or in contribution
+    const donor = payload.donor || contribution.donor;
     const donationDate = createdAt; // Assuming ISO string or compatible format
 
     // Determine if we should use test mode (check for test API key presence)
