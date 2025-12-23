@@ -18,7 +18,6 @@ export interface ActBlueAccount {
   webhook_password: string;
   webhook_source_id: string;
   webhook_connection_id?: string;
-  thanksio_subaccount_id?: number;
   election_level?: string;
   office_sought?: string;
   // Address fields
@@ -59,4 +58,14 @@ export enum ViewState {
   SETTINGS = 'SETTINGS',
   PROFILE = 'PROFILE',
   USER_ONBOARDING = 'USER_ONBOARDING'
+}
+
+export interface Postcard {
+  id: string;
+  donation_id: string;
+  profile_id: string;
+  status: 'SENT' | 'FAILED' | 'IN_TRANSIT' | 'DELIVERED';
+  lob_postcard_id?: string;
+  error_message?: string;
+  created_at: string;
 }
