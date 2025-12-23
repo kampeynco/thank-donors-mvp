@@ -52,7 +52,7 @@ function generatePostcardHtml(message: string): string {
       position: absolute;
       top: 0.4in;
       left: 0.4in;
-      width: 2.7in; /* Reduced slightly to ensure no bleed */
+      width: 2.6in; /* Reduced slightly to ensure no bleed */
       height: 3.2in;
       display: flex;
       flex-direction: column;
