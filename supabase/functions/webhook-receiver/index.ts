@@ -1,6 +1,12 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
+import Stripe from "https://esm.sh/stripe@14.16.0?target=deno";
+
+const stripe = new Stripe(Deno.env.get("STRIPE_API_KEY") || "", {
+  apiVersion: "2023-10-16",
+  httpClient: Stripe.createFetchHttpClient(),
+});
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -345,6 +351,58 @@ serve(async (req) => {
 
       console.log(`✅ Found account: ${account.committee_name} (ID: ${account.id})`);
 
+      // --- Billing Logic Start ---
+      // 1. Fetch User Profile for Tier and Balance
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('tier, balance_cents, auto_topup_enabled, auto_topup_amount_cents')
+        .eq('id', account.profile_id)
+        .single();
+
+      if (profileError || !profile) {
+        console.error("❌ Error fetching profile for billing:", JSON.stringify(profileError));
+        continue; // Or handle as an error
+      }
+
+      // 2. Determine Price per Postcard
+      const priceCents = profile.tier === 'pro' ? 89 : 129;
+      console.log(`💰 User Tier: ${profile.tier}, Price: ${priceCents} cents, Current Balance: ${profile.balance_cents} cents`);
+
+      // 3. Check for Insufficient Funds
+      if (profile.balance_cents < priceCents) {
+        console.warn(`🛑 Insufficient funds for user ${account.profile_id}. Required: ${priceCents}, Available: ${profile.balance_cents}`);
+
+        // Log a failed donation/postcard record so the user sees it in the dashboard
+        const { data: donation, error: donationError } = await supabase
+          .from('donations')
+          .insert({
+            profile_id: account.profile_id,
+            actblue_account_id: account.id,
+            actblue_donation_id: actBlueId,
+            amount: amount,
+            donor_firstname: donor.firstname || 'Donor',
+            donor_lastname: donor.lastname || '',
+            donor_email: donor.email || '',
+            donor_addr1: donor.addr1 || '',
+            donor_city: donor.city || '',
+            donor_state: donor.state || '',
+            donor_zip: donor.zip || ''
+          })
+          .select()
+          .single();
+
+        if (!donationError) {
+          await supabase.from('postcards').insert({
+            donation_id: donation.id,
+            profile_id: account.profile_id,
+            status: 'failed',
+            error_message: 'Insufficient balance. Please top up your account.'
+          });
+        }
+        continue;
+      }
+      // --- Billing Logic End ---
+
       // Create normalized donor object for this specific contribution
       const normalizedDonor = {
         firstname: donor.firstname || donor.firstName || 'Donor',
@@ -408,6 +466,37 @@ serve(async (req) => {
 
       if (postcardError) {
         console.error("❌ Error creating postcard record:", JSON.stringify(postcardError));
+      }
+
+      // 7. Deduct balance and record transaction on success
+      if (lobResult.success) {
+        console.log(`💸 Deducting ${priceCents} cents from balance...`);
+        const newBalance = profile.balance_cents - priceCents;
+
+        const { error: balanceUpdateError } = await supabase
+          .from('profiles')
+          .update({ balance_cents: newBalance })
+          .eq('id', account.profile_id);
+
+        if (balanceUpdateError) {
+          console.error("❌ Error updating balance:", JSON.stringify(balanceUpdateError));
+        }
+
+        // Record the transaction
+        await supabase.from('billing_transactions').insert({
+          profile_id: account.profile_id,
+          amount_cents: -priceCents,
+          type: 'postcard_deduction',
+          description: `Postcard for ${normalizedDonor.firstname} ${normalizedDonor.lastname} (${actBlueId})`
+        });
+
+        // 8. Handle Auto-topup if balance is low
+        if (newBalance < 1000 && profile.auto_topup_enabled) {
+          console.log(`⚡ Balance low (${newBalance}c). Auto-topup enabled. Triggering recharge...`);
+          // Note: In a real production app, you might trigger an async Edge Function here 
+          // that calls Stripe to charge the saved payment method.
+          // For now, we'll just log it. 
+        }
       }
     }
 

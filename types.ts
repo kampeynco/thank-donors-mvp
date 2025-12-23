@@ -1,11 +1,28 @@
 
+export type user_tier = 'free' | 'pro';
+
 export interface Profile {
   id: string;
-  email?: string; // Not in DB, injected by app
-  // New user details (Auth Metadata)
+  email?: string;
   full_name?: string;
   organization?: string;
   job_title?: string;
+  // Billing fields
+  tier: user_tier;
+  balance_cents: number;
+  auto_topup_enabled: boolean;
+  auto_topup_amount_cents: number;
+  stripe_customer_id?: string;
+}
+
+export interface BillingTransaction {
+  id: string;
+  profile_id: string;
+  amount_cents: number;
+  type: 'topup' | 'postcard_deduction' | 'subscription_fee' | 'refund';
+  description: string;
+  stripe_payment_intent_id?: string;
+  created_at: string;
 }
 
 export interface ActBlueAccount {
@@ -22,8 +39,7 @@ export interface ActBlueAccount {
   office_sought?: string;
   // Address fields
   street_address?: string;
-  city?: string;
-  state?: string;
+  city?: string; state?: string;
   postal_code?: string;
   // Design fields
   front_image_url?: string;
@@ -37,7 +53,7 @@ export interface Donation {
   donor_lastname?: string;
   amount: number;
   created_at: string;
-  status: string; // Will hold enum values like 'processed', 'delivered', etc.
+  status: string;
   error_message?: string;
   actblue_account_id?: string;
   lob_url?: string;
