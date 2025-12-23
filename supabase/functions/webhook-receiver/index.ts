@@ -52,18 +52,22 @@ function generatePostcardHtml(message: string): string {
       position: absolute;
       top: 0.4in;
       left: 0.4in;
-      width: 2.8in; /* Adjusted to leave margin for center and address block */
+      width: 2.7in; /* Reduced slightly to ensure no bleed */
       height: 3.2in;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
+      box-sizing: border-box;
     }
     .text-body {
+      width: 100%;
+      max-width: 100%;
       font-size: 11pt;
       line-height: 1.5;
       color: #1c1917;
       white-space: pre-wrap;
       word-wrap: break-word;
+      overflow-wrap: break-word;
     }
     /* The right 45% of the card is reserved for the address block and indicia */
   </style>
@@ -104,18 +108,18 @@ function generatePostcardFrontHtml(imageUrl: string, disclaimer: string | null):
     }
     .disclaimer-overlay {
       position: absolute;
-      bottom: 0;
+      bottom: 0.1in; /* Lifted slightly for a cleaner look without background */
       left: 0;
       right: 0;
-      background-color: rgba(0, 0, 10, 0.45); /* Subtle transparency */
-      backdrop-filter: blur(2px); /* Soften the background if supported */
+      background-color: transparent; /* Fully transparent per user request */
       color: white;
-      padding: 0.15in 0.2in;
+      padding: 0 0.4in;
       font-family: 'Inter', -apple-system, sans-serif;
       font-size: 8.5pt;
       line-height: 1.3;
       text-align: center;
       letter-spacing: 0.01em;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8); /* Added shadow for readability on any image */
     }
   </style>
 </head>
