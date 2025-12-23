@@ -29,22 +29,10 @@ serve(async (req) => {
         const payload = await req.json();
         console.log("Received Lob Webhook:", payload.event_type_id);
 
-        // 3. Verify Event Type
-        const eventType = payload.event_type_id;
-        // We care about postcard.in_transit and postcard.delivered
-        const relevantEvents = ['postcard.in_transit', 'postcard.delivered'];
-
-        if (!relevantEvents.includes(eventType)) {
-            console.log(`Ignoring event type: ${eventType}`);
-            return new Response(JSON.stringify({ message: "Ignored event type" }), {
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-                status: 200,
-            });
-        }
-
-        // 4. Extract Postcard ID from Payload
-        // Lob events have the resource in payload.body
+        // 3. Verify Event Type and Map to Enum
+        const eventType = payload.event_type_id; // e.g., "postcard.in_transit"
         const resourceId = payload.body.id;
+
         if (!resourceId) {
             console.error("No resource ID found in payload");
             return new Response(JSON.stringify({ error: "No resource ID found" }), {
@@ -53,10 +41,27 @@ serve(async (req) => {
             });
         }
 
-        // 5. Build Status Map
-        let newStatus = '';
-        if (eventType === 'postcard.in_transit') newStatus = 'IN_TRANSIT';
-        else if (eventType === 'postcard.delivered') newStatus = 'DELIVERED';
+        // Extract the status part (everything after "postcard.")
+        const newStatus = eventType.replace('postcard.', '');
+
+        // Valid statuses defined in our postcard_status_type enum
+        const validStatuses = [
+            'mailed',
+            'in_transit',
+            'in_local_area',
+            'processed_for_delivery',
+            'delivered',
+            're_routed',
+            'returned_to_sender'
+        ];
+
+        if (!validStatuses.includes(newStatus)) {
+            console.log(`Ignoring event type: ${eventType} (mapped to: ${newStatus})`);
+            return new Response(JSON.stringify({ message: "Ignored event type" }), {
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+                status: 200,
+            });
+        }
 
         console.log(`Updating postcard ${resourceId} to status ${newStatus}`);
 

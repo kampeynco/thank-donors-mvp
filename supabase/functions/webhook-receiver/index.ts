@@ -391,8 +391,8 @@ serve(async (req) => {
       const lobResult = await sendPostcardViaLob(normalizedDonor, account, donationDate, isTestMode);
 
       // 6. Create Postcard Record with result
-      console.log(`📝 Recording postcard status: ${lobResult.success ? 'SENT' : 'FAILED'}`);
-      const postcardStatus = lobResult.success ? 'SENT' : 'FAILED';
+      console.log(`📝 Recording postcard status: ${lobResult.success ? 'processed' : 'failed'}`);
+      const postcardStatus = lobResult.success ? 'processed' : 'failed';
       const { error: postcardError } = await supabase
         .from('postcards')
         .insert({
