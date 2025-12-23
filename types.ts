@@ -25,26 +25,44 @@ export interface BillingTransaction {
   created_at: string;
 }
 
-export interface ActBlueAccount {
-  id: string;
-  profile_id: string;
+export interface ActBlueEntity {
   entity_id: number;
   committee_name: string;
+  front_image_url?: string;
+  back_message?: string;
+  disclaimer?: string;
+  street_address?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
   webhook_url: string;
   webhook_username: string;
   webhook_password: string;
   webhook_source_id: string;
   webhook_connection_id?: string;
-  election_level?: string;
-  office_sought?: string;
-  // Address fields
-  street_address?: string;
-  city?: string; state?: string;
-  postal_code?: string;
-  // Design fields
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ActBlueAccount {
+  id: string;
+  profile_id: string;
+  entity_id: number;
+  created_at: string;
+  archived_at?: string;
+  // Merged fields from Entity for backward compatibility/joining
+  entity?: ActBlueEntity;
+  // We keep these here for now to avoid breaking UI that expects them on the account object
+  committee_name?: string;
   front_image_url?: string;
   back_message?: string;
   disclaimer?: string;
+  street_address?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  webhook_url?: string;
 }
 
 export interface PostcardEvent {

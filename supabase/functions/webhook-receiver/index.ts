@@ -141,7 +141,7 @@ function generatePostcardFrontHtml(imageUrl: string, disclaimer: string | null):
 // Helper function to send postcard via Lob.com API
 async function sendPostcardViaLob(
   normalizedDonor: any,
-  account: any,
+  entity: any,
   donationDate: string,
   isTestMode: boolean
 ): Promise<{ success: boolean; lobId?: string; url?: string; lobStatus?: string; error?: string }> {
@@ -158,8 +158,8 @@ async function sendPostcardViaLob(
   console.log(`📡 Preparing Lob request for ${normalizedDonor.firstname} ${normalizedDonor.lastname} (Mode: ${isTestMode ? 'TEST' : 'LIVE'})`);
 
   // Prepare the back message with variable substitution
-  const backMessage = account.back_message
-    ? substituteVariables(account.back_message, normalizedDonor, donationDate)
+  const backMessage = entity.back_message
+    ? substituteVariables(entity.back_message, normalizedDonor, donationDate)
     : `Dear ${normalizedDonor.firstname},\n\nThank you for your generous support!`;
 
   // Prepare Lob API payload
@@ -174,15 +174,15 @@ async function sendPostcardViaLob(
       address_zip: normalizedDonor.zip,
     },
     from: {
-      name: account.committee_name || "Campaign",
-      address_line1: account.street_address || "123 Main St",
-      address_city: account.city || "City",
-      address_state: account.state || "ST",
-      address_zip: account.postal_code || "12345",
+      name: entity.committee_name || "Campaign",
+      address_line1: entity.street_address || "123 Main St",
+      address_city: entity.city || "City",
+      address_state: entity.state || "ST",
+      address_zip: entity.postal_code || "12345",
     },
     front: generatePostcardFrontHtml(
-      account.front_image_url || "https://via.placeholder.com/1875x1275",
-      account.disclaimer
+      entity.front_image_url || "https://via.placeholder.com/1875x1275",
+      entity.disclaimer
     ),
     back: generatePostcardHtml(backMessage),
     size: "4x6",
@@ -337,32 +337,61 @@ serve(async (req) => {
       const amount = parseFloat(item.amount || "0");
       console.log(`🔍 Checking line item. Entity ID: ${entityId}, Amount: ${amount}`);
 
-      // Find the account in our DB
-      const { data: account, error: accountError } = await supabase
-        .from('actblue_accounts')
-        .select('id, profile_id, committee_name, front_image_url, back_message, disclaimer, street_address, city, state, postal_code')
+      // 1. Fetch the Entity (for template design)
+      const { data: entity, error: entityError } = await supabase
+        .from('actblue_entities')
+        .select('*')
         .eq('entity_id', entityId)
         .single();
 
-      if (accountError || !account) {
-        console.log(`⚠️ Entity ID ${entityId} not found in actblue_accounts. Skipping this line item.`);
+      if (entityError || !entity) {
+        console.log(`⚠️ Entity ID ${entityId} not found in actblue_entities. Skipping this line item.`);
         continue;
       }
 
-      console.log(`✅ Found account: ${account.committee_name} (ID: ${account.id})`);
+      console.log(`✅ Found entity: ${entity.committee_name} (ID: ${entity.entity_id})`);
+
+      // 2. Fetch all linked profiles for billing
+      const { data: linkedAccounts, error: linkedError } = await supabase
+        .from('actblue_accounts')
+        .select('profile_id, id')
+        .eq('entity_id', entityId);
+
+      if (linkedError || !linkedAccounts || linkedAccounts.length === 0) {
+        console.log(`⚠️ No users linked to Entity ${entityId}. Skipping.`);
+        continue;
+      }
+
+      // 3. Find a user to bill (highest balance or first with pro etc)
+      const profileIds = linkedAccounts.map(a => a.profile_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, tier, balance_cents, auto_topup_enabled, auto_topup_amount_cents')
+        .in('id', profileIds);
+
+      if (profilesError || !profiles || profiles.length === 0) {
+        console.log(`⚠️ Failed to fetch profiles for Entity ${entityId}.`);
+        continue;
+      }
+
+      // Sort profiles to find best billing candidate: Pro first, then highest balance
+      const billingProfile = profiles.sort((a, b) => {
+        if (a.tier === 'pro' && b.tier !== 'pro') return -1;
+        if (b.tier === 'pro' && a.tier !== 'pro') return 1;
+        return b.balance_cents - a.balance_cents;
+      })[0];
+
+      // Match the billing profile back to an account record
+      const account = linkedAccounts.find(a => a.profile_id === billingProfile.id);
+      if (!account) {
+        console.log(`⚠️ Linked account record not found for profile ${billingProfile.id}.`);
+        continue;
+      }
 
       // --- Billing Logic Start ---
-      // 1. Fetch User Profile for Tier and Balance
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('tier, balance_cents, auto_topup_enabled, auto_topup_amount_cents')
-        .eq('id', account.profile_id)
-        .single();
-
-      if (profileError || !profile) {
-        console.error("❌ Error fetching profile for billing:", JSON.stringify(profileError));
-        continue; // Or handle as an error
-      }
+      // 1. Use the selected billingProfile (formerly "profile")
+      const profile = billingProfile;
+      // --- Billing Logic End ---
 
       // 2. Determine Price per Postcard
       const priceCents = profile.tier === 'pro' ? 89 : 129;
@@ -446,7 +475,7 @@ serve(async (req) => {
       }
 
       // 5. Send Postcard via Lob.com API
-      const lobResult = await sendPostcardViaLob(normalizedDonor, account, donationDate, isTestMode);
+      const lobResult = await sendPostcardViaLob(normalizedDonor, entity, donationDate, isTestMode);
 
       // 6. Create Postcard Record with result
       console.log(`📝 Recording postcard status: ${lobResult.success ? 'processed' : 'failed'}`);

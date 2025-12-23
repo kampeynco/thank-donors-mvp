@@ -464,30 +464,46 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "Connection creation failed" }, 500);
     }
 
-    // 9) Database Insert
-    const insertPayload: Record<string, any> = {
-      profile_id: user.id,
+    // 9) Database Upsert for Entity and Insert for Account
+    const entityPayload = {
       entity_id: entityId,
       committee_name: committeeName,
-      platform,
+      street_address: streetAddress,
+      city: city,
+      state: state,
+      postal_code: postalCode,
+      disclaimer: disclaimer,
       webhook_url: source.url,
       webhook_username: sourceName,
       webhook_password: password,
       webhook_source_id: source.id,
       webhook_connection_id: connection.id,
-      street_address: streetAddress,
-      city: city,
-      state: state,
-      postal_code: postalCode,
-      disclaimer: disclaimer
+      updated_at: new Date().toISOString()
     };
 
-    console.log("📝 Database insert payload:", insertPayload);
+    console.log("📝 Entity upsert payload:", entityPayload);
+
+    const { error: entityErr } = await supabase
+      .from("actblue_entities")
+      .upsert(entityPayload, { onConflict: 'entity_id' });
+
+    if (entityErr) {
+      console.error("Entity Upsert Error:", entityErr);
+      return jsonResponse({ error: `Entity Update Failed: ${entityErr.message}` }, 500);
+    }
+
+    const accountPayload = {
+      profile_id: user.id,
+      entity_id: entityId,
+      platform
+    };
+
+    console.log("📝 Account insert payload:", accountPayload);
 
     const { data: inserted, error: insertErr } = await supabase
       .from("actblue_accounts")
-      .insert(insertPayload)
-      .select("*")
+      .insert(accountPayload)
+      .select("*, entity:actblue_entities(*)")
       .single();
 
     if (insertErr) {
@@ -521,13 +537,8 @@ Deno.serve(async (request) => {
       ok: true,
       existing: false,
       account: {
-        ...inserted,
-        // Ensure these critical fields are present
-        webhook_url: inserted?.webhook_url || source.url,
-        webhook_username: inserted?.webhook_username || sourceName,
-        webhook_password: inserted?.webhook_password || password,
-        webhook_source_id: inserted?.webhook_source_id || source.id,
-        webhook_connection_id: inserted?.webhook_connection_id || connection.id,
+        ...(inserted as any),
+        ...(inserted as any).entity // Flatten for response
       },
       hookdeck: {
         source_id: source.id,

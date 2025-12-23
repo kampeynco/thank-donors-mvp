@@ -129,12 +129,15 @@ const App: React.FC = () => {
       let fetchedAccounts: ActBlueAccount[] = [];
       const { data: accountsData, error: accountsError } = await supabase
         .from('actblue_accounts')
-        .select('*')
+        .select('*, entity:actblue_entities(*)')
         .eq('profile_id', userId)
-        .order('updated_at', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (!accountsError && accountsData) {
-        fetchedAccounts = accountsData as ActBlueAccount[];
+        fetchedAccounts = (accountsData as any[]).map(row => ({
+          ...row,
+          ...row.entity // Flatten entity fields onto account for UI compatibility
+        })) as ActBlueAccount[];
       }
       setAccounts(fetchedAccounts);
 
@@ -296,16 +299,18 @@ const App: React.FC = () => {
     try {
       if (currentAccount && currentAccount.id !== 'new') {
         // Update existing account
+        // Update centralized entity details
         const updates: any = { ...accountData };
         if (updates.entity_id) updates.entity_id = Number(updates.entity_id);
 
         const { error } = await supabase
-          .from('actblue_accounts')
+          .from('actblue_entities')
           .update(updates)
-          .eq('id', currentAccount.id);
+          .eq('entity_id', currentAccount.entity_id);
 
         if (error) throw error;
 
+        // Update local state
         const updated = { ...currentAccount, ...accountData } as ActBlueAccount;
         if (accountData.entity_id) updated.entity_id = Number(accountData.entity_id);
 
