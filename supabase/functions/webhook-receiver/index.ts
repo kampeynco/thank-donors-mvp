@@ -164,26 +164,36 @@ serve(async (req) => {
     }
 
     // ActBlue structure: { contribution: { unique_id, donor: {...}, lineitems: [...] } }
+    // ActBlue structure: { contribution: { unique_id, donor: {...}, lineitems: [...] } }
     const contribution = payload.contribution;
+    // Handle camelCase vs snake_case for lineitems
+    const lineItems = contribution?.lineitems || contribution?.lineItems;
 
-    if (!contribution || !contribution.lineitems) {
+    // Check for unique_id OR uniqueIdentifier, created_at OR createdAt
+    const uniqueId = contribution?.unique_id || contribution?.uniqueIdentifier;
+    const createdAt = contribution?.created_at || contribution?.createdAt;
+
+    if (!contribution || !lineItems || !uniqueId || !createdAt) {
       console.warn("Invalid payload structure. Payload keys:", Object.keys(payload));
-      if (payload.contribution) console.warn("Contribution keys:", Object.keys(payload.contribution));
+      if (contribution) {
+        console.warn("Contribution keys:", Object.keys(contribution));
+        console.warn("Missing fields - uniqueId:", !uniqueId, "createdAt:", !createdAt, "lineItems:", !lineItems);
+      }
 
-      // Return 200 to acknowledge receipt even if invalid, to stop retries
+      // Return debug info in response
       return new Response(JSON.stringify({
         error: "Invalid Payload Structure",
         receivedKeys: Object.keys(payload),
         bodyType: typeof payload,
         hasBodyProp: !!payload.body,
-        contributionKeys: payload.contribution ? Object.keys(payload.contribution) : null
+        contributionKeys: contribution ? Object.keys(contribution) : null,
+        missing: { uniqueId: !uniqueId, createdAt: !createdAt, lineItems: !lineItems }
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const actBlueId = contribution.unique_id;
+    const actBlueId = uniqueId;
     const donor = contribution.donor;
-    const lineItems = contribution.lineitems;
-    const donationDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const donationDate = createdAt; // Assuming ISO string or compatible format
 
     // Determine if we should use test mode (check for test API key presence)
     // @ts-ignore
@@ -194,7 +204,9 @@ serve(async (req) => {
     // We loop through to find the entity ID that matches one of our accounts.
 
     for (const item of lineItems) {
-      const entityId = item.entityId;
+      // Handle both camelCase and snake_case for item fields if needed, 
+      // but code previously assumed entityId (camel). fallback to entity_id just in case.
+      const entityId = item.entityId || item.entity_id;
       const amount = item.amount; // The amount specific to this entity
 
       // Find the account in our DB
@@ -212,6 +224,15 @@ serve(async (req) => {
 
       console.log(`Processing donation for ${account.committee_name} (Profile: ${account.profile_id})`);
 
+      // Normalize donor fields
+      const donorFirstName = donor.firstname || donor.firstName;
+      const donorLastName = donor.lastname || donor.lastName;
+      const donorEmail = donor.email;
+      const donorAddr1 = donor.addr1 || donor.address_line1 || donor.addressLine1;
+      const donorCity = donor.city;
+      const donorState = donor.state;
+      const donorZip = donor.zip || donor.postalCode || donor.postal_code;
+
       // 4. Insert Donation Record
       const { data: donation, error: donationError } = await supabase
         .from('donations')
@@ -220,13 +241,13 @@ serve(async (req) => {
           actblue_account_id: account.id,
           actblue_donation_id: actBlueId,
           amount: parseFloat(amount),
-          donor_firstname: donor.firstname,
-          donor_lastname: donor.lastname,
-          donor_email: donor.email,
-          donor_address: donor.addr1,
-          donor_city: donor.city,
-          donor_state: donor.state,
-          donor_zip: donor.zip,
+          donor_firstname: donorFirstName,
+          donor_lastname: donorLastName,
+          donor_email: donorEmail,
+          donor_address: donorAddr1,
+          donor_city: donorCity,
+          donor_state: donorState,
+          donor_zip: donorZip,
           status: 'PENDING' // Donation tracked, postcard pending
         })
         .select()
