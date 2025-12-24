@@ -118,10 +118,14 @@ const App: React.FC = () => {
 
       const mappedProfile = { ...loadedProfileData };
       mappedProfile.email = userEmail;
+
+      // Merge metadata only if it exists and doesn't conflict with existing profile data
+      // or if we want to synchronize them. Given the user reports issues, 
+      // let's prefer the database record if already present.
       if (user && user.user_metadata) {
-        mappedProfile.full_name = user.user_metadata.full_name;
-        mappedProfile.organization = user.user_metadata.organization;
-        mappedProfile.job_title = user.user_metadata.job_title;
+        mappedProfile.full_name = mappedProfile.full_name || user.user_metadata.full_name;
+        mappedProfile.organization = mappedProfile.organization || user.user_metadata.organization;
+        mappedProfile.job_title = mappedProfile.job_title || user.user_metadata.job_title;
       }
 
       setProfile(mappedProfile);
