@@ -548,10 +548,10 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
     return (
         <div className="space-y-8 relative">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">                <div>
-                <h2 className="text-3xl font-serif font-bold text-stone-800">Campaign Postcard</h2>
+                <h2 className="text-3xl font-serif font-bold text-stone-800">Postcard Designer</h2>
                 <p className="text-stone-500 mt-2 flex items-center gap-1.5 grayscale-0">
                     <Check size={14} className="text-emerald-500 flex-shrink-0" />
-                    <span>Changes apply to all accounts linked to <b>{account?.committee_name || 'this campaign'}</b>.</span>
+                    <span>Changes apply to all postcards sent from <b>{account?.committee_name || 'this campaign'}</b>.</span>
                 </p>
             </div>
 
