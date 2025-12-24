@@ -363,7 +363,7 @@ serve(async (req) => {
 
       // 3. Billing Check & Deduction
       // Centralized Billing: Deduct from the entity balance directly
-      const priceCents = entity.tier === 'pro' ? 85 : 100;
+      const priceCents = entity.tier === 'pro' ? 99 : 149;
 
       if (entity.balance_cents < priceCents) {
         console.warn(`❌ Entity ${entityId} has insufficient balance (${entity.balance_cents}c). Need ${priceCents}c.`);

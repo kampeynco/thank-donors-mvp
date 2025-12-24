@@ -108,7 +108,7 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
           <div className="space-y-3 mb-8">
             <div className="flex justify-between text-sm opacity-90 border-b border-white/20 pb-2">
               <span>Cost per Postcard</span>
-              <span className="font-bold">${entity?.tier === 'pro' ? '0.89' : '1.29'}</span>
+              <span className="font-bold">${entity?.tier === 'pro' ? '0.99' : '1.49'}</span>
             </div>
             <div className="flex justify-between items-center text-sm opacity-90 border-b border-white/20 pb-2">
               <span>Auto-topup trigger</span>
@@ -148,9 +148,9 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
             </h3>
             <ul className="space-y-3 mb-6">
               {[
-                'Lower cost ($0.89 vs $1.29)',
-                'Priority support',
-                'Advanced campaign analytics'
+                'Lower cost ($0.99 vs $1.49)',
+                'First class mail (3 to 5 business days)',
+                'Remove Thank Donors branding'
               ].map((feature, i) => (
                 <li key={i} className="flex items-center gap-2 text-sm text-stone-600">
                   <div className="w-1.5 h-1.5 rounded-full bg-rose-400" />
