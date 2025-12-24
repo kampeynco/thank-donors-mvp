@@ -613,6 +613,16 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                 <span className="text-xs text-stone-400 bg-stone-100 px-2 py-1 rounded">1875 × 1275 px</span>
                             </div>
 
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-sm font-medium text-stone-700">
+                                    Front Image URL
+                                </label>
+                                {account.is_using_entity_image && (
+                                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-600 border border-blue-100 italic">
+                                        <Share2 className="w-2.5 h-2.5" /> Shared from {account.entity?.name || 'Entity'}
+                                    </span>
+                                )}
+                            </div>
                             <label className="border-2 border-dashed border-stone-200 rounded-xl p-12 flex flex-col items-center justify-center cursor-pointer hover:bg-stone-50 hover:border-rose-300 transition-all group h-64 relative overflow-hidden">
                                 {isUploading ? (
                                     <div className="flex flex-col items-center text-rose-500 z-20">

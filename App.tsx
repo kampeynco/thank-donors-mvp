@@ -129,15 +129,22 @@ const App: React.FC = () => {
       let fetchedAccounts: ActBlueAccount[] = [];
       const { data: accountsData, error: accountsError } = await supabase
         .from('actblue_accounts')
-        .select('*, entity:actblue_entities(*)')
-        .eq('profile_id', userId)
-        .order('created_at', { ascending: false });
+        .select('*, entity:entities(*)')
+        .order('committee_name');
 
       if (!accountsError && accountsData) {
-        fetchedAccounts = (accountsData as any[]).map(row => ({
-          ...row,
-          ...row.entity // Flatten entity fields onto account for UI compatibility
-        })) as ActBlueAccount[];
+        fetchedAccounts = (accountsData as any[]).map(row => {
+          const entityProp = row.entity || {};
+          return {
+            ...row,
+            is_using_entity_image: !row.front_image_url && !!entityProp.front_image_url,
+            is_using_entity_message: !row.back_message && !!entityProp.back_message,
+            is_using_entity_disclaimer: !row.disclaimer && !!entityProp.disclaimer,
+            front_image_url: row.front_image_url || entityProp.front_image_url,
+            back_message: row.back_message || entityProp.back_message,
+            disclaimer: row.disclaimer || entityProp.disclaimer,
+          };
+        }) as ActBlueAccount[];
       }
       setAccounts(fetchedAccounts);
 
