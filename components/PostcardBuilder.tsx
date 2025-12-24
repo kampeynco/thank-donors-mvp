@@ -79,10 +79,61 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
     const cropContainerRef = useRef<HTMLDivElement>(null);
 
     // Helper to get a fresh signed URL from a potential stale/public URL
-    const getFreshSignedUrl = async (oldUrl: string | null): Promise<string | null> => {
-        if (!oldUrl) return null;
-        if (oldUrl.startsWith('data:')) return oldUrl;
-        if (oldUrl.startsWith('blob:')) return null;
+    const getFreshSignedUrl = async (url: string | null): Promise<string | null> => {
+        if (!url) return null;
+        if (url.startsWith('data:')) return url;
+        if (url.startsWith('blob:')) return null;
+
+        try {
+            let bucket = 'images';
+            let key = '';
+
+            if (url.includes('/storage/v1/object/')) {
+                const urlObj = new URL(url);
+                const parts = urlObj.pathname.split('/object/');
+                if (parts.length < 2) return url;
+
+                const pathSegments = parts[1].split('/');
+                if (pathSegments.length < 3) return url;
+
+                bucket = pathSegments[1];
+                key = decodeURIComponent(pathSegments.slice(2).join('/'));
+            } else if (!url.startsWith('http')) {
+                // If it's a relative path, assume it's a key in the images bucket
+                key = url;
+                console.log(`[ImageRefresh] Treating as relative key: ${key}`);
+            } else {
+                console.warn('[ImageRefresh] URL is not a recognized Supabase format:', url);
+                return url;
+            }
+
+            console.log(`[ImageRefresh] Refreshing - Bucket: ${bucket}, Key: ${key}`);
+
+            // Request a new signed URL
+            const { data, error } = await supabase.storage
+                .from(bucket)
+                .createSignedUrl(key, 60 * 60 * 24 * 365); // 1 year validity
+
+            if (error || !data?.signedUrl) {
+                console.warn('[ImageRefresh] createSignedUrl failed, falling back to public:', error);
+                const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(key);
+                console.log('[ImageRefresh] Public fallback URL:', publicData.publicUrl);
+                return publicData.publicUrl;
+            }
+
+            console.log('[ImageRefresh] Successfully got fresh signed URL');
+            return data.signedUrl;
+        } catch (e) {
+            console.error('[ImageRefresh] Error during refresh:', e);
+            return url;
+        }
+    };
+
+    // Fetch recent uploads
+    const fetchImageHistory = async () => {
+        const entityId = account?.entity_id;
+        const storagePath = entityId ? `entity_${entityId}` : profile.id;
+        if (!storagePath) return;
 
         try {
             const { data, error } = await supabase.storage
@@ -134,6 +185,11 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
     useEffect(() => {
         const syncImage = async () => {
             const incomingImage = template.frontpsc_background_image;
+            console.log('[PostcardBuilder] Effect 2: Syncing image from props', {
+                incomingImage: incomingImage ? incomingImage.substring(0, 50) + '...' : 'null',
+                accountId: account?.id
+            });
+
             if (!incomingImage) {
                 setDbImage(null);
             } else {
@@ -143,7 +199,10 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                 // Try to refresh it to a fresh signed URL
                 const freshUrl = await getFreshSignedUrl(incomingImage);
                 if (freshUrl) {
+                    console.log('[PostcardBuilder] Effect 2: Applying fresh URL');
                     setDbImage(freshUrl);
+                    // Force error reset in case freshUrl === incomingImage
+                    setImageLoadError(false);
                     // If we have a fresh confirmed URL, clear local preview so we see the real thing
                     if (localImage) setLocalImage(null);
                 }
@@ -171,6 +230,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
     // Reset error when active image changes
     useEffect(() => {
         if (activeImage) {
+            console.log('[PostcardBuilder] Active image changed, resetting error state. URL start:', activeImage.substring(0, 50));
             setImageLoadError(false);
             setRetryCount(0);
         }
@@ -733,8 +793,13 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                             src={activeImage}
                                             alt="Postcard Front"
                                             className="w-full h-full object-cover bg-stone-100"
-                                            onError={() => {
-                                                console.error("Image load failed for:", activeImage);
+                                            onError={(e) => {
+                                                console.error("[PostcardBuilder] Front Image load failed", {
+                                                    url: activeImage,
+                                                    retryCount,
+                                                    naturalWidth: e.currentTarget.naturalWidth,
+                                                    src: e.currentTarget.src
+                                                });
                                                 setImageLoadError(true);
                                             }}
                                         />
