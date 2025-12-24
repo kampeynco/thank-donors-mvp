@@ -74,8 +74,8 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
         <div className="space-y-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div>
-              <h2 className="text-3xl font-serif font-bold text-stone-800">Campaign Overview</h2>
-              <p className="text-stone-500 mt-2">Welcome back! Here's how your gratitude campaign is performing.</p>
+              <h2 className="text-3xl font-serif font-bold text-stone-800">Overview</h2>
+              <p className="text-stone-500 mt-2">Welcome back! Here's how your gratitude efforts are going.</p>
             </div>
             <div className="relative" ref={statusDropdownRef}>
               <button
