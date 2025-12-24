@@ -888,11 +888,12 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                         if (!showBranding) return null;
 
                                         return (
-                                            <div className="absolute top-2 right-2 flex items-center gap-1 opacity-80 z-50">
-                                                <Sparkles size={8} className="text-stone-500" />
-                                                <span className="text-[6px] font-sans text-stone-500 font-bold uppercase tracking-widest">
-                                                    Powered by Thank Donors
-                                                </span>
+                                            <div className="absolute top-2 right-2 z-50 opacity-90">
+                                                <img
+                                                    src="/thank_donors_stamp.png"
+                                                    alt="Thank Donors"
+                                                    className="w-16 h-auto object-contain"
+                                                />
                                             </div>
                                         );
                                     })()}
