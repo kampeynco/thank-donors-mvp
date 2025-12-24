@@ -133,8 +133,13 @@ const App: React.FC = () => {
       let fetchedAccounts: ActBlueAccount[] = [];
       const { data: accountsData, error: accountsError } = await supabase
         .from('actblue_accounts')
-        .select('*, entity:entities(*)')
+        .select('*, entity:actblue_entities(*)')
+        .eq('profile_id', userId)
         .order('committee_name');
+
+      if (accountsError) {
+        console.error('Error fetching accounts:', accountsError);
+      }
 
       if (!accountsError && accountsData) {
         fetchedAccounts = (accountsData as any[]).map(row => {
