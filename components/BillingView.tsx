@@ -85,21 +85,22 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
           <h2 className="text-3xl font-serif font-bold text-stone-800">Billing & Pricing</h2>
           <p className="text-stone-500 mt-2">Manage your account balance and subscription tier.</p>
         </div>
-        <div className="text-right">
-          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${entity?.tier === 'pro' ? 'bg-amber-100 text-amber-700' : 'bg-stone-100 text-stone-600'
-            }`}>
-            {entity?.tier || 'Free'} Tier
-          </span>
-        </div>
+
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Balance Card */}
         <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-8 text-white shadow-lg shadow-rose-200">
-          <h3 className="font-bold flex items-center gap-2 mb-2 opacity-90 text-sm">
-            <DollarSign size={18} />
-            Campaign Available Balance
-          </h3>
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="font-bold flex items-center gap-2 opacity-90 text-sm">
+              <DollarSign size={18} />
+              Campaign Available Balance
+            </h3>
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm ${entity?.tier === 'pro' ? 'bg-white text-amber-600' : 'bg-white/20 text-white backdrop-blur-sm'
+              }`}>
+              {entity?.tier || 'Free'} Tier
+            </span>
+          </div>
           <div className="text-4xl font-serif font-bold mb-6">
             ${((entity?.balance_cents || 0) / 100).toFixed(2)}
           </div>
