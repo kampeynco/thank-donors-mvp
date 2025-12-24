@@ -83,14 +83,7 @@ function generatePostcardHtml(message: string, showBranding: boolean = true): st
       opacity: 0.9;
       width: 64px;
     }
-    .branding-text {
-      font-size: 6px;
-      font-family: 'Inter', sans-serif;
-      color: #78716c; /* text-stone-500 */
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.1em; /* tracking-widest */
-    }
+
     /* The right 45% of the card is reserved for the address block and indicia */
   </style>
 </head>
