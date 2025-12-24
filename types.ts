@@ -43,6 +43,7 @@ export interface ActBlueEntity {
   balance_cents: number;
   auto_topup_enabled: boolean;
   auto_topup_amount_cents: number;
+  branding_enabled?: boolean; // New field for postcards branding (default true)
   stripe_customer_id?: string;
   created_at: string;
   updated_at: string;

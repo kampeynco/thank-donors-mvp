@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Profile, ActBlueAccount } from '../types';
-import { Webhook, Copy, Check, Home, Save, MapPin, AlertTriangle, Loader2 } from 'lucide-react';
+import { Webhook, Copy, Check, Home, Save, MapPin, AlertTriangle, Loader2, Sparkles } from 'lucide-react';
 import { useToast } from './ToastContext';
 
 interface SettingsProps {
@@ -25,6 +25,7 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, onUpdate, 
     });
 
     const [disclaimer, setDisclaimer] = useState('');
+    const [brandingEnabled, setBrandingEnabled] = useState(true);
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [deleteConfirmation, setDeleteConfirmation] = useState('');
@@ -40,10 +41,12 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, onUpdate, 
                 postal_code: currentAccount.postal_code || ''
             });
             setDisclaimer(currentAccount.disclaimer || '');
+            setBrandingEnabled(currentAccount.entity?.branding_enabled !== false); // Default to true if undefined
         } else {
             setCommitteeName('');
             setAddress({ street_address: '', city: '', state: '', postal_code: '' });
             setDisclaimer('');
+            setBrandingEnabled(true);
         }
     }, [currentAccount]);
 
@@ -73,7 +76,8 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, onUpdate, 
                 city: address.city,
                 state: address.state,
                 postal_code: address.postal_code,
-                disclaimer: disclaimer
+                disclaimer: disclaimer,
+                branding_enabled: brandingEnabled
             });
 
             toast('Settings updated successfully!', 'success');
@@ -200,6 +204,39 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, onUpdate, 
                             <p className="text-xs text-stone-400 mt-2 italic">This text will appear in small print at the bottom of your postcards.</p>
                         </div>
                     </div>
+
+                    {currentAccount?.entity?.tier === 'pro' && (
+                        <div className="border-t border-stone-100 pt-6 mt-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h4 className="font-bold text-stone-800 text-lg flex items-center gap-2">
+                                        <Sparkles size={20} className="text-amber-500" />
+                                        Thank Donors Branding
+                                    </h4>
+                                    <p className="text-sm text-stone-500 mt-1">
+                                        Show the "Thank Donors" badge on your postcards.
+                                    </p>
+                                </div>
+                                <div className="flex items-center">
+                                    <button
+                                        type="button"
+                                        onClick={() => setBrandingEnabled(!brandingEnabled)}
+                                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${brandingEnabled ? 'bg-rose-600' : 'bg-stone-200'}`}
+                                    >
+                                        <span
+                                            area-hidden="true"
+                                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${brandingEnabled ? 'translate-x-5' : 'translate-x-0'}`}
+                                        />
+                                    </button>
+                                </div>
+                            </div>
+                            {!brandingEnabled && (
+                                <p className="text-xs text-stone-400 mt-3 italic">
+                                    Branding is hidden. This is a Pro plan feature.
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     <div className="mt-8 flex justify-end">
                         <button

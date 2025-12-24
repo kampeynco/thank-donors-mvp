@@ -31,7 +31,7 @@ function substituteVariables(template: string, donor: any, donationDate: string)
 }
 
 // Helper function to generate HTML for the postcard back
-function generatePostcardHtml(message: string): string {
+function generatePostcardHtml(message: string, showBranding: boolean = true): string {
   // This HTML mimics the frontend preview while adhering to Lob's 4x6 specifications
   return `
 <html>
@@ -75,6 +75,24 @@ function generatePostcardHtml(message: string): string {
       word-wrap: break-word;
       overflow-wrap: break-word;
     }
+    .branding-badge {
+      position: absolute;
+      bottom: 15px; /* approx bottom-2 in tailwind */
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      opacity: 0.6;
+    }
+    .branding-text {
+      font-size: 6px;
+      font-family: 'Inter', sans-serif;
+      color: #78716c; /* text-stone-500 */
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em; /* tracking-widest */
+    }
     /* The right 45% of the card is reserved for the address block and indicia */
   </style>
 </head>
@@ -82,6 +100,15 @@ function generatePostcardHtml(message: string): string {
   <div class="back-container">
     <div class="message-section">
       <div class="text-body">${message}</div>
+    </div>
+    ${showBranding ? `
+    <div class="branding-badge">
+      <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#78716c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+      </svg>
+      <span class="branding-text">Powered by Thank Donors</span>
+    </div>
+    ` : ''}
     </div>
   </div>
 </body>
@@ -162,6 +189,9 @@ async function sendPostcardViaLob(
     ? substituteVariables(entity.back_message, normalizedDonor, donationDate)
     : `Dear ${normalizedDonor.firstname},\n\nThank you for your generous support!`;
 
+  // Determine branding visibility
+  const showBranding = entity.tier === 'free' || (entity.tier === 'pro' && entity.branding_enabled !== false);
+
   // Prepare Lob API payload
   const lobPayload = {
     description: `Thank you postcard for ${normalizedDonor.firstname} ${normalizedDonor.lastname}`,
@@ -184,7 +214,7 @@ async function sendPostcardViaLob(
       entity.front_image_url || "https://via.placeholder.com/1875x1275",
       entity.disclaimer
     ),
-    back: generatePostcardHtml(backMessage),
+    back: generatePostcardHtml(backMessage, showBranding),
     size: "4x6",
     mail_type: "usps_first_class",
   };
