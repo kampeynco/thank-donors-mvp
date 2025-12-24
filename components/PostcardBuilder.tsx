@@ -879,26 +879,25 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                             <p>{DEMO_DONOR.city}, {DEMO_DONOR.state} {DEMO_DONOR.zip}</p>
                                         </div>
                                     </div>
+                                    {/* Branding Badge */}
+                                    {(() => {
+                                        const tier = (account as any)?.tier || account?.entity?.tier || 'free';
+                                        const brandingEnabled = (account as any)?.branding_enabled ?? account?.entity?.branding_enabled ?? true;
+                                        const showBranding = tier === 'free' || (tier === 'pro' && brandingEnabled !== false);
+
+                                        if (!showBranding) return null;
+
+                                        return (
+                                            <div className="absolute top-2 right-2 flex items-center gap-1 opacity-80 z-50">
+                                                <Sparkles size={8} className="text-stone-500" />
+                                                <span className="text-[6px] font-sans text-stone-500 font-bold uppercase tracking-widest">
+                                                    Powered by Thank Donors
+                                                </span>
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             )}
-                            {/* Branding Badge */}
-                            {/* Branding Badge - Updated Logic */}
-                            {(() => {
-                                const tier = (account as any)?.tier || account?.entity?.tier || 'free';
-                                const brandingEnabled = (account as any)?.branding_enabled ?? account?.entity?.branding_enabled ?? true;
-                                const showBranding = tier === 'free' || (tier === 'pro' && brandingEnabled !== false);
-
-                                if (!showBranding) return null;
-
-                                return (
-                                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 opacity-80 z-50">
-                                        <Sparkles size={8} className="text-stone-500" />
-                                        <span className="text-[6px] font-sans text-stone-500 font-bold uppercase tracking-widest">
-                                            Powered by Thank Donors
-                                        </span>
-                                    </div>
-                                );
-                            })()}
                         </div>
                     </div>
 
@@ -912,102 +911,104 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
             </div>
 
             {/* Crop Modal */}
-            {cropState.isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/80 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                        <div className="p-4 border-b border-stone-100 flex justify-between items-center bg-white z-10">
-                            <h3 className="font-bold text-stone-800 flex items-center gap-2">
-                                <Crop size={20} className="text-rose-500" />
-                                Crop Image
-                            </h3>
-                            <button onClick={() => setCropState(prev => ({ ...prev, isOpen: false }))} className="text-stone-400 hover:text-stone-600">
-                                <X size={24} />
-                            </button>
-                        </div>
+            {
+                cropState.isOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/80 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                            <div className="p-4 border-b border-stone-100 flex justify-between items-center bg-white z-10">
+                                <h3 className="font-bold text-stone-800 flex items-center gap-2">
+                                    <Crop size={20} className="text-rose-500" />
+                                    Crop Image
+                                </h3>
+                                <button onClick={() => setCropState(prev => ({ ...prev, isOpen: false }))} className="text-stone-400 hover:text-stone-600">
+                                    <X size={24} />
+                                </button>
+                            </div>
 
-                        <div className="flex-1 bg-stone-100 relative overflow-hidden flex items-center justify-center p-8 select-none">
-                            {/* The View Window (Fixed Aspect Ratio) */}
-                            <div
-                                ref={cropContainerRef}
-                                className="relative bg-stone-800 shadow-2xl overflow-hidden cursor-move ring-4 ring-white"
-                                style={{ width: 500, height: 500 / ASPECT_RATIO }}
-                                onMouseDown={handleCropMouseDown}
-                                onMouseMove={handleCropMouseMove}
-                                onMouseUp={handleCropMouseUp}
-                                onMouseLeave={handleCropMouseUp}
-                            >
-                                <img
-                                    src={cropState.imageSrc}
-                                    alt="Crop Target"
-                                    className="absolute max-w-none origin-center pointer-events-none"
-                                    style={{
-                                        // We use object-fit: cover logic to initially size it.
-                                        // But here we need manual control. 
-                                        // Let's assume natural size for transform, but scaled to fit container initially?
-                                        // Easier: CSS transform based on natural dims is hard without knowing them.
-                                        // Let's rely on the container size.
-                                        width: '100%',
-                                        height: '100%',
-                                        objectFit: 'cover', // This creates the "base" view
-                                        transform: `translate(${cropState.offset.x}px, ${cropState.offset.y}px) scale(${cropState.zoom})`,
-                                    }}
-                                    draggable={false}
-                                />
+                            <div className="flex-1 bg-stone-100 relative overflow-hidden flex items-center justify-center p-8 select-none">
+                                {/* The View Window (Fixed Aspect Ratio) */}
+                                <div
+                                    ref={cropContainerRef}
+                                    className="relative bg-stone-800 shadow-2xl overflow-hidden cursor-move ring-4 ring-white"
+                                    style={{ width: 500, height: 500 / ASPECT_RATIO }}
+                                    onMouseDown={handleCropMouseDown}
+                                    onMouseMove={handleCropMouseMove}
+                                    onMouseUp={handleCropMouseUp}
+                                    onMouseLeave={handleCropMouseUp}
+                                >
+                                    <img
+                                        src={cropState.imageSrc}
+                                        alt="Crop Target"
+                                        className="absolute max-w-none origin-center pointer-events-none"
+                                        style={{
+                                            // We use object-fit: cover logic to initially size it.
+                                            // But here we need manual control. 
+                                            // Let's assume natural size for transform, but scaled to fit container initially?
+                                            // Easier: CSS transform based on natural dims is hard without knowing them.
+                                            // Let's rely on the container size.
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover', // This creates the "base" view
+                                            transform: `translate(${cropState.offset.x}px, ${cropState.offset.y}px) scale(${cropState.zoom})`,
+                                        }}
+                                        draggable={false}
+                                    />
 
-                                {/* Grid Overlay */}
-                                <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none opacity-50">
-                                    <div className="border-r border-b border-white/30"></div>
-                                    <div className="border-r border-b border-white/30"></div>
-                                    <div className="border-b border-white/30"></div>
-                                    <div className="border-r border-b border-white/30"></div>
-                                    <div className="border-r border-b border-white/30"></div>
-                                    <div className="border-b border-white/30"></div>
-                                    <div className="border-r border-white/30"></div>
-                                    <div className="border-r border-white/30"></div>
-                                    <div></div>
+                                    {/* Grid Overlay */}
+                                    <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none opacity-50">
+                                        <div className="border-r border-b border-white/30"></div>
+                                        <div className="border-r border-b border-white/30"></div>
+                                        <div className="border-b border-white/30"></div>
+                                        <div className="border-r border-b border-white/30"></div>
+                                        <div className="border-r border-b border-white/30"></div>
+                                        <div className="border-b border-white/30"></div>
+                                        <div className="border-r border-white/30"></div>
+                                        <div className="border-r border-white/30"></div>
+                                        <div></div>
+                                    </div>
+                                </div>
+
+                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-stone-900/80 text-white text-xs px-3 py-1 rounded-full backdrop-blur-md pointer-events-none flex items-center gap-2">
+                                    <Move size={12} /> Drag to reposition
                                 </div>
                             </div>
 
-                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-stone-900/80 text-white text-xs px-3 py-1 rounded-full backdrop-blur-md pointer-events-none flex items-center gap-2">
-                                <Move size={12} /> Drag to reposition
-                            </div>
-                        </div>
+                            <div className="p-6 bg-white border-t border-stone-100 flex flex-col gap-4">
+                                <div className="flex items-center gap-4">
+                                    <ZoomOut size={20} className="text-stone-400" />
+                                    <input
+                                        type="range"
+                                        min="1"
+                                        max="3"
+                                        step="0.1"
+                                        value={cropState.zoom}
+                                        onChange={(e) => setCropState(prev => ({ ...prev, zoom: parseFloat(e.target.value) }))}
+                                        className="flex-1 h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-rose-500"
+                                    />
+                                    <ZoomIn size={20} className="text-stone-400" />
+                                </div>
 
-                        <div className="p-6 bg-white border-t border-stone-100 flex flex-col gap-4">
-                            <div className="flex items-center gap-4">
-                                <ZoomOut size={20} className="text-stone-400" />
-                                <input
-                                    type="range"
-                                    min="1"
-                                    max="3"
-                                    step="0.1"
-                                    value={cropState.zoom}
-                                    onChange={(e) => setCropState(prev => ({ ...prev, zoom: parseFloat(e.target.value) }))}
-                                    className="flex-1 h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-rose-500"
-                                />
-                                <ZoomIn size={20} className="text-stone-400" />
-                            </div>
-
-                            <div className="flex justify-end gap-3">
-                                <button
-                                    onClick={() => setCropState(prev => ({ ...prev, isOpen: false }))}
-                                    className="px-6 py-3 font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleCropSave}
-                                    className="px-6 py-3 font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-colors shadow-lg shadow-rose-200 flex items-center gap-2"
-                                >
-                                    <Check size={18} />
-                                    Apply Crop & Upload
-                                </button>
+                                <div className="flex justify-end gap-3">
+                                    <button
+                                        onClick={() => setCropState(prev => ({ ...prev, isOpen: false }))}
+                                        className="px-6 py-3 font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleCropSave}
+                                        className="px-6 py-3 font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-colors shadow-lg shadow-rose-200 flex items-center gap-2"
+                                    >
+                                        <Check size={18} />
+                                        Apply Crop & Upload
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 
