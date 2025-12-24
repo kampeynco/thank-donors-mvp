@@ -124,8 +124,8 @@ const Layout: React.FC<LayoutProps> = ({
                                         key={item.id}
                                         onClick={() => onChangeView(item.id)}
                                         className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentView === item.id
-                                                ? 'bg-rose-50 text-rose-700'
-                                                : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
+                                            ? 'bg-rose-50 text-rose-700'
+                                            : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                                             }`}
                                     >
                                         <item.icon size={16} />
@@ -147,7 +147,7 @@ const Layout: React.FC<LayoutProps> = ({
                                     className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-stone-50 transition-colors group"
                                 >
                                     <div className="text-right hidden sm:block">
-                                        <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Campaign</p>
+                                        <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Overview</p>
                                         <p className="text-sm font-bold text-stone-800 leading-none max-w-[150px] truncate">
                                             {currentAccount?.committee_name || 'Select Account'}
                                         </p>
@@ -160,7 +160,7 @@ const Layout: React.FC<LayoutProps> = ({
 
                                         {/* Active Account Info (Mobile Visible) */}
                                         <div className="px-4 py-3 bg-stone-50 border-b border-stone-100 sm:hidden rounded-t-xl">
-                                            <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-0.5">Active Campaign</p>
+                                            <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-0.5">Overview</p>
                                             <p className="text-sm font-bold text-stone-800 truncate">{currentAccount?.committee_name}</p>
                                         </div>
 
@@ -182,8 +182,8 @@ const Layout: React.FC<LayoutProps> = ({
                                                             setIsMobileAccountsExpanded(false);
                                                         }}
                                                         className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors ${currentView === item.id
-                                                                ? 'bg-rose-50 text-rose-700 border-r-2 border-rose-500'
-                                                                : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
+                                                            ? 'bg-rose-50 text-rose-700 border-r-2 border-rose-500'
+                                                            : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                                                             }`}
                                                     >
                                                         <item.icon size={16} />
@@ -242,8 +242,8 @@ const Layout: React.FC<LayoutProps> = ({
                                                     setIsMobileAccountsExpanded(false);
                                                 }}
                                                 className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors ${currentView === ViewState.PROFILE
-                                                        ? 'bg-rose-50 text-rose-700 border-r-2 border-rose-500'
-                                                        : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
+                                                    ? 'bg-rose-50 text-rose-700 border-r-2 border-rose-500'
+                                                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                                                     }`}
                                             >
                                                 <User size={16} />

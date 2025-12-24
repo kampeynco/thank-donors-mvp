@@ -82,8 +82,8 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
     <div className="space-y-8 max-w-4xl mx-auto pb-12">
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-3xl font-serif font-bold text-stone-800">Billing & Pricing</h2>
-          <p className="text-stone-500 mt-2">Manage your account balance and subscription tier.</p>
+          <h2 className="text-3xl font-serif font-bold text-stone-800">Billing &  Subscription</h2>
+          <p className="text-stone-500 mt-2">Manage your account balance and subscription plan.</p>
         </div>
 
       </div>
@@ -94,11 +94,11 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
           <div className="flex justify-between items-start mb-2">
             <h3 className="font-bold flex items-center gap-2 opacity-90 text-sm">
               <DollarSign size={18} />
-              Campaign Available Balance
+              Available Balance
             </h3>
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm ${entity?.tier === 'pro' ? 'bg-white text-amber-600' : 'bg-white/20 text-white backdrop-blur-sm'
               }`}>
-              {entity?.tier || 'Free'} Tier
+              {entity?.tier || 'Free'} Plan
             </span>
           </div>
           <div className="text-4xl font-serif font-bold mb-6">
