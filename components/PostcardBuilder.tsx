@@ -93,11 +93,19 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                 const parts = urlObj.pathname.split('/object/');
                 if (parts.length < 2) return url;
 
-                const pathSegments = parts[1].split('/');
-                if (pathSegments.length < 3) return url;
+                const pathSegments = parts[1].split('/').filter(Boolean);
+                if (pathSegments.length < 2) return url;
 
-                bucket = pathSegments[1];
-                key = decodeURIComponent(pathSegments.slice(2).join('/'));
+                // Mode could be 'public', 'authenticated', 'sign', etc.
+                // If the first segment is one of these, bucket is the second segment.
+                const modes = ['public', 'authenticated', 'sign'];
+                if (modes.includes(pathSegments[0]) && pathSegments.length >= 3) {
+                    bucket = pathSegments[1];
+                    key = decodeURIComponent(pathSegments.slice(2).join('/'));
+                } else {
+                    bucket = pathSegments[0];
+                    key = decodeURIComponent(pathSegments.slice(1).join('/'));
+                }
             } else if (!url.startsWith('http')) {
                 // If it's a relative path, assume it's a key in the images bucket
                 key = url;
@@ -184,9 +192,11 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
     // Effect 2: Sync State with Props (Template updates) & Refresh potentially stale URLs
     useEffect(() => {
         const syncImage = async () => {
-            const incomingImage = template.frontpsc_background_image;
+            const incomingImage = template.frontpsc_background_image || account?.front_image_url;
             console.log('[PostcardBuilder] Effect 2: Syncing image from props', {
                 incomingImage: incomingImage ? incomingImage.substring(0, 50) + '...' : 'null',
+                hasTemplateImage: !!template.frontpsc_background_image,
+                hasAccountImage: !!account?.front_image_url,
                 accountId: account?.id
             });
 
@@ -611,13 +621,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                         <ImageIcon size={20} className="text-rose-500" />
                                         Front Image
                                     </h3>
-                                    {(!template.frontpsc_background_image && account?.front_image_url) && (
-                                        <div className="flex items-center gap-1.5 mt-1">
-                                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-600 border border-blue-100 italic">
-                                                <Share2 className="w-2.5 h-2.5" /> Shared from {account.is_using_entity_image ? (account.entity?.name || 'Entity') : 'Account'}
-                                            </span>
-                                        </div>
-                                    )}
+                                    {/* Removed Shared from badge */}
                                 </div>
                                 <span className="text-xs text-stone-400 bg-stone-100 px-2 py-1 rounded">1875 × 1275 px</span>
                             </div>
@@ -626,11 +630,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                 <label className="block text-sm font-medium text-stone-700">
                                     Front Image URL
                                 </label>
-                                {account.is_using_entity_image && (
-                                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-600 border border-blue-100 italic">
-                                        <Share2 className="w-2.5 h-2.5" /> Shared from {account.entity?.name || 'Entity'}
-                                    </span>
-                                )}
+                                {/* Removed Shared from badge */}
                             </div>
                             <label className="border-2 border-dashed border-stone-200 rounded-xl p-12 flex flex-col items-center justify-center cursor-pointer hover:bg-stone-50 hover:border-rose-300 transition-all group h-64 relative overflow-hidden">
                                 {isUploading ? (
@@ -729,13 +729,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                         <Type size={20} className="text-rose-500" />
                                         Message Builder
                                     </h3>
-                                    {(!template.backpsc_message_template && account?.back_message) && (
-                                        <div className="flex items-center gap-1.5 mt-1">
-                                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-600 border border-blue-100 italic">
-                                                <Share2 className="w-2.5 h-2.5" /> Shared from {account.is_using_entity_message ? (account.entity?.name || 'Entity') : 'Account'}
-                                            </span>
-                                        </div>
-                                    )}
+                                    {/* Removed Shared from badge */}
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
 
