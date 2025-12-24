@@ -11,7 +11,26 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [selectedDonationId, setSelectedDonationId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const statusDropdownRef = useRef<HTMLDivElement>(null);
+
+  const filteredDonations = donations.filter(donation => {
+    const matchesSearch =
+      donation.donor_firstname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      donation.donor_lastname.toLowerCase().includes(searchTerm.toLowerCase());
+
+    let matchesStatus = true;
+    if (statusFilter === 'sent') {
+      matchesStatus = ['processed', 'mailed', 'in_transit', 'in_local_area', 'processed_for_delivery', 'delivered'].includes(donation.status);
+    } else if (statusFilter === 'pending') {
+      matchesStatus = ['pending', 'processing'].includes(donation.status);
+    } else if (statusFilter === 'failed') {
+      matchesStatus = ['failed', 'returned_to_sender'].includes(donation.status);
+    }
+
+    return matchesSearch && matchesStatus;
+  });
 
   const selectedDonation = donations.find(d => d.id === selectedDonationId);
 
@@ -133,6 +152,35 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
             />
           </div>
 
+
+          {/* Search and Filter Controls */}
+          <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-4 flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-grow">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="text-stone-400 w-5 h-5" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search donors..."
+                className="block w-full pl-10 pr-3 py-2 border border-stone-200 rounded-lg leading-5 bg-white placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm text-stone-900"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex-shrink-0">
+              <select
+                className="block w-full pl-3 pr-10 py-2 text-base border-stone-200 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-lg bg-white text-stone-900"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="all">All Statuses</option>
+                <option value="sent">Sent</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+          </div>
+
           {/* Activity Feed */}
           <div className="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden flex flex-col">
             <div className="p-6 border-b border-stone-100 flex items-center justify-between">
@@ -150,17 +198,21 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {donations.length === 0 ? (
+                  {filteredDonations.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="py-12 text-center">
                         <div className="flex flex-col items-center justify-center">
                           <Activity className="w-12 h-12 text-stone-100 mb-4" />
-                          <p className="text-stone-400 text-sm">Waiting for your first donation...</p>
+                          <p className="text-stone-400 text-sm">
+                            {searchTerm || statusFilter !== 'all'
+                              ? "No donations found matching your filters."
+                              : "Waiting for your first donation..."}
+                          </p>
                         </div>
                       </td>
                     </tr>
                   ) : (
-                    donations.map((donation) => (
+                    filteredDonations.map((donation) => (
                       <tr
                         key={donation.id}
                         className={`hover:bg-stone-50 transition-colors cursor-pointer group ${selectedDonationId === donation.id ? 'bg-indigo-50/50' : ''
