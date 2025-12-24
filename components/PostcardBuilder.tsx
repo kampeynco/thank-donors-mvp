@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Sparkles, Eye, Type, Image as ImageIcon, Plus, Loader2, Save, AlertTriangle, CheckCircle, AlertCircle, X, History, RefreshCw, Crop, Move, ZoomIn, ZoomOut, Check } from 'lucide-react';
+import { Upload, Sparkles, Eye, Type, Image as ImageIcon, Plus, Loader2, Save, AlertTriangle, CheckCircle, AlertCircle, X, History, RefreshCw, Crop, Move, ZoomIn, ZoomOut, Check, Share2, Info } from 'lucide-react';
 import { generateThankYouMessage } from '../services/geminiService';
 import { Profile, Template, ActBlueAccount } from '../types';
 import { useToast } from './ToastContext';
@@ -46,11 +46,11 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
     const [viewSide, setViewSide] = useState<'front' | 'back'>('front');
 
     // Message State
-    const [message, setMessage] = useState(template.backpsc_message_template || "Dear %FIRST_NAME%,\n\nThank you so much for your generous support! Your contribution helps us fight for a better future.\n\nWith gratitude,");
+    const [message, setMessage] = useState(template.backpsc_message_template || account?.back_message || "Dear %FIRST_NAME%,\n\nThank you so much for your generous support! Your contribution helps us fight for a better future.\n\nWith gratitude,");
 
     // Image State
     // dbImage mirrors what is saved in the database (passed via props)
-    const [dbImage, setDbImage] = useState<string | null>(template.frontpsc_background_image || null);
+    const [dbImage, setDbImage] = useState<string | null>(template.frontpsc_background_image || account?.front_image_url || null);
     // localImage holds the base64 preview of a newly uploaded file
     const [localImage, setLocalImage] = useState<string | null>(null);
 
@@ -606,10 +606,19 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                     {viewSide === 'front' ? (
                         <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm animate-in fade-in duration-300">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-bold text-stone-800 flex items-center gap-2">
-                                    <ImageIcon size={20} className="text-rose-500" />
-                                    Front Image
-                                </h3>
+                                <div className="flex flex-col">
+                                    <h3 className="font-bold text-stone-800 flex items-center gap-2">
+                                        <ImageIcon size={20} className="text-rose-500" />
+                                        Front Image
+                                    </h3>
+                                    {(!template.frontpsc_background_image && account?.front_image_url) && (
+                                        <div className="flex items-center gap-1.5 mt-1">
+                                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-600 border border-blue-100 italic">
+                                                <Share2 className="w-2.5 h-2.5" /> Shared from {account.is_using_entity_image ? (account.entity?.name || 'Entity') : 'Account'}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
                                 <span className="text-xs text-stone-400 bg-stone-100 px-2 py-1 rounded">1875 × 1275 px</span>
                             </div>
 
@@ -715,10 +724,19 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                     ) : (
                         <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm animate-in fade-in duration-300">
                             <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-                                <h3 className="font-bold text-stone-800 flex items-center gap-2">
-                                    <Type size={20} className="text-rose-500" />
-                                    Message Builder
-                                </h3>
+                                <div className="flex flex-col">
+                                    <h3 className="font-bold text-stone-800 flex items-center gap-2">
+                                        <Type size={20} className="text-rose-500" />
+                                        Message Builder
+                                    </h3>
+                                    {(!template.backpsc_message_template && account?.back_message) && (
+                                        <div className="flex items-center gap-1.5 mt-1">
+                                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-600 border border-blue-100 italic">
+                                                <Share2 className="w-2.5 h-2.5" /> Shared from {account.is_using_entity_message ? (account.entity?.name || 'Entity') : 'Account'}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
                                 <div className="flex flex-wrap items-center gap-2">
 
                                     <div className="relative">
