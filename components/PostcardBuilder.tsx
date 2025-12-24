@@ -882,14 +882,23 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                 </div>
                             )}
                             {/* Branding Badge */}
-                            {(account?.entity?.tier === 'free' || (account?.entity?.tier === 'pro' && account?.entity?.branding_enabled !== false)) && (
-                                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 opacity-60">
-                                    <Sparkles size={8} className="text-stone-400" />
-                                    <span className="text-[6px] font-sans text-stone-400 font-medium uppercase tracking-widest">
-                                        Powered by Thank Donors
-                                    </span>
-                                </div>
-                            )}
+                            {/* Branding Badge - Updated Logic */}
+                            {(() => {
+                                const tier = (account as any)?.tier || account?.entity?.tier || 'free';
+                                const brandingEnabled = (account as any)?.branding_enabled ?? account?.entity?.branding_enabled ?? true;
+                                const showBranding = tier === 'free' || (tier === 'pro' && brandingEnabled !== false);
+
+                                if (!showBranding) return null;
+
+                                return (
+                                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 opacity-80 z-50">
+                                        <Sparkles size={8} className="text-stone-500" />
+                                        <span className="text-[6px] font-sans text-stone-500 font-bold uppercase tracking-widest">
+                                            Powered by Thank Donors
+                                        </span>
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </div>
 
