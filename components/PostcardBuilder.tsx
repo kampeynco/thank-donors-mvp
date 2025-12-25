@@ -815,7 +815,6 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                             )}
                                         </div>
                                     )}
-                                    <div className="absolute inset-0 border-8 border-white/10 pointer-events-none"></div>
 
                                     {/* Committee Disclaimer (Front) */}
                                     {(currentAccount?.disclaimer || currentAccount?.committee_name) && (
