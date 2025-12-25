@@ -60,8 +60,8 @@ function generatePostcardHtml(message: string, showBranding: boolean = true): st
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel = "stylesheet" >
     <style>
     body {
-  width: 6.25in;
-  height: 4.25in;
+  width: 6in;
+  height: 4in;
   margin: 0;
   padding: 0;
   background: white;
@@ -69,42 +69,45 @@ function generatePostcardHtml(message: string, showBranding: boolean = true): st
   -webkit - font - smoothing: antialiased;
 }
     .back - container {
-  width: 6.25in;
-  height: 4.25in;
+  width: 6in;
+  height: 4in;
   position: relative;
-  background: #fafaf9;
+  background: white;
   overflow: hidden;
-  box - sizing: border - box;
-  padding: 0.4in;
 }
+    /* Adjusted to match your new .content-area and .message-text structure */
     .content - area {
-  width: 55 %;
-  height: 100 %;
+  position: absolute;
+  top: 0.4in;
+  left: 0.4in;
+  width: 2.7in;
+  height: 3.2in;
   display: flex;
   flex - direction: column;
+  justify - content: flex - start;
+  box - sizing: border - box;
 }
     .message - text {
+  width: 95 %;
+  max - width: 95 %;
   font - size: 11pt;
-  line - height: 1.35;
+  line - height: 1.5;
   color: #1c1917;
   white - space: pre - wrap;
   word - wrap: break-word;
   overflow - wrap: break-word;
   margin: 0;
 }
-    .branding - stamp {
+    .branding - badge {
   position: absolute;
-  top: 0.4in;
-  right: 0.4in;
-  width: 1in;
-  height: 1in;
-  opacity: 0.8;
+  top: 15px;
+  right: 15px;
   z - index: 50;
+  opacity: 0.9;
 }
-    .branding - stamp img {
-  width: 100 %;
-  height: 100 %;
-  object - fit: contain;
+    .branding - badge img {
+  width: 64px;
+  display: block;
 }
 </style>
   </head>
@@ -113,9 +116,10 @@ function generatePostcardHtml(message: string, showBranding: boolean = true): st
     <div class="content-area" >
       <p class="message-text" > ${ escapedMessage } </p>
         </div>
+    
     ${
   showBranding ? `
-    <div class="branding-stamp">
+    <div class="branding-badge">
       <img src="${BRANDING_IMAGE_BASE64}" alt="Thank Donors Branding" />
     </div>
     ` : ''
