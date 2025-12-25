@@ -10,7 +10,7 @@ import ProfileView from './components/ProfileView';
 import BillingView from './components/BillingView';
 import Auth from './components/Auth';
 import { supabase } from './services/supabaseClient';
-import { Loader2, Home, Sparkles, AlertTriangle, Lock, User, Webhook, FileText } from 'lucide-react';
+import { Loader2, Home, Sparkles, AlertTriangle, Lock, User, Webhook, FileText, CreditCard } from 'lucide-react';
 import { useToast } from './components/ToastContext';
 
 const App: React.FC = () => {
@@ -549,6 +549,7 @@ id,
       subNavigation={view === ViewState.SETTINGS ? {
         items: [
           { id: 'general', label: 'General Information', icon: Home },
+          { id: 'billing', label: 'Billing', icon: CreditCard },
           { id: 'webhook', label: 'Webhook Details', icon: Webhook },
           { id: 'branding', label: 'Branding', icon: Sparkles },
           { id: 'disclaimer', label: 'Disclaimer', icon: FileText },
@@ -593,12 +594,17 @@ id,
           onComplete={() => setView(ViewState.DASHBOARD)}
         />
       )}
-      {view === ViewState.BILLING && (
-        <BillingView
+
+      {view === ViewState.SETTINGS && (
+        <Settings
           profile={profile!}
-          account={currentAccount}
-          onUpdateAccount={async (updates) => {
-            // Re-use handleSaveAccount logic or direct update to actblue_entities
+          currentAccount={currentAccount}
+          activeSection={settingsActiveSection}
+          setActiveSection={setSettingsActiveSection}
+          onUpdate={handleUpdateProfile}
+          onDeleteAccount={handleDeleteAccount}
+          onSaveAccount={handleSaveAccount}
+          onUpdateEntity={async (updates) => {
             if (!currentAccount) return;
             const { error } = await supabase
               .from('actblue_entities')
@@ -618,17 +624,6 @@ id,
             setCurrentAccount(updated);
             setAccounts(accounts.map(a => a.id === updated.id ? updated : a));
           }}
-        />
-      )}
-      {view === ViewState.SETTINGS && (
-        <Settings
-          profile={profile!}
-          currentAccount={currentAccount}
-          activeSection={settingsActiveSection}
-          setActiveSection={setSettingsActiveSection}
-          onUpdate={handleUpdateProfile}
-          onDeleteAccount={handleDeleteAccount}
-          onSaveAccount={handleSaveAccount}
         />
       )}
       {view === ViewState.PROFILE && (

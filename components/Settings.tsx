@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Profile, ActBlueAccount } from '../types';
-import { Webhook, Copy, Check, Home, Save, MapPin, AlertTriangle, Loader2, Sparkles, FileText, Lock } from 'lucide-react';
+import { Webhook, Copy, Check, Home, Save, MapPin, AlertTriangle, Loader2, Sparkles, FileText, Lock, CreditCard } from 'lucide-react';
 import { useToast } from './ToastContext';
 import SettingsLayout from './SettingsLayout';
+import BillingView from './BillingView';
 
 interface SettingsProps {
     profile: Profile;
@@ -12,9 +13,10 @@ interface SettingsProps {
     onUpdate: (profile: Partial<Profile>) => void;
     onDeleteAccount: () => void;
     onSaveAccount: (account: Partial<ActBlueAccount>) => Promise<void>;
+    onUpdateEntity: (updates: any) => Promise<void>;
 }
 
-const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSection, setActiveSection, onUpdate, onDeleteAccount, onSaveAccount }) => {
+const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSection, setActiveSection, onUpdate, onDeleteAccount, onSaveAccount, onUpdateEntity }) => {
     const { toast } = useToast();
     const [copiedField, setCopiedField] = useState<string | null>(null);
 
@@ -106,6 +108,7 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSect
 
     const menuItems = [
         { id: 'general', label: 'General Information', icon: Home },
+        { id: 'billing', label: 'Billing', icon: CreditCard },
         { id: 'webhook', label: 'Webhook Details', icon: Webhook },
         { id: 'branding', label: 'Branding', icon: Sparkles },
         { id: 'disclaimer', label: 'Disclaimer', icon: FileText },
@@ -129,6 +132,15 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSect
     return (
         <>
             <SettingsLayout>
+                {activeSection === 'billing' && (
+                    <div className="animate-in fade-in zoom-in-95 duration-200">
+                        <BillingView
+                            profile={profile}
+                            account={currentAccount}
+                            onUpdateAccount={onUpdateEntity}
+                        />
+                    </div>
+                )}
                 {activeSection === 'general' && (
                     <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
                         <div className="bg-white p-8 rounded-2xl border border-stone-100 shadow-sm">

@@ -38,7 +38,6 @@ const Layout: React.FC<LayoutProps> = ({
     const navItems = [
         { id: ViewState.DASHBOARD, label: 'Overview', icon: LayoutDashboard },
         { id: ViewState.POSTCARD_BUILDER, label: 'Design', icon: Mail },
-        { id: ViewState.BILLING, label: 'Billing', icon: CreditCard },
         { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },
     ];
 
