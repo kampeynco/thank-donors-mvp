@@ -866,7 +866,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                             </div>
                                         </div>
 
-                                        <div className="mb-6 space-y-0.5 px-2 py-1 bg-white/50 rounded">
+                                        <div className="mb-6 space-y-0.5 px-2 py-1">
                                             <div className="text-[13px] font-bold text-stone-800 uppercase tracking-wide">
                                                 {DEMO_DONOR.firstname} {DEMO_DONOR.lastname}
                                             </div>
