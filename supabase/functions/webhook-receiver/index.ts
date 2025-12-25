@@ -369,14 +369,24 @@ serve(async (req) => {
 
       // 2. Fetch a representative account for profile_id linkage in donation records
       // We still use profile_id for UI visibility of which account "owns" the donation data
+      console.log(`🔍 Querying actblue_accounts for entity_id: ${entityId} (Type: ${typeof entityId})`);
       const { data: linkedAccounts, error: linkedError } = await supabase
         .from('actblue_accounts')
         .select('profile_id, id, front_image_url, back_message, disclaimer')
         .eq('entity_id', entityId)
         .limit(1);
 
+      if (linkedError) {
+        console.error(`❌ Error querying actblue_accounts for entity_id ${entityId}:`, linkedError);
+      }
+
+      console.log(`📊 Query result for entity_id ${entityId}:`, {
+        count: linkedAccounts?.length,
+        found: !!(linkedAccounts && linkedAccounts.length > 0)
+      });
+
       if (linkedError || !linkedAccounts || linkedAccounts.length === 0) {
-        console.log(`⚠️ No users linked to Entity ${entityId}. Skipping.`);
+        console.log(`⚠️ Entity ID ${entityId} not found in actblue_accounts. Skipping.`);
         continue;
       }
       const account = linkedAccounts[0];
