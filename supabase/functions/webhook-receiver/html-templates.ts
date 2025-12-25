@@ -1,12 +1,12 @@
 import { escapeHtml, BRANDING_NOTE } from "./utils.ts";
 
 export function generatePostcardBackHtml(message: string, showBranding: boolean = true): string {
-    const escapedMessage = escapeHtml(message);
-    // Refined scaling: 8pt for short messages, down to 5pt for long ones
-    const fontSize = Math.max(5, 8 - (message.length / 500) * 3);
-    console.log(`📏 Calculated font size for message (length ${message.length}): ${fontSize}pt`);
+  const escapedMessage = escapeHtml(message);
+  // Refined scaling: 8pt for short messages, down to 5pt for long ones
+  const fontSize = Math.max(6, 8 - (message.length / 500) * 6);
+  console.log(`📏 Calculated font size for message (length ${message.length}): ${fontSize}pt`);
 
-    return `
+  return `
   <html>
   <head>
   <meta charset="UTF-8">
@@ -76,9 +76,9 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
 }
 
 export function generatePostcardFrontHtml(imageUrl: string, disclaimer: string | null, _showBranding: boolean): string {
-    const escapedDisclaimer = disclaimer ? escapeHtml(disclaimer) : null;
+  const escapedDisclaimer = disclaimer ? escapeHtml(disclaimer) : null;
 
-    return `
+  return `
 <html>
 <head>
 <meta charset="UTF-8">
