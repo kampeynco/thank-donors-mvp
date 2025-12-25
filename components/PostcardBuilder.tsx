@@ -824,20 +824,6 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                             </p>
                                         </div>
                                     )}
-
-                                    {/* Branding Badge (Front) */}
-                                    {currentAccount?.entity?.branding_enabled !== false && (
-                                        <div className="absolute bottom-[30px] right-[20px] w-12 h-12 pointer-events-none z-20">
-                                            <img
-                                                src="/thank_donors_stamp.png"
-                                                alt="Thank Donors Branding"
-                                                className="w-full h-full object-contain"
-                                                onError={(e) => {
-                                                    e.currentTarget.style.display = 'none';
-                                                }}
-                                            />
-                                        </div>
-                                    )}
                                 </div>
                             ) : (
                                 <div className="w-full h-full bg-stone-50 relative flex flex-col p-6 overflow-hidden">
@@ -880,6 +866,13 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* Branding Note (Back) */}
+                                    {currentAccount?.entity?.branding_enabled !== false && (
+                                        <div className="absolute bottom-4 left-6 text-[9px] text-stone-400 font-medium opacity-70">
+                                            Mailed by Thank Donors
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
