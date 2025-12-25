@@ -363,59 +363,52 @@ serve(async (req) => {
       const amount = parseFloat(item.amount || "0");
       console.log(`🔍 Checking line item. Entity ID: ${entityId}, Amount: ${amount}`);
 
-      // 1. Fetch the Entity (for template design and billing)
+      // 1. Fetch the Entity and its linked Account in a single query
+      // This prioritizes the entity as the source of truth for design and billing
       const { data: entity, error: entityError } = await supabase
         .from("actblue_entities")
-        .select("entity_id, committee_name, tier, balance_cents, stripe_customer_id, front_image_url, back_message, disclaimer, street_address, city, state, postal_code, branding_enabled")
+        .select(`
+          entity_id, 
+          committee_name, 
+          tier, 
+          balance_cents, 
+          stripe_customer_id, 
+          front_image_url, 
+          back_message, 
+          disclaimer, 
+          street_address, 
+          city, 
+          state, 
+          postal_code, 
+          branding_enabled,
+          actblue_accounts (
+            id,
+            profile_id
+          )
+        `)
         .eq("entity_id", entityId)
         .single();
 
       if (entityError || !entity) {
-        console.warn(`⚠️ Entity ID ${entityId} not found in actblue_entities. query_error: ${entityError?.message}. Skipping this line item.`);
-        // We continue to the next item instead of failing the entire webhook
+        console.warn(`⚠️ Entity ID ${entityId} not found or query error: ${entityError?.message}. Skipping.`);
         continue;
       }
 
-      console.log(`✅ Found entity: ${entity.committee_name} (ID: ${entity.entity_id})`);
-
-      // 2. Fetch a representative account for profile_id linkage in donation records
-      // We still use profile_id for UI visibility of which account "owns" the donation data
-      console.log(`🔍 Querying actblue_accounts for entity_id: ${entityId} (Type: ${typeof entityId})`);
-      const { data: linkedAccounts, error: linkedError } = await supabase
-        .from('actblue_accounts')
-        .select('profile_id, id, front_image_url, back_message, disclaimer')
-        .eq('entity_id', entityId)
-        .limit(1);
-
-      if (linkedError) {
-        console.error(`❌ Error querying actblue_accounts for entity_id ${entityId}:`, linkedError);
-      }
-
-      console.log(`📊 Query result for entity_id ${entityId}:`, {
-        count: linkedAccounts?.length,
-        found: !!(linkedAccounts && linkedAccounts.length > 0)
-      });
-
-      if (linkedError || !linkedAccounts || linkedAccounts.length === 0) {
-        console.warn(`⚠️ Entity ID ${entityId} not found in actblue_accounts. query_error: ${linkedError?.message}. Skipping.`);
+      const account = entity.actblue_accounts?.[0];
+      if (!account) {
+        console.warn(`⚠️ No linked profile found for Entity ID ${entityId}. Skipping.`);
         continue;
       }
-      const account = linkedAccounts[0];
 
-      // Update event record with profile_id if we have one (usually the first one we find)
+      console.log(`✅ Resolved entity: ${entity.committee_name} and profile: ${account.profile_id}`);
+
+      // Update event record with profile_id if we have one
       if (eventId && account.profile_id) {
         await supabase
           .from('webhook_events')
           .update({ profile_id: account.profile_id })
           .eq('id', eventId);
       }
-
-      // 2.1 Resolve fields based on Account defaults
-      const resolvedOverrides = {
-        front_image_url: account.front_image_url,
-        back_message: account.back_message,
-        disclaimer: account.disclaimer
-      };
 
       // 3. Billing Check & Deduction
       // Centralized Billing: Deduct from the entity balance directly
@@ -497,7 +490,8 @@ serve(async (req) => {
       }
 
       // 6. Send Postcard via Lob.com API
-      const lobResult = await sendPostcardViaLob(normalizedDonor, entity, donationDate, isTestMode, resolvedOverrides);
+      // Since actblue_entities is now the source of truth, we pass no overrides
+      const lobResult = await sendPostcardViaLob(normalizedDonor, entity, donationDate, isTestMode, {});
 
       // 7. Create Postcard Record with result
       console.log(`📝 Recording postcard status: ${lobResult.success ? 'processed' : 'failed'}`);
@@ -509,8 +503,8 @@ serve(async (req) => {
           donation_id: donation.id,
           profile_id: account.profile_id,
           status: postcardStatus,
-          front_image_url: resolvedOverrides.front_image_url || entity.front_image_url,
-          back_message: resolvedOverrides.back_message || entity.back_message,
+          front_image_url: entity.front_image_url,
+          back_message: entity.back_message,
           lob_postcard_id: lobResult.lobId || null,
           lob_url: lobResult.url || null,
           error_message: lobResult.error || null
