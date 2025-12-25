@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { CreditCard, DollarSign, Clock, ArrowUpRight, Shield, Zap, Loader2 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
@@ -14,14 +13,33 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
   const [transactions, setTransactions] = useState<BillingTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
-
-  const entity = account?.entity || account; // Fallback to flattened fields
+  const [entityData, setEntityData] = useState<any>(null);
 
   useEffect(() => {
     if (account?.entity_id) {
       fetchBillingData();
+      fetchEntityData();
     }
   }, [account?.entity_id]);
+
+  const fetchEntityData = async () => {
+    if (!account?.entity_id) return;
+    try {
+      const { data, error } = await supabase
+        .from('actblue_entities')
+        .select('*')
+        .eq('id', account.entity_id)
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        console.log('Entity data from Supabase:', data);
+        setEntityData(data);
+      }
+    } catch (err) {
+      console.error('Error fetching entity data:', err);
+    }
+  };
 
   const fetchBillingData = async () => {
     if (!account?.entity_id) return;
@@ -40,7 +58,6 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
       setLoading(false);
     }
   };
-
 
   const handleStripeCheckout = async (type: 'topup' | 'subscription') => {
     try {
@@ -78,14 +95,37 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
     );
   }
 
+  // Get balance from the freshly fetched entity data, with multiple fallbacks
+  const balanceCents = entityData?.balance_cents ??
+    account?.entity?.balance_cents ??
+    account?.balance_cents ??
+    0;
+
+  const tier = entityData?.tier ??
+    account?.entity?.tier ??
+    account?.tier ??
+    'free';
+
+  const autoTopupAmount = entityData?.auto_topup_amount_cents ??
+    account?.entity?.auto_topup_amount_cents ??
+    account?.auto_topup_amount_cents ??
+    5000;
+
+  console.log('Balance display:', {
+    balanceCents,
+    tier,
+    entityData,
+    accountEntity: account?.entity,
+    account
+  });
+
   return (
     <div className="space-y-8 max-w-4xl mx-auto pb-12">
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-3xl font-serif font-bold text-stone-800">Billing &  Subscription</h2>
+          <h2 className="text-3xl font-serif font-bold text-stone-800">Billing & Subscription</h2>
           <p className="text-stone-500 mt-2">Manage your account balance and subscription plan.</p>
         </div>
-
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -96,19 +136,19 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
               <DollarSign size={18} />
               Available Balance
             </h3>
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm ${entity?.tier === 'pro' ? 'bg-white text-amber-600' : 'bg-white/20 text-white backdrop-blur-sm'
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm ${tier === 'pro' ? 'bg-white text-amber-600' : 'bg-white/20 text-white backdrop-blur-sm'
               }`}>
-              {entity?.tier || 'Free'} Plan
+              {tier || 'Free'} Plan
             </span>
           </div>
           <div className="text-4xl font-serif font-bold mb-6">
-            ${((entity?.balance_cents || 0) / 100).toFixed(2)}
+            ${(balanceCents / 100).toFixed(2)}
           </div>
 
           <div className="space-y-3 mb-8">
             <div className="flex justify-between text-sm opacity-90 border-b border-white/20 pb-2">
               <span>Cost per Postcard</span>
-              <span className="font-bold">${entity?.tier === 'pro' ? '0.99' : '1.49'}</span>
+              <span className="font-bold">${tier === 'pro' ? '0.99' : '1.49'}</span>
             </div>
             <div className="flex justify-between items-center text-sm opacity-90 border-b border-white/20 pb-2">
               <span>Auto-topup trigger</span>
@@ -117,7 +157,7 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
             <div className="flex justify-between items-center text-sm opacity-90 border-b border-white/20 pb-2">
               <span>Top-up refill amount</span>
               <select
-                value={entity?.auto_topup_amount_cents || 5000}
+                value={autoTopupAmount}
                 onChange={(e) => onUpdateAccount({ auto_topup_amount_cents: parseInt(e.target.value) })}
                 className="bg-transparent font-bold text-right outline-none cursor-pointer border-none focus:ring-0 p-0"
               >
@@ -160,7 +200,7 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
             </ul>
           </div>
 
-          {entity?.tier === 'pro' ? (
+          {tier === 'pro' ? (
             <button className="w-full bg-stone-100 text-stone-500 font-bold py-3 rounded-xl cursor-default">
               Current Plan
             </button>
@@ -178,7 +218,7 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
       </div>
 
       {/* Payment History */}
-      <div className="bg-white rounded-2xl border border-xl shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-stone-100 flex justify-between items-center">
           <h3 className="font-bold text-lg text-stone-800 flex items-center gap-2">
             <Clock size={20} className="text-stone-400" />
