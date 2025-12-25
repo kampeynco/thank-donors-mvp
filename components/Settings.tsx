@@ -7,14 +7,15 @@ import SettingsLayout from './SettingsLayout';
 interface SettingsProps {
     profile: Profile;
     currentAccount: ActBlueAccount | null;
+    activeSection: string;
+    setActiveSection: (section: string) => void;
     onUpdate: (profile: Partial<Profile>) => void;
     onDeleteAccount: () => void;
     onSaveAccount: (account: Partial<ActBlueAccount>) => Promise<void>;
 }
 
-const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, onUpdate, onDeleteAccount, onSaveAccount }) => {
+const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSection, setActiveSection, onUpdate, onDeleteAccount, onSaveAccount }) => {
     const { toast } = useToast();
-    const [activeSection, setActiveSection] = useState('general');
     const [copiedField, setCopiedField] = useState<string | null>(null);
 
     const [committeeName, setCommitteeName] = useState('');

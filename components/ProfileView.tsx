@@ -6,15 +6,16 @@ import { useToast } from './ToastContext';
 
 interface ProfileViewProps {
     profile: Profile;
+    activeSection: string;
+    setActiveSection: (section: string) => void;
     onUpdate: (profile: Partial<Profile>) => void;
     onDeleteUser: () => void;
 }
 
 import SettingsLayout from './SettingsLayout';
 
-const ProfileView: React.FC<ProfileViewProps> = ({ profile, onUpdate, onDeleteUser }) => {
+const ProfileView: React.FC<ProfileViewProps> = ({ profile, activeSection, setActiveSection, onUpdate, onDeleteUser }) => {
     const { toast } = useToast();
-    const [activeSection, setActiveSection] = useState('profile');
 
     const [fullName, setFullName] = useState(profile.full_name || '');
     const [organization, setOrganization] = useState(profile.organization || '');

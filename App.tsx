@@ -10,12 +10,14 @@ import ProfileView from './components/ProfileView';
 import BillingView from './components/BillingView';
 import Auth from './components/Auth';
 import { supabase } from './services/supabaseClient';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Home, Sparkles, AlertTriangle, Lock, User } from 'lucide-react';
 import { useToast } from './components/ToastContext';
 
 const App: React.FC = () => {
   const { toast } = useToast();
   const [view, setView] = useState<ViewState>(ViewState.AUTH);
+  const [settingsActiveSection, setSettingsActiveSection] = useState('general');
+  const [profileActiveSection, setProfileActiveSection] = useState('profile');
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const loadedUserIdRef = React.useRef<string | null>(null);
@@ -529,12 +531,33 @@ id,
   return (
     <Layout
       currentView={view}
-      onChangeView={setView}
+      onChangeView={(v) => {
+        setView(v);
+        // Reset sub-section when switching main views
+        if (v !== ViewState.SETTINGS) setSettingsActiveSection('general');
+      }}
       onLogout={handleLogout}
       accounts={accounts}
       currentAccount={currentAccount}
       onSwitchAccount={handleSwitchAccount}
       onAddAccount={() => handleAddAccount()}
+      subNavigation={view === ViewState.SETTINGS ? {
+        items: [
+          { id: 'general', label: 'General Information', icon: Home },
+          { id: 'branding', label: 'Branding', icon: Sparkles },
+          { id: 'danger', label: 'Danger Zone', icon: AlertTriangle },
+        ],
+        activeId: settingsActiveSection,
+        onSelect: setSettingsActiveSection
+      } : view === ViewState.PROFILE ? {
+        items: [
+          { id: 'profile', label: 'User Information', icon: User },
+          { id: 'security', label: 'Security', icon: Lock },
+          { id: 'danger', label: 'Danger Zone', icon: AlertTriangle },
+        ],
+        activeId: profileActiveSection,
+        onSelect: setProfileActiveSection
+      } : undefined}
     >
       {view === ViewState.DASHBOARD && <Dashboard donations={donations} />}
       {view === ViewState.POSTCARD_BUILDER && (
@@ -595,6 +618,8 @@ id,
         <Settings
           profile={profile!}
           currentAccount={currentAccount}
+          activeSection={settingsActiveSection}
+          setActiveSection={setSettingsActiveSection}
           onUpdate={handleUpdateProfile}
           onDeleteAccount={handleDeleteAccount}
           onSaveAccount={handleSaveAccount}
@@ -603,6 +628,8 @@ id,
       {view === ViewState.PROFILE && (
         <ProfileView
           profile={profile!}
+          activeSection={profileActiveSection}
+          setActiveSection={setProfileActiveSection}
           onUpdate={handleUpdateProfile}
           onDeleteUser={handleDeleteUser}
         />

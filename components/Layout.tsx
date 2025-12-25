@@ -12,6 +12,11 @@ interface LayoutProps {
     currentAccount: ActBlueAccount | null;
     onSwitchAccount: (account: ActBlueAccount) => void;
     onAddAccount: () => void;
+    subNavigation?: {
+        items: { id: string; label: string; icon: any }[];
+        activeId: string;
+        onSelect: (id: string) => void;
+    };
 }
 
 const Layout: React.FC<LayoutProps> = ({
@@ -22,7 +27,8 @@ const Layout: React.FC<LayoutProps> = ({
     accounts,
     currentAccount,
     onSwitchAccount,
-    onAddAccount
+    onAddAccount,
+    subNavigation
 }) => {
     const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
     const [isMobileAccountsExpanded, setIsMobileAccountsExpanded] = useState(false);
@@ -270,6 +276,33 @@ const Layout: React.FC<LayoutProps> = ({
                     </div>
                 </div>
             </nav>
+
+            {/* Sub-Navigation Bar (e.g., Settings menu) */}
+            {subNavigation && (
+                <div className="bg-white border-b border-stone-200 sticky top-16 z-20">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex gap-8 h-12 overflow-x-auto no-scrollbar">
+                            {subNavigation.items.map((item) => {
+                                const Icon = item.icon;
+                                const isActive = subNavigation.activeId === item.id;
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => subNavigation.onSelect(item.id)}
+                                        className={`flex items-center gap-2 px-1 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${isActive
+                                            ? 'border-rose-500 text-rose-600'
+                                            : 'border-transparent text-stone-500 hover:text-stone-800'
+                                            }`}
+                                    >
+                                        {Icon && <Icon size={16} />}
+                                        {item.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Main Content */}
             <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
