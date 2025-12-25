@@ -878,14 +878,6 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                                 {DEMO_DONOR.city}, {DEMO_DONOR.state} {DEMO_DONOR.zip}
                                             </div>
                                         </div>
-
-                                        {(currentAccount?.entity?.disclaimer || currentAccount?.disclaimer) && (
-                                            <div className="mt-2 pt-2">
-                                                <p className="text-[7px] text-stone-500 uppercase leading-[1.1] tracking-tighter italic text-center">
-                                                    Paid for by {currentAccount?.entity?.disclaimer || currentAccount?.disclaimer}. Not authorized by any candidate or candidate's committee.
-                                                </p>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             )}
