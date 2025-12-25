@@ -98,17 +98,7 @@ function generatePostcardHtml(message: string, showBranding: boolean = true): st
   overflow - wrap: break-word;
   margin: 0;
 }
-    .branding - badge {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  z - index: 50;
-  opacity: 0.9;
-}
-    .branding - badge img {
-  width: 64px;
-  display: block;
-}
+
 </style>
   </head>
   < body >
@@ -116,30 +106,22 @@ function generatePostcardHtml(message: string, showBranding: boolean = true): st
     <div class="content-area" >
       <p class="message-text" > ${ escapedMessage } </p>
         </div>
-    
-    ${
-  showBranding ? `
-    <div class="branding-badge">
-      <img src="${BRANDING_IMAGE_BASE64}" alt="Thank Donors Branding" />
-    </div>
-    ` : ''
-}
-</div>
-  </body>
-  </html>
-    `.trim();
+        </div>
+        </body>
+        </html>
+          `.trim();
 }
 
 // Helper function to generate HTML for the postcard front with disclaimer overlay
-function generatePostcardFrontHtml(imageUrl: string, disclaimer: string | null): string {
+function generatePostcardFrontHtml(imageUrl: string, disclaimer: string | null, showBranding: boolean): string {
   // Escape disclaimer text to prevent injection
   const escapedDisclaimer = disclaimer ? escapeHtml(disclaimer) : null;
 
   return `
-  < html >
-  <head>
-  <style>
-  body {
+        < html >
+        <head>
+        <style>
+        body {
   width: 6in;
   height: 4in;
   margin: 0;
@@ -171,11 +153,31 @@ function generatePostcardFrontHtml(imageUrl: string, disclaimer: string | null):
   letter - spacing: 0.01em;
   text - shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
+    .branding - badge {
+  position: absolute;
+  bottom: 0.35in;
+  right: 0.25in;
+  width: 0.8in;
+  height: auto;
+  z - index: 20;
+}
+    .branding - badge img {
+  width: 100 %;
+  height: auto;
+  display: block;
+}
 </style>
   </head>
   < body >
   <div class="front-container" >
     ${ escapedDisclaimer ? '<div class="disclaimer-overlay">' + escapedDisclaimer + '</div>' : '' }
+    ${
+  showBranding ? `
+    <div class="branding-badge">
+      <img src="${BRANDING_IMAGE_BASE64}" alt="Thank Donors Branding" />
+    </div>
+    ` : ''
+}
 </div>
   </body>
   </html>
@@ -255,7 +257,8 @@ async function sendPostcardViaLob(
     },
     front: generatePostcardFrontHtml(
       overrides.front_image_url || entity.front_image_url || "https://via.placeholder.com/1875x1275",
-      overrides.disclaimer || entity.disclaimer
+      overrides.disclaimer || entity.disclaimer,
+      showBranding
     ),
     back: generatePostcardHtml(backMessage, showBranding),
     size: "4x6",
