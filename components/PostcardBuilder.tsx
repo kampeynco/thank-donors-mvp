@@ -824,6 +824,20 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                             </p>
                                         </div>
                                     )}
+
+                                    {/* Branding Badge (Front) */}
+                                    {currentAccount?.entity?.branding_enabled !== false && (
+                                        <div className="absolute bottom-[30px] right-[20px] w-12 h-12 pointer-events-none z-20">
+                                            <img
+                                                src="/thank_donors_stamp.png"
+                                                alt="Thank Donors Branding"
+                                                className="w-full h-full object-contain"
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                }}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="w-full h-full bg-stone-50 relative flex flex-col p-6 overflow-hidden">
@@ -835,18 +849,6 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                         </div>
                                     </div>
 
-                                    {currentAccount?.entity?.branding_enabled !== false && (
-                                        <div className="absolute top-4 right-4 w-16 h-16 pointer-events-none opacity-80">
-                                            <img
-                                                src="/thank_donors_stamp.png"
-                                                alt="Thank Donors Stamp"
-                                                className="w-full h-full object-contain"
-                                                onError={(e) => {
-                                                    e.currentTarget.style.display = 'none';
-                                                }}
-                                            />
-                                        </div>
-                                    )}
 
                                     <div className="absolute left-[52%] top-0 right-0 bottom-0 p-6 flex flex-col justify-end">
                                         <div className="flex items-end justify-between gap-4 mb-4 pb-2">
