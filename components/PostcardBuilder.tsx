@@ -19,6 +19,7 @@ const VARIABLE_OPTIONS = [
     { label: 'Full Name', value: '%FULL_NAME%' },
     { label: 'First Name', value: '%FIRST_NAME%' },
     { label: 'Last Name', value: '%LAST_NAME%' },
+    { label: 'Donation Amount', value: '%DONATION_AMOUNT%' },
     { label: 'Donation Date', value: '%DONATION_DAY%' },
     { label: 'Current Date', value: '%CURRENT_DAY%' },
     { label: 'Address Line 1', value: '%ADDRESS%' },
@@ -34,6 +35,7 @@ const DEMO_DONOR = {
     city: 'Hopeville',
     state: 'CA',
     zip: '90210',
+    amount: '$50.00',
     date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 };
 
@@ -527,6 +529,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
             .replace(/%FULL_NAME%/g, `${DEMO_DONOR.firstname} ${DEMO_DONOR.lastname}`)
             .replace(/%FIRST_NAME%/g, DEMO_DONOR.firstname)
             .replace(/%LAST_NAME%/g, DEMO_DONOR.lastname)
+            .replace(/%DONATION_AMOUNT%/g, DEMO_DONOR.amount)
             .replace(/%ADDRESS%/g, DEMO_DONOR.addr1)
             .replace(/%ADDRESS2%/g, DEMO_DONOR.addr2)
             .replace(/%CITY%/g, DEMO_DONOR.city)
@@ -815,10 +818,10 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                     <div className="absolute inset-0 border-8 border-white/10 pointer-events-none"></div>
 
                                     {/* Committee Disclaimer (Front) */}
-                                    {(currentAccount?.entity?.disclaimer || currentAccount?.disclaimer || currentAccount?.committee_name) && (
+                                    {(currentAccount?.disclaimer || currentAccount?.committee_name) && (
                                         <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm px-4 py-2">
                                             <p className="text-[7px] text-white uppercase leading-[1.2] tracking-tight text-center">
-                                                Paid for by {currentAccount?.entity?.disclaimer || currentAccount?.disclaimer || currentAccount?.committee_name}. Not authorized by any candidate or candidate's committee.
+                                                Paid for by {currentAccount?.disclaimer || currentAccount?.committee_name}.
                                             </p>
                                         </div>
                                     )}
