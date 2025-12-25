@@ -1,5 +1,5 @@
-import { serve} from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient} from "https://esm.sh/@supabase/supabase-js@2.39.7";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import Stripe from "https://esm.sh/stripe@14.16.0?target=deno";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_API_KEY") || "", {
@@ -37,8 +37,8 @@ function substituteVariables(template: string, donor: any, donationDate: string)
   return template
     .replace(/%FIRST_NAME%/g, donor.firstname || 'Friend')
     .replace(/%LAST_NAME%/g, donor.lastname || '')
-    .replace(/%FULL_NAME%/g, `${donor.firstname || 'Friend'} ${donor.lastname || ''} `)
-    .replace(/%AMOUNT%/g, donor.amount ? `$${donor.amount.toFixed(2)} ` : '')
+    .replace(/%FULL_NAME%/g, `${ donor.firstname || 'Friend'} ${ donor.lastname || '' } `)
+    .replace(/%AMOUNT%/g, donor.amount ? `$${ donor.amount.toFixed(2) } ` : '')
     .replace(/%EMAIL%/g, donor.email || '')
     .replace(/%ADDRESS1%/g, donor.addr1 || '')
     .replace(/%ADDRESS2%/g, donor.addr2 || '')
@@ -55,9 +55,9 @@ function generatePostcardBackHtml(message: string, showBranding: boolean = true)
   const escapedMessage = escapeHtml(message);
 
   return `
-  <html>
+  < html >
   <head>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" >
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel = "stylesheet" >
     <style>
     body {
   width: 6in;
@@ -65,44 +65,44 @@ function generatePostcardBackHtml(message: string, showBranding: boolean = true)
   margin: 0;
   padding: 0;
   background: white;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  font - family: 'Inter', -apple - system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans - serif;
+  -webkit - font - smoothing: antialiased;
 }
-    .back-container {
+    .back - container {
   width: 6in;
   height: 4in;
   position: relative;
   background: white;
   overflow: hidden;
 }
-    .content-area {
+    .content - area {
   position: absolute;
   top: 0.4in;
   left: 0.4in;
   width: 2.7in;
   height: 3.2in;
   display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  box-sizing: border-box;
+  flex - direction: column;
+  justify - content: flex - start;
+  box - sizing: border - box;
 }
-    .message-text {
-  width: 95%;
-  max-width: 95%;
-  font-size: 11pt;
-  line-height: 1.5;
+    .message - text {
+  width: 95 %;
+  max - width: 95 %;
+  font - size: 11pt;
+  line - height: 1.5;
   color: #1c1917;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+  white - space: pre - wrap;
+  word - wrap: break-word;
+  overflow - wrap: break-word;
   margin: 0;
 }
 </style>
   </head>
-  <body>
+  < body >
   <div class="back-container" >
     <div class="content-area" >
-      <p class="message-text" > ${escapedMessage} </p>
+      <p class="message-text" > ${ escapedMessage } </p>
         </div>
         </div>
         </body>
@@ -116,66 +116,64 @@ function generatePostcardFrontHtml(imageUrl: string, disclaimer: string | null, 
   const escapedDisclaimer = disclaimer ? escapeHtml(disclaimer) : null;
 
   return `
-        <html>
+        < html >
         <head>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" >
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel = "stylesheet" >
           <style>
           body {
   width: 6in;
   height: 4in;
   margin: 0;
   padding: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  font - family: 'Inter', -apple - system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans - serif;
+  -webkit - font - smoothing: antialiased;
   overflow: hidden;
   background: #f8fafc;
 }
-    .front-container {
+    .front - container {
   width: 6in;
   height: 4in;
   position: relative;
-  background-image: url('${imageUrl}');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  background - image: url('${imageUrl}');
+  background - size: cover;
+  background - position: center;
+  background - repeat: no - repeat;
 }
-    .disclaimer-overlay {
+    .disclaimer - overlay {
   position: absolute;
   bottom: 0.1in;
   left: 0;
   right: 0;
-  background-color: transparent;
+  background - color: transparent;
   color: white;
   padding: 0 0.4in;
-  font-family: 'Inter', -apple-system, sans-serif;
-  font-size: 8.5pt;
-  line-height: 1.3;
-  text-align: center;
-  letter-spacing: 0.01em;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  font - family: 'Inter', -apple - system, sans - serif;
+  font - size: 8.5pt;
+  line - height: 1.3;
+  text - align: center;
+  letter - spacing: 0.01em;
+  text - shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
-    .branding-badge {
+    .branding - badge {
   position: absolute;
   bottom: 0.35in;
   right: 0.25in;
-  width: 0.8in;
-  height: auto;
-  z-index: 20;
-}
-    .branding-badge img {
-  width: 100%;
-  height: auto;
-  display: block;
+  font - family: 'Inter', -apple - system, sans - serif;
+  font - size: 9pt;
+  color: white;
+  z - index: 20;
+  text - shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  opacity: 0.9;
 }
 </style>
   </head>
-  <body>
+  < body >
   <div class="front-container" >
-    ${escapedDisclaimer ? `<div class="disclaimer-overlay">${escapedDisclaimer}</div>` : ''}
+    ${ escapedDisclaimer ? `<div class="disclaimer-overlay">${escapedDisclaimer}</div>` : '' }
     ${
   showBranding ? `
     <div class="branding-badge">
-      <img src="${BRANDING_IMAGE_BASE64}" alt="Thank Donors Branding" />
+      ${BRANDING_NOTE}
     </div>
     ` : ''
 }
@@ -217,15 +215,15 @@ async function sendPostcardViaLob(
     return { success: false, error: "Lob API key not configured"};
 }
 
-  console.log(`📡 Preparing Lob request for ${normalizedDonor.firstname} ${normalizedDonor.lastname} (Mode: ${isTestMode ? 'TEST' : 'LIVE'})`);
+  console.log(`📡 Preparing Lob request for ${ normalizedDonor.firstname } ${ normalizedDonor.lastname } (Mode: ${ isTestMode ? 'TEST' : 'LIVE'})`);
 
   // Validate address before proceeding
   const addressValidation = validateAddress(normalizedDonor);
   if (!addressValidation.valid) {
-    console.error(`❌ Incomplete address.Missing: ${addressValidation.missing.join(', ')} `);
+    console.error(`❌ Incomplete address.Missing: ${ addressValidation.missing.join(', ') } `);
     return {
       success: false,
-      error: `Incomplete address.Missing: ${addressValidation.missing.join(', ')} `
+      error: `Incomplete address.Missing: ${ addressValidation.missing.join(', ') } `
   };
 }
 
@@ -233,16 +231,16 @@ async function sendPostcardViaLob(
   const rawBackMessage = overrides.back_message || entity.back_message;
   const backMessage = rawBackMessage
     ? substituteVariables(rawBackMessage, normalizedDonor, donationDate)
-    : `Dear ${normalizedDonor.firstname}, \n\nThank you for your generous support!`;
+    : `Dear ${ normalizedDonor.firstname }, \n\nThank you for your generous support!`;
 
   // Determine branding visibility
   const showBranding = entity.tier === 'free' || (entity.tier === 'pro' && entity.branding_enabled !== false);
 
   // Prepare Lob API payload
   const lobPayload = {
-    description: `Thank you postcard for ${normalizedDonor.firstname} ${normalizedDonor.lastname} `,
+    description: `Thank you postcard for ${ normalizedDonor.firstname } ${ normalizedDonor.lastname } `,
     to: {
-      name: `${normalizedDonor.firstname} ${normalizedDonor.lastname} `.trim() || "Donor",
+      name: `${ normalizedDonor.firstname } ${ normalizedDonor.lastname } `.trim() || "Donor",
       address_line1: normalizedDonor.addr1,
       address_line2: normalizedDonor.addr2 || undefined,
       address_city: normalizedDonor.city,
@@ -271,11 +269,11 @@ async function sendPostcardViaLob(
 
   for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
     try {
-      console.log(`🚀 Lob API Call(Attempt ${attempt})...`);
+      console.log(`🚀 Lob API Call(Attempt ${ attempt })...`);
       const response = await fetch("https://api.lob.com/v1/postcards", {
         method: "POST",
         headers: {
-          "Authorization": `Basic ${btoa(LOB_API_KEY + ":")} `,
+          "Authorization": `Basic ${ btoa(LOB_API_KEY + ":") } `,
           "Content-Type": "application/json",
           "Lob-Version": "2020-02-11",
       },
@@ -287,26 +285,26 @@ async function sendPostcardViaLob(
       if (!response.ok) {
         // If it's a client error (4xx) that IS NOT 429 (Too Many Requests) or 408 (Timeout), fail immediately
         if (response.status >= 400 && response.status < 500 && response.status !== 429 && response.status !== 408) {
-          console.error(`❌ Lob API Client Error(${response.status}): `, JSON.stringify(result));
+          console.error(`❌ Lob API Client Error(${ response.status }): `, JSON.stringify(result));
           return {
             success: false,
-            error: result.error?.message || `Lob API returned ${response.status} `
+            error: result.error?.message || `Lob API returned ${ response.status } `
         };
       }
 
         // If we have retries left, throw to catch block to handle delay & retry
         if (attempt <= MAX_RETRIES) {
-          throw new Error(`Lob API Error ${response.status}: ${result.error?.message || 'Unknown error'} `);
+          throw new Error(`Lob API Error ${ response.status }: ${ result.error?.message || 'Unknown error' } `);
       } else {
           console.error("❌ Lob API Error (Final Attempt):", JSON.stringify(result));
           return {
             success: false,
-            error: result.error?.message || `Lob API returned ${response.status} after ${attempt} attempts`
+            error: result.error?.message || `Lob API returned ${ response.status } after ${ attempt } attempts`
         };
       }
     }
 
-      console.log(`✅ Postcard created successfully! Lob ID: ${result.id} `);
+      console.log(`✅ Postcard created successfully! Lob ID: ${ result.id } `);
       return {
         success: true,
         lobId: result.id,
@@ -315,15 +313,15 @@ async function sendPostcardViaLob(
     };
 
   } catch (error: any) {
-      console.warn(`⚠️ Attempt ${attempt} failed: ${error.message} `);
+      console.warn(`⚠️ Attempt ${ attempt } failed: ${ error.message } `);
 
       if (attempt <= MAX_RETRIES) {
         // Exponential backoff: 1s, 2s, 4s
         const backoff = RETRY_DELAY_MS * Math.pow(2, attempt - 1);
-        console.log(`Retrying in ${backoff}ms...`);
+        console.log(`Retrying in ${ backoff }ms...`);
         await new Promise(resolve => setTimeout(resolve, backoff));
     } else {
-        return { success: false, error: `Failed after ${MAX_RETRIES} retries: ${error.message} `};
+        return { success: false, error: `Failed after ${ MAX_RETRIES } retries: ${ error.message } `};
     }
   }
 }
@@ -342,7 +340,7 @@ async function processLineItem(
 ): Promise<{ success: boolean; error?: string}> {
   const entityId = item.entityId || item.entity_id;
   const amount = parseFloat(item.amount || "0");
-  console.log(`🔍 Checking line item.Entity ID: ${entityId}, Amount: ${amount} `);
+  console.log(`🔍 Checking line item.Entity ID: ${ entityId }, Amount: ${ amount } `);
 
   // 1. Fetch the Entity and its linked Account in a single query
   const { data: entity, error: entityError} = await supabase
@@ -370,17 +368,17 @@ entity_id,
     .single();
 
   if (entityError || !entity) {
-    console.warn(`⚠️ Entity ID ${entityId} not found or query error: ${entityError?.message}.Skipping.`);
-    return { success: false, error: `Entity not found: ${entityId} `};
+    console.warn(`⚠️ Entity ID ${ entityId } not found or query error: ${ entityError?.message }.Skipping.`);
+    return { success: false, error: `Entity not found: ${ entityId } `};
 }
 
   const account = entity.actblue_accounts?.[0];
   if (!account) {
-    console.warn(`⚠️ No linked profile found for Entity ID ${entityId}.Skipping.`);
+    console.warn(`⚠️ No linked profile found for Entity ID ${ entityId }.Skipping.`);
     return { success: false, error: 'No linked profile'};
 }
 
-  console.log(`✅ Resolved entity: ${entity.committee_name} and profile: ${account.profile_id} `);
+  console.log(`✅ Resolved entity: ${ entity.committee_name } and profile: ${ account.profile_id } `);
 
   // 2. Determine pricing
   const priceCents = PRICING[entity.tier as keyof typeof PRICING] || PRICING.free;
@@ -395,11 +393,11 @@ entity_id,
     .single();
 
   if (deductError || !updatedEntity) {
-    console.warn(`❌ Entity ${entityId} has insufficient balance or concurrent update.Current: ${entity.balance_cents} c, Need: ${priceCents} c.`);
+    console.warn(`❌ Entity ${ entityId } has insufficient balance or concurrent update.Current: ${ entity.balance_cents } c, Need: ${ priceCents } c.`);
     return { success: false, error: 'Insufficient balance'};
 }
 
-  console.log(`💰 Deducted ${priceCents}c from entity ${entityId}. New balance: ${updatedEntity.balance_cents} c`);
+  console.log(`💰 Deducted ${ priceCents }c from entity ${ entityId }. New balance: ${ updatedEntity.balance_cents } c`);
 
   // 4. Record transaction linked to entity
   await supabase.from('billing_transactions').insert({
@@ -407,7 +405,7 @@ entity_id,
     profile_id: account.profile_id,
     amount_cents: -priceCents,
     type: 'postcard_deduction',
-    description: `Postcard for donor ${donor.firstname} ${donor.lastname} `
+    description: `Postcard for donor ${ donor.firstname } ${ donor.lastname } `
 });
 
   // 5. Create normalized donor object for this specific contribution
@@ -424,8 +422,8 @@ entity_id,
 };
 
   // 6. Insert Donation Record
-  const donationUid = `${actBlueId}_${entityId} `;
-  console.log(`💾 Saving donation record ${donationUid} to database...`);
+  const donationUid = `${ actBlueId }_${ entityId } `;
+  console.log(`💾 Saving donation record ${ donationUid } to database...`);
 
   const { data: donation, error: donationError} = await supabase
     .from('donations')
@@ -447,7 +445,7 @@ entity_id,
 
   if (donationError) {
     if (donationError.code === '23505') {
-      console.log(`ℹ️ Duplicate donation item received(${donationUid}).Refunding balance.`);
+      console.log(`ℹ️ Duplicate donation item received(${ donationUid }).Refunding balance.`);
 
       // Refund the balance using atomic increment
       await supabase.rpc('increment_entity_balance', {
@@ -474,7 +472,7 @@ entity_id,
 
   // 8. If Lob failed, refund the balance
   if (!lobResult.success) {
-    console.warn(`⚠️ Lob API failed.Refunding ${priceCents}c to entity ${entityId} `);
+    console.warn(`⚠️ Lob API failed.Refunding ${ priceCents }c to entity ${ entityId } `);
     await supabase.rpc('increment_entity_balance', {
       p_entity_id: entityId,
       p_amount: priceCents
@@ -482,7 +480,7 @@ entity_id,
 }
 
   // 9. Create Postcard Record with result
-  console.log(`📝 Recording postcard status: ${lobResult.success ? 'processed' : 'failed'} `);
+  console.log(`📝 Recording postcard status: ${ lobResult.success ? 'processed' : 'failed' } `);
   const postcardStatus = lobResult.success ? 'processed' : 'failed';
 
   const { data: postcardData, error: postcardError} = await supabase
@@ -509,7 +507,7 @@ entity_id,
       status: postcardStatus,
       details: lobResult.success
         ? 'Postcard successfully sent to Lob.com'
-        : `Failed to send to Lob.com: ${lobResult.error} `
+        : `Failed to send to Lob.com: ${ lobResult.error } `
   });
 }
 
@@ -608,7 +606,7 @@ serve(async (req) => {
 
     for (let i = 0; i < lineItems.length; i += BATCH_SIZE) {
       const batch = lineItems.slice(i, i + BATCH_SIZE);
-      console.log(`📦 Processing batch ${Math.floor(i / BATCH_SIZE) + 1} of ${Math.ceil(lineItems.length / BATCH_SIZE)} `);
+      console.log(`📦 Processing batch ${ Math.floor(i / BATCH_SIZE) + 1 } of ${ Math.ceil(lineItems.length / BATCH_SIZE) } `);
 
       const batchResults = await Promise.all(
         batch.map(item => processLineItem(item, donor, actBlueId, donationDate, isTestMode, supabase))
@@ -626,7 +624,7 @@ serve(async (req) => {
         .from('webhook_events')
         .update({
           status: 'processed',
-          error_message: failureCount > 0 ? `${failureCount} of ${results.length} line items failed` : null
+          error_message: failureCount > 0 ? `${ failureCount } of ${ results.length } line items failed` : null
       })
         .eq('id', eventId);
   }
