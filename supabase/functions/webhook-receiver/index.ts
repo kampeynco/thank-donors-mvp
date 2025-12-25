@@ -146,7 +146,7 @@ function generatePostcardFrontHtml(imageUrl: string, disclaimer: string | null):
 </head>
 <body>
   <div class="front-container">
-    ${disclaimer ? `<div class="disclaimer-overlay">${disclaimer}</div>` : ''}
+    ${disclaimer ? '<div class="disclaimer-overlay">' + disclaimer + '</div>' : ''}
   </div>
 </body>
 </html>
