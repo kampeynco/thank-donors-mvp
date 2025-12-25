@@ -392,20 +392,10 @@ serve(async (req) => {
       }
       const account = linkedAccounts[0];
 
-      // 2.1 Fetch active template for this account
-      const { data: template } = await supabase
-        .from('postcard_templates')
-        .select('front_image_url, back_message')
-        .eq('actblue_account_id', account.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      // 2.2 Resolve template fields based on hierarchy (Template > Account > Entity)
+      // 2.1 Resolve fields based on Account defaults
       const resolvedOverrides = {
-        front_image_url: template?.front_image_url || account.front_image_url,
-        back_message: template?.back_message || account.back_message,
+        front_image_url: account.front_image_url,
+        back_message: account.back_message,
         disclaimer: account.disclaimer
       };
 
