@@ -361,19 +361,9 @@ serve(async (req) => {
         .single();
 
       if (entityError || !entity) {
-        console.log(`⚠️ Entity ID ${entityId} not found in actblue_entities. Skipping this line item.`);
-        return new Response(JSON.stringify({
-          error: "Entity not found",
-          debug: {
-            entityId,
-            entityIdType: typeof entityId,
-            supabaseError: entityError,
-            resultsFound: !!entity
-          }
-        }), {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        console.warn(`⚠️ Entity ID ${entityId} not found in actblue_entities. query_error: ${entityError?.message}. Skipping this line item.`);
+        // We continue to the next item instead of failing the entire webhook
+        continue;
       }
 
       console.log(`✅ Found entity: ${entity.committee_name} (ID: ${entity.entity_id})`);
@@ -397,19 +387,8 @@ serve(async (req) => {
       });
 
       if (linkedError || !linkedAccounts || linkedAccounts.length === 0) {
-        console.log(`⚠️ Entity ID ${entityId} not found in actblue_accounts. Skipping.`);
-        return new Response(JSON.stringify({
-          error: "Account not found",
-          debug: {
-            entityId,
-            entityIdType: typeof entityId,
-            supabaseError: linkedError,
-            resultsCount: linkedAccounts?.length || 0
-          }
-        }), {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        console.warn(`⚠️ Entity ID ${entityId} not found in actblue_accounts. query_error: ${linkedError?.message}. Skipping.`);
+        continue;
       }
       const account = linkedAccounts[0];
 
