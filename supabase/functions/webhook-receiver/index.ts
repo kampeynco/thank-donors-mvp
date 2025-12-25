@@ -51,7 +51,7 @@ function substituteVariables(template: string, donor: any, donationDate: string)
 function generatePostcardBackHtml(message: string, showBranding: boolean = true): string {
   // Escape the message to prevent HTML injection
   const escapedMessage = escapeHtml(message);
-  const fontSize = Math.max(6, 9 - (message.length / 500) * 3);
+  const fontSize = Math.max(6, 9 - (message.length / 500) * 4);
 
   return `
   <html>
