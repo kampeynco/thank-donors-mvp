@@ -851,7 +851,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                                         <span className="font-bold text-stone-700">DEBUG INFO:</span><br />
                                                         URL: {activeImage}<br />
                                                         <span className="text-rose-400">Path: {(() => {
-                                                            const match = activeImage?.match(/\/storage/v1 / object / (?: sign | public | authenticated) / ([^ /]+)/(.+)$ /);
+                                                            const match = activeImage?.match(/\/storage\/v1\/object\/(?:sign|public|authenticated)\/([^\/]+)\/(.+)$/);
                                                             return match ? `${match[1]}/${match[2]}` : 'not a storage URL';
                                                         })()}</span><br />
                                                         <hr className="my-1 border-stone-100" />
