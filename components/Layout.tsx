@@ -280,7 +280,7 @@ const Layout: React.FC<LayoutProps> = ({
             {/* Sub-Navigation Bar (e.g., Settings menu) */}
             {subNavigation && (
                 <div className="bg-white border-b border-stone-200 sticky top-16 z-20">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex gap-8 h-12 overflow-x-auto no-scrollbar">
                             {subNavigation.items.map((item) => {
                                 const Icon = item.icon;

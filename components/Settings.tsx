@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Profile, ActBlueAccount } from '../types';
-import { Webhook, Copy, Check, Home, Save, MapPin, AlertTriangle, Loader2, Sparkles } from 'lucide-react';
+import { Webhook, Copy, Check, Home, Save, MapPin, AlertTriangle, Loader2, Sparkles, FileText, Lock } from 'lucide-react';
 import { useToast } from './ToastContext';
 import SettingsLayout from './SettingsLayout';
 
@@ -106,7 +106,9 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSect
 
     const menuItems = [
         { id: 'general', label: 'General Information', icon: Home },
+        { id: 'webhook', label: 'Webhook Details', icon: Webhook },
         { id: 'branding', label: 'Branding', icon: Sparkles },
+        { id: 'disclaimer', label: 'Disclaimer', icon: FileText },
         { id: 'danger', label: 'Danger Zone', icon: AlertTriangle },
     ];
 
@@ -125,14 +127,8 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSect
     }
 
     return (
-        <div className="max-w-6xl mx-auto">
-            <SettingsLayout
-                title="Account Settings"
-                subtitle="Manage your political committee details and preferences."
-                items={menuItems}
-                activeItem={activeSection}
-                onItemSelect={setActiveSection}
-            >
+        <>
+            <SettingsLayout>
                 {activeSection === 'general' && (
                     <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
                         <div className="bg-white p-8 rounded-2xl border border-stone-100 shadow-sm">
@@ -211,26 +207,9 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSect
                                     </div>
                                 </div>
 
-                                {currentAccount && currentAccount.id !== 'new' ? (
-                                    <div className="border-t border-stone-100 pt-6 mt-6">
-                                        <h4 className="font-bold text-stone-800 text-lg mb-2">Disclaimer</h4>
-                                        <p className="text-sm text-stone-500 mb-4">Optional small-print text that will appear on your postcards.</p>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-stone-700 mb-2">Disclaimer Text</label>
-                                            <textarea
-                                                value={disclaimer}
-                                                onChange={(e) => setDisclaimer(e.target.value)}
-                                                className="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none text-sm"
-                                                placeholder="e.g., Paid for by Friends of Jane Doe"
-                                                rows={3}
-                                                disabled={!currentAccount || currentAccount.id === 'new'}
-                                            />
-                                        </div>
-                                    </div>
-                                ) : (
+                                {(!currentAccount || currentAccount.id === 'new') && (
                                     <div className="text-center py-6 bg-stone-50 rounded-xl text-stone-500 text-sm">
-                                        Please select or create an account to view credentials.
+                                        Please select or create an account to view details.
                                     </div>
                                 )}
 
@@ -249,6 +228,81 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSect
                     </div>
                 )}
 
+                {activeSection === 'webhook' && currentAccount && (
+                    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="bg-white p-8 rounded-2xl border border-stone-100 shadow-sm">
+                            <h3 className="font-bold text-stone-800 flex items-center gap-2 mb-2 text-lg">
+                                <Webhook size={20} className="text-blue-500" />
+                                ActBlue Webhook Details
+                            </h3>
+                            <p className="text-sm text-stone-500 mb-6">Use these credentials to connect your ActBlue account to Thank Donors.</p>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Webhook URL</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            readOnly
+                                            value={currentAccount?.entity?.webhook_url || currentAccount?.webhook_url || ''}
+                                            className="flex-1 p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-mono text-stone-600"
+                                        />
+                                        <button
+                                            onClick={() => copyToClipboard(currentAccount?.entity?.webhook_url || currentAccount?.webhook_url || '', 'url')}
+                                            className="p-3 text-stone-400 hover:text-rose-500 transition-colors"
+                                        >
+                                            {copiedField === 'url' ? <Check size={20} className="text-green-500" /> : <Copy size={20} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Username</label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                readOnly
+                                                value={currentAccount?.entity?.webhook_username || currentAccount?.webhook_username || ''}
+                                                className="flex-1 p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-mono text-stone-600"
+                                            />
+                                            <button
+                                                onClick={() => copyToClipboard(currentAccount?.entity?.webhook_username || currentAccount?.webhook_username || '', 'user')}
+                                                className="p-3 text-stone-400 hover:text-rose-500 transition-colors"
+                                            >
+                                                {copiedField === 'user' ? <Check size={20} className="text-green-500" /> : <Copy size={20} />}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Password</label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="password"
+                                                readOnly
+                                                value={currentAccount?.entity?.webhook_password || currentAccount?.webhook_password || ''}
+                                                className="flex-1 p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-mono text-stone-600"
+                                            />
+                                            <button
+                                                onClick={() => copyToClipboard(currentAccount?.entity?.webhook_password || currentAccount?.webhook_password || '', 'pass')}
+                                                className="p-3 text-stone-400 hover:text-rose-500 transition-colors"
+                                            >
+                                                {copiedField === 'pass' ? <Check size={20} className="text-green-500" /> : <Copy size={20} />}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100 flex gap-3 text-blue-700 text-sm">
+                                <Lock size={20} className="shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="font-bold mb-1">Secure Connection</p>
+                                    <p>These credentials ensure that only ActBlue can send donation data to your account. Never share these publicly.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {activeSection === 'branding' && currentAccount && (
                     <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
                         <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl border border-stone-100 shadow-sm">
@@ -259,17 +313,27 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSect
 
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between p-4 border border-stone-200 rounded-xl bg-stone-50">
-                                    <div>
-                                        <div className="font-bold text-stone-800">Automated Branding</div>
-                                        <div className="text-sm text-stone-500">Automatically apply your logo and colors to postcards (Pro feature)</div>
+                                    <div className="pr-4">
+                                        <div className="font-bold text-stone-800">Remove Thank Donors branding</div>
+                                        <div className="text-sm text-stone-500">Hide the "Powered by Thank Donors" badge from the back of your postcards.</div>
+                                        {currentAccount?.entity?.tier !== 'pro' && (
+                                            <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                                <Sparkles size={10} />
+                                                Pro Feature
+                                            </span>
+                                        )}
                                     </div>
-                                    <label className="relative inline-flex items-center cursor-pointer">
+                                    <label className={`relative inline-flex items-center ${currentAccount?.entity?.tier === 'pro' ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
                                         <input
                                             type="checkbox"
                                             checked={brandingEnabled}
-                                            onChange={(e) => setBrandingEnabled(e.target.checked)}
+                                            onChange={(e) => {
+                                                if (currentAccount?.entity?.tier === 'pro') {
+                                                    setBrandingEnabled(e.target.checked);
+                                                }
+                                            }}
                                             className="sr-only peer"
-                                            disabled={!currentAccount || currentAccount.id === 'new'}
+                                            disabled={currentAccount?.entity?.tier !== 'pro' || isSaving}
                                         />
                                         <div className="w-11 h-6 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                                     </label>
@@ -282,7 +346,47 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSect
                                         className="flex items-center gap-2 bg-rose-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                                        Save Branding
+                                        Save Preferences
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                )}
+
+                {activeSection === 'disclaimer' && currentAccount && (
+                    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
+                        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl border border-stone-100 shadow-sm">
+                            <h3 className="font-bold text-stone-800 flex items-center gap-2 mb-6 text-lg">
+                                <FileText size={20} className="text-stone-500" />
+                                Legal Disclaimer
+                            </h3>
+
+                            <div className="space-y-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-stone-700 mb-2">Disclaimer Text</label>
+                                    <p className="text-xs text-stone-500 mb-4 italic">Example: "Paid for by Friends of Jane Doe. Not authorized by any candidate or candidate's committee."</p>
+                                    <textarea
+                                        value={disclaimer}
+                                        onChange={(e) => setDisclaimer(e.target.value)}
+                                        className="w-full p-4 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none text-sm leading-relaxed"
+                                        placeholder="Enter legacy disclaimer text..."
+                                        rows={4}
+                                        disabled={!currentAccount || currentAccount.id === 'new'}
+                                    />
+                                    <p className="text-[11px] text-stone-400 mt-3">
+                                        <strong>Note:</strong> This text will appear in small print on the back of every postcard as required by election law.
+                                    </p>
+                                </div>
+
+                                <div className="flex justify-end pt-6 border-t border-stone-100">
+                                    <button
+                                        type="submit"
+                                        disabled={isSaving || !currentAccount || currentAccount.id === 'new'}
+                                        className="flex items-center gap-2 bg-rose-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                                        Save Disclaimer
                                     </button>
                                 </div>
                             </div>
@@ -310,7 +414,6 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSect
                         </div>
                     </div>
                 )}
-
             </SettingsLayout>
 
             {isDeleteModalOpen && (
@@ -355,7 +458,7 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSect
                     </div>
                 </div>
             )}
-        </div>
+        </>
     );
 };
 

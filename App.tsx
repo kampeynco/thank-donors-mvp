@@ -10,7 +10,7 @@ import ProfileView from './components/ProfileView';
 import BillingView from './components/BillingView';
 import Auth from './components/Auth';
 import { supabase } from './services/supabaseClient';
-import { Loader2, Home, Sparkles, AlertTriangle, Lock, User } from 'lucide-react';
+import { Loader2, Home, Sparkles, AlertTriangle, Lock, User, Webhook, FileText } from 'lucide-react';
 import { useToast } from './components/ToastContext';
 
 const App: React.FC = () => {
@@ -331,6 +331,11 @@ id,
         const updated = { ...currentAccount, ...accountData } as ActBlueAccount;
         if (accountData.entity_id) updated.entity_id = Number(accountData.entity_id);
 
+        // Ensure nested entity is also updated for state consistency (e.g. branding_enabled)
+        if (currentAccount.entity) {
+          updated.entity = { ...currentAccount.entity, ...accountData as any };
+        }
+
         setCurrentAccount(updated);
         setAccounts(accounts.map(a => a.id === updated.id ? updated : a));
         toast("Account details saved", "success");
@@ -544,7 +549,9 @@ id,
       subNavigation={view === ViewState.SETTINGS ? {
         items: [
           { id: 'general', label: 'General Information', icon: Home },
+          { id: 'webhook', label: 'Webhook Details', icon: Webhook },
           { id: 'branding', label: 'Branding', icon: Sparkles },
+          { id: 'disclaimer', label: 'Disclaimer', icon: FileText },
           { id: 'danger', label: 'Danger Zone', icon: AlertTriangle },
         ],
         activeId: settingsActiveSection,
