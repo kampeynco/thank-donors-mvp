@@ -810,8 +810,9 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                             </div>
 
                                             {/* Postage Indicia */}
-                                            <div className="flex flex-col items-center justify-center p-0.5 text-center font-bold bg-white shrink-0">
-                                                <span className="text-[8px] uppercase tracking-tighter leading-none">Postage Indicia</span>
+                                            <div className="w-14 h-10 border border-stone-800 flex flex-col items-center justify-center p-0.5 text-center font-bold bg-white shrink-0">
+                                                <span className="text-[7px] uppercase tracking-tighter leading-none">Postage</span>
+                                                <span className="text-[7px] uppercase tracking-tighter leading-none">Indicia</span>
                                             </div>
                                         </div>
 

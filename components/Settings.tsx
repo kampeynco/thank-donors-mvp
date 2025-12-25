@@ -226,19 +226,6 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSect
                                                 rows={3}
                                                 disabled={!currentAccount || currentAccount.id === 'new'}
                                             />
-                                            <div className="flex gap-2">
-                                                <div className="flex-1 bg-stone-50 p-2.5 rounded-lg text-xs font-mono text-stone-600 truncate border border-stone-100 flex justify-between items-center group relative overflow-hidden">
-                                                    <span className="absolute inset-0 p-2.5 select-all font-mono">{currentAccount.webhook_password}</span>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => copyToClipboard(currentAccount.webhook_password, 'password')}
-                                                    className="p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-50 rounded-lg transition-colors"
-                                                    title="Copy Password"
-                                                >
-                                                    {copiedField === 'password' ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
-                                                </button>
-                                            </div>
                                         </div>
                                     </div>
                                 ) : (
