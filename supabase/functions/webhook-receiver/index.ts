@@ -373,9 +373,9 @@ serve(async (req) => {
 
       // 1. Fetch the Entity (for template design and billing)
       const { data: entity, error: entityError } = await supabase
-        .from('actblue_entities')
-        .select('entity_id, committee_name, tier, balance_cents, stripe_customer_id, billing_email')
-        .eq('entity_id', entityId)
+        .from("actblue_entities")
+        .select("entity_id, committee_name, tier, balance_cents, stripe_customer_id, front_image_url, back_message, disclaimer, street_address, city, state, postal_code, branding_enabled")
+        .eq("entity_id", entityId)
         .single();
 
       if (entityError || !entity) {
