@@ -821,7 +821,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                     {(currentAccount?.disclaimer || currentAccount?.committee_name) && (
                                         <div className="absolute bottom-0 left-0 right-0 px-4 py-2 z-10">
                                             <p className="text-[7px] text-white uppercase leading-[1.2] tracking-tight text-center">
-                                                Paid for by {currentAccount?.disclaimer || currentAccount?.committee_name}. Not authorized by any candidate or candidate's committee.
+                                                Paid for by {currentAccount?.disclaimer || currentAccount?.committee_name}.
                                             </p>
                                         </div>
                                     )}
