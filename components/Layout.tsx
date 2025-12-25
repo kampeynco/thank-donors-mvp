@@ -289,7 +289,7 @@ const Layout: React.FC<LayoutProps> = ({
                                     <button
                                         key={item.id}
                                         onClick={() => subNavigation.onSelect(item.id)}
-                                        className={`flex items-center gap-2 px-1 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${isActive
+                                        className={`flex items-center gap-2 px-1 text-sm font-bold border-b-2 h-full transition-all whitespace-nowrap ${isActive
                                             ? 'border-rose-500 text-rose-600'
                                             : 'border-transparent text-stone-500 hover:text-stone-800'
                                             }`}
@@ -305,7 +305,8 @@ const Layout: React.FC<LayoutProps> = ({
             )}
 
             {/* Main Content */}
-            <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+            <main className={`flex-1 w-full mx-auto p-4 sm:p-6 lg:p-8 ${subNavigation ? 'max-w-5xl' : 'max-w-7xl'
+                }`}>
                 {children}
             </main>
 

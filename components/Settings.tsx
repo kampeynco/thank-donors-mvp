@@ -326,10 +326,10 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSect
                                     <label className={`relative inline-flex items-center ${currentAccount?.entity?.tier === 'pro' ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
                                         <input
                                             type="checkbox"
-                                            checked={brandingEnabled}
+                                            checked={!brandingEnabled}
                                             onChange={(e) => {
                                                 if (currentAccount?.entity?.tier === 'pro') {
-                                                    setBrandingEnabled(e.target.checked);
+                                                    setBrandingEnabled(!e.target.checked);
                                                 }
                                             }}
                                             className="sr-only peer"

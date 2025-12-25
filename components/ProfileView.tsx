@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Profile } from '../types';
-import { User, Lock, Loader2, AlertCircle, AlertTriangle, Save } from 'lucide-react';
+import { User, Lock, Loader2, AlertTriangle, Save, Shield, Trash2 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useToast } from './ToastContext';
 
@@ -82,76 +82,70 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, activeSection, setAc
         }
     }
 
-    const menuItems = [
-        { id: 'profile', label: 'User Information', icon: User },
-        { id: 'security', label: 'Security', icon: Lock },
-        { id: 'danger', label: 'Danger Zone', icon: AlertTriangle },
-    ];
+
 
     return (
-        <div className="max-w-6xl mx-auto">
-            <SettingsLayout
-                title="My Profile"
-                subtitle="Manage your personal details and login credentials."
-                items={menuItems}
-                activeItem={activeSection}
-                onItemSelect={setActiveSection}
-            >
+        <>
+            <SettingsLayout>
                 {activeSection === 'profile' && (
                     <div className="bg-white p-8 rounded-2xl border border-stone-100 shadow-sm animate-in fade-in zoom-in-95 duration-200">
                         <h3 className="font-bold text-stone-800 flex items-center gap-2 mb-6 text-lg">
-                            <User size={20} className="text-rose-500" />
+                            <User size={20} className="text-orange-500" />
                             User Information
                         </h3>
-
-                        <form onSubmit={handleUpdateInfo} className="grid grid-cols-1 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium text-stone-700 mb-2">Full Name</label>
-                                <input
-                                    value={fullName}
-                                    onChange={(e) => setFullName(e.target.value)}
-                                    className="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                                    placeholder="Jane Doe"
-                                />
-                            </div>
+                        <form onSubmit={handleUpdateInfo} className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-stone-700 mb-2">Organization</label>
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-bold text-stone-600">Full Name</label>
                                     <input
-                                        value={organization}
-                                        onChange={(e) => setOrganization(e.target.value)}
-                                        className="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                                        placeholder="Campaign for Change"
+                                        type="text"
+                                        value={fullName}
+                                        onChange={(e) => setFullName(e.target.value)}
+                                        className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                        placeholder="Jane Doe"
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-stone-700 mb-2">Job Title</label>
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-bold text-stone-600">Email Address</label>
                                     <input
+                                        type="email"
+                                        value={profile.email || ''}
+                                        disabled
+                                        className="w-full p-3 bg-stone-100 border border-stone-200 rounded-xl text-stone-500 cursor-not-allowed"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-bold text-stone-600">Organization</label>
+                                    <input
+                                        type="text"
+                                        value={organization}
+                                        onChange={(e) => setOrganization(e.target.value)}
+                                        className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                        placeholder="Campaign Name"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-bold text-stone-600">Job Title</label>
+                                    <input
+                                        type="text"
                                         value={jobTitle}
                                         onChange={(e) => setJobTitle(e.target.value)}
-                                        className="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                                        className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all"
                                         placeholder="Campaign Manager"
                                     />
                                 </div>
                             </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-stone-700 mb-2">Email Address</label>
-                                <input
-                                    value={profile.email || ''}
-                                    disabled
-                                    className="w-full p-3 border border-stone-200 rounded-xl bg-stone-50 text-stone-500 cursor-not-allowed"
-                                />
-                                <p className="text-xs text-stone-400 mt-2">To change your email, please contact support.</p>
-                            </div>
-
                             <div className="flex justify-end pt-4">
                                 <button
                                     type="submit"
                                     disabled={isUpdatingInfo}
-                                    className="bg-stone-800 text-white font-bold py-3 px-8 rounded-xl hover:bg-black transition-all flex items-center gap-2 shadow-lg shadow-stone-200 disabled:opacity-70"
+                                    className="bg-stone-900 text-white font-bold py-3 px-8 rounded-xl hover:bg-black transition-all shadow-lg shadow-stone-200 flex items-center gap-2 disabled:opacity-50"
                                 >
-                                    {isUpdatingInfo ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                                    {isUpdatingInfo ? (
+                                        <Loader2 size={18} className="animate-spin" />
+                                    ) : (
+                                        <Save size={18} />
+                                    )}
                                     Save Changes
                                 </button>
                             </div>
@@ -162,30 +156,33 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, activeSection, setAc
                 {activeSection === 'security' && (
                     <div className="bg-white p-8 rounded-2xl border border-stone-100 shadow-sm animate-in fade-in zoom-in-95 duration-200">
                         <h3 className="font-bold text-stone-800 flex items-center gap-2 mb-6 text-lg">
-                            <Lock size={20} className="text-rose-500" />
-                            Security
+                            <Lock size={20} className="text-orange-500" />
+                            Password & Security
                         </h3>
-
-                        <form onSubmit={handlePasswordUpdate} className="grid grid-cols-1 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium text-stone-700 mb-2">New Password</label>
+                        <form onSubmit={handlePasswordUpdate} className="max-w-md space-y-6">
+                            <div className="space-y-2">
+                                <label className="block text-sm font-bold text-stone-600">New Password</label>
                                 <input
                                     type="password"
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
-                                    className="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                                    className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all"
                                     placeholder="••••••••"
                                     required
+                                    minLength={6}
                                 />
                             </div>
-
-                            <div className="flex justify-end">
+                            <div className="flex justify-end pt-4">
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="bg-white border border-stone-200 text-stone-600 font-bold py-3 px-8 rounded-xl hover:bg-stone-50 transition-all flex items-center gap-2 disabled:opacity-70"
+                                    className="bg-stone-900 text-white font-bold py-3 px-8 rounded-xl hover:bg-black transition-all shadow-lg shadow-stone-200 flex items-center gap-2 disabled:opacity-50"
                                 >
-                                    {loading ? <Loader2 size={18} className="animate-spin" /> : <Lock size={18} />}
+                                    {loading ? (
+                                        <Loader2 size={18} className="animate-spin" />
+                                    ) : (
+                                        <Shield size={18} />
+                                    )}
                                     Update Password
                                 </button>
                             </div>
@@ -194,21 +191,23 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, activeSection, setAc
                 )}
 
                 {activeSection === 'danger' && (
-                    <div className="bg-rose-50 p-8 rounded-2xl border border-rose-100 animate-in fade-in zoom-in-95 duration-200">
-                        <h3 className="font-bold text-rose-800 flex items-center gap-2 mb-4">
-                            <AlertTriangle size={20} />
-                            Danger Zone
-                        </h3>
-                        <p className="text-sm text-rose-600 mb-6">
-                            Deleting your account will remove all campaigns, donations, and settings. This action cannot be undone.
-                        </p>
-                        <button
-                            type="button"
-                            onClick={handleDeleteClick}
-                            className="bg-white border border-rose-200 text-rose-600 font-bold py-3 px-6 rounded-xl hover:bg-rose-600 hover:text-white transition-all"
-                        >
-                            Delete User Account
-                        </button>
+                    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="bg-rose-50 p-8 rounded-2xl border border-rose-100">
+                            <h3 className="font-bold text-rose-800 flex items-center gap-2 mb-4 text-lg">
+                                <AlertTriangle size={20} />
+                                Delete User Account
+                            </h3>
+                            <p className="text-stone-600 mb-6">
+                                This will permanently delete your user account and <strong>ALL data</strong> across all your campaigns. This action cannot be undone.
+                            </p>
+                            <button
+                                onClick={handleDeleteClick}
+                                className="bg-white border border-rose-200 text-rose-600 font-bold py-3 px-6 rounded-xl hover:bg-rose-600 hover:text-white transition-all shadow-sm flex items-center gap-2"
+                            >
+                                <Trash2 size={18} />
+                                Delete Account
+                            </button>
+                        </div>
                     </div>
                 )}
             </SettingsLayout>
@@ -255,7 +254,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, activeSection, setAc
                     </div>
                 </div>
             )}
-        </div>
+        </>
     );
 };
 
