@@ -158,7 +158,8 @@ async function sendPostcardViaLob(
   normalizedDonor: any,
   entity: any,
   donationDate: string,
-  isTestMode: boolean
+  isTestMode: boolean,
+  overrides: { front_image_url?: string; back_message?: string; disclaimer?: string } = {}
 ): Promise<{ success: boolean; lobId?: string; url?: string; lobStatus?: string; error?: string }> {
   // @ts-ignore
   const LOB_API_KEY = isTestMode
@@ -173,8 +174,9 @@ async function sendPostcardViaLob(
   console.log(`📡 Preparing Lob request for ${normalizedDonor.firstname} ${normalizedDonor.lastname} (Mode: ${isTestMode ? 'TEST' : 'LIVE'})`);
 
   // Prepare the back message with variable substitution
-  const backMessage = entity.back_message
-    ? substituteVariables(entity.back_message, normalizedDonor, donationDate)
+  const rawBackMessage = overrides.back_message || entity.back_message;
+  const backMessage = rawBackMessage
+    ? substituteVariables(rawBackMessage, normalizedDonor, donationDate)
     : `Dear ${normalizedDonor.firstname},\n\nThank you for your generous support!`;
 
   // Determine branding visibility
@@ -199,8 +201,8 @@ async function sendPostcardViaLob(
       address_zip: entity.postal_code || "12345",
     },
     front: generatePostcardFrontHtml(
-      entity.front_image_url || "https://via.placeholder.com/1875x1275",
-      entity.disclaimer
+      overrides.front_image_url || entity.front_image_url || "https://via.placeholder.com/1875x1275",
+      overrides.disclaimer || entity.disclaimer
     ),
     back: generatePostcardHtml(backMessage, showBranding),
     size: "4x6",
@@ -369,7 +371,7 @@ serve(async (req) => {
       // We still use profile_id for UI visibility of which account "owns" the donation data
       const { data: linkedAccounts, error: linkedError } = await supabase
         .from('actblue_accounts')
-        .select('profile_id, id')
+        .select('profile_id, id, front_image_url, back_message, disclaimer')
         .eq('entity_id', entityId)
         .limit(1);
 
@@ -378,6 +380,23 @@ serve(async (req) => {
         continue;
       }
       const account = linkedAccounts[0];
+
+      // 2.1 Fetch active template for this account
+      const { data: template } = await supabase
+        .from('postcard_templates')
+        .select('front_image_url, back_message')
+        .eq('actblue_account_id', account.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      // 2.2 Resolve template fields based on hierarchy (Template > Account > Entity)
+      const resolvedOverrides = {
+        front_image_url: template?.front_image_url || account.front_image_url,
+        back_message: template?.back_message || account.back_message,
+        disclaimer: account.disclaimer
+      };
 
       // 3. Billing Check & Deduction
       // Centralized Billing: Deduct from the entity balance directly
@@ -459,7 +478,7 @@ serve(async (req) => {
       }
 
       // 6. Send Postcard via Lob.com API
-      const lobResult = await sendPostcardViaLob(normalizedDonor, entity, donationDate, isTestMode);
+      const lobResult = await sendPostcardViaLob(normalizedDonor, entity, donationDate, isTestMode, resolvedOverrides);
 
       // 7. Create Postcard Record with result
       console.log(`📝 Recording postcard status: ${lobResult.success ? 'processed' : 'failed'}`);
@@ -471,8 +490,8 @@ serve(async (req) => {
           donation_id: donation.id,
           profile_id: account.profile_id,
           status: postcardStatus,
-          front_image_url: entity.front_image_url,
-          back_message: entity.back_message,
+          front_image_url: resolvedOverrides.front_image_url || entity.front_image_url,
+          back_message: resolvedOverrides.back_message || entity.back_message,
           lob_postcard_id: lobResult.lobId || null,
           lob_url: lobResult.url || null,
           error_message: lobResult.error || null

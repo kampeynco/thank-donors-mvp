@@ -95,6 +95,17 @@ export interface Donation {
   events?: PostcardEvent[];
 }
 
+export interface PostcardTemplate {
+  id: string;
+  actblue_account_id: string;
+  template_name: string;
+  front_image_url?: string;
+  back_message?: string;
+  disclaimer?: string;
+  is_active: boolean;
+  created_at: string;
+}
+
 export interface Template {
   profile_id: string;
   template_name: string;

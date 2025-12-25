@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Profile, ActBlueAccount } from '../types';
 import { Webhook, Copy, Check, Home, Save, MapPin, AlertTriangle, Loader2, Sparkles } from 'lucide-react';
 import { useToast } from './ToastContext';
+import SettingsLayout from './SettingsLayout';
 
 interface SettingsProps {
     profile: Profile;
@@ -209,105 +210,163 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, onUpdate, 
                                     </div>
                                 </div>
 
-                                <div className="border-t border-stone-100 pt-6 mt-6">
-                                    <h4 className="font-bold text-stone-800 text-lg mb-2">Disclaimer</h4>
-                                    <p className="text-sm text-stone-500 mb-4">Optional small-print text that will appear on your postcards.</p>
+                                {currentAccount && currentAccount.id !== 'new' ? (
+                                    <div className="border-t border-stone-100 pt-6 mt-6">
+                                        <h4 className="font-bold text-stone-800 text-lg mb-2">Disclaimer</h4>
+                                        <p className="text-sm text-stone-500 mb-4">Optional small-print text that will appear on your postcards.</p>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-stone-700 mb-2">Disclaimer Text</label>
-                                        <textarea
-                                            value={disclaimer}
-                                            onChange={(e) => setDisclaimer(e.target.value)}
-                                            className="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none text-sm"
-                                            placeholder="e.g., Paid for by Friends of Jane Doe"
-                                            rows={3}
-                                            disabled={!currentAccount || currentAccount.id === 'new'}
-                                        />
-                                        <div className="flex gap-2">
-                                            <div className="flex-1 bg-stone-50 p-2.5 rounded-lg text-xs font-mono text-stone-600 truncate border border-stone-100 flex justify-between items-center group relative overflow-hidden">
-                                                <span className="absolute inset-0 p-2.5 select-all font-mono">{currentAccount.webhook_password}</span>
+                                        <div>
+                                            <label className="block text-sm font-medium text-stone-700 mb-2">Disclaimer Text</label>
+                                            <textarea
+                                                value={disclaimer}
+                                                onChange={(e) => setDisclaimer(e.target.value)}
+                                                className="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none text-sm"
+                                                placeholder="e.g., Paid for by Friends of Jane Doe"
+                                                rows={3}
+                                                disabled={!currentAccount || currentAccount.id === 'new'}
+                                            />
+                                            <div className="flex gap-2">
+                                                <div className="flex-1 bg-stone-50 p-2.5 rounded-lg text-xs font-mono text-stone-600 truncate border border-stone-100 flex justify-between items-center group relative overflow-hidden">
+                                                    <span className="absolute inset-0 p-2.5 select-all font-mono">{currentAccount.webhook_password}</span>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => copyToClipboard(currentAccount.webhook_password, 'password')}
+                                                    className="p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-50 rounded-lg transition-colors"
+                                                    title="Copy Password"
+                                                >
+                                                    {copiedField === 'password' ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                                                </button>
                                             </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => copyToClipboard(currentAccount.webhook_password, 'password')}
-                                                className="p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-50 rounded-lg transition-colors"
-                                                title="Copy Password"
-                                            >
-                                                {copiedField === 'password' ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
-                                            </button>
                                         </div>
                                     </div>
-                                </div>
                                 ) : (
-                                <div className="text-center py-6 bg-stone-50 rounded-xl text-stone-500 text-sm">
-                                    Please select or create an account to view credentials.
+                                    <div className="text-center py-6 bg-stone-50 rounded-xl text-stone-500 text-sm">
+                                        Please select or create an account to view credentials.
+                                    </div>
+                                )}
+
+                                <div className="flex justify-end pt-6 border-t border-stone-100 mt-6">
+                                    <button
+                                        type="submit"
+                                        disabled={isSaving || !currentAccount || currentAccount.id === 'new'}
+                                        className="flex items-center gap-2 bg-rose-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                                        Save Changes
+                                    </button>
                                 </div>
-                    )}
-                        </div>
-
-                        {currentAccount && currentAccount.id !== 'new' && (
-                            <div className="bg-rose-50 p-8 rounded-2xl border border-rose-100">
-                                <h3 className="font-bold text-rose-800 flex items-center gap-2 mb-4">
-                                    <AlertTriangle size={20} />
-                                    Danger Zone
-                                </h3>
-                                <p className="text-sm text-rose-600 mb-6">
-                                    Deleting this campaign <strong>({currentAccount.committee_name})</strong> will remove all associated webhooks and data. This action cannot be undone.
-                                </p>
-                                <button
-                                    type="button"
-                                    onClick={handleDeleteClick}
-                                    className="bg-white border border-rose-200 text-rose-600 font-bold py-3 px-6 rounded-xl hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                                >
-                                    Delete Campaign
-                                </button>
-                            </div>
-                        )}
-
-                    </form>
-
-            {isDeleteModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-                        <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in zoom-in-95 duration-200">
-                            <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center text-rose-600 mb-4 mx-auto">
-                                <AlertTriangle size={24} />
-                            </div>
-                            <h3 className="text-xl font-bold text-stone-800 mb-2 text-center">Delete Campaign?</h3>
-                            <p className="text-stone-500 mb-4 text-center text-sm">
-                                This will permanently delete <strong>{currentAccount?.committee_name}</strong> and all its data.
-                            </p>
-
-                            <div className="mb-4">
-                                <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">
-                                    Type "DELETE" to confirm
-                                </label>
-                                <input
-                                    type="text"
-                                    value={deleteConfirmation}
-                                    onChange={(e) => setDeleteConfirmation(e.target.value)}
-                                    className="w-full p-2 border border-stone-200 rounded-lg text-center font-bold text-rose-600 focus:ring-2 focus:ring-rose-500 outline-none"
-                                    placeholder="DELETE"
-                                />
-                            </div>
-
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setIsDeleteModalOpen(false)}
-                                    className="flex-1 py-2.5 rounded-xl font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmDelete}
-                                    disabled={deleteConfirmation !== 'DELETE'}
-                                    className="flex-1 py-2.5 rounded-xl font-bold text-white bg-rose-600 hover:bg-rose-700 transition-colors shadow-lg shadow-rose-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    Delete
-                                </button>
-                            </div>
+                            </form>
                         </div>
                     </div>
                 )}
+
+                {activeSection === 'branding' && currentAccount && (
+                    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
+                        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl border border-stone-100 shadow-sm">
+                            <h3 className="font-bold text-stone-800 flex items-center gap-2 mb-6 text-lg">
+                                <Sparkles size={20} className="text-violet-500" />
+                                Branding Configuration
+                            </h3>
+
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between p-4 border border-stone-200 rounded-xl bg-stone-50">
+                                    <div>
+                                        <div className="font-bold text-stone-800">Automated Branding</div>
+                                        <div className="text-sm text-stone-500">Automatically apply your logo and colors to postcards (Pro feature)</div>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={brandingEnabled}
+                                            onChange={(e) => setBrandingEnabled(e.target.checked)}
+                                            className="sr-only peer"
+                                            disabled={!currentAccount || currentAccount.id === 'new'}
+                                        />
+                                        <div className="w-11 h-6 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                                    </label>
+                                </div>
+
+                                <div className="flex justify-end pt-6 border-t border-stone-100">
+                                    <button
+                                        type="submit"
+                                        disabled={isSaving || !currentAccount || currentAccount.id === 'new'}
+                                        className="flex items-center gap-2 bg-rose-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                                        Save Branding
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                )}
+
+                {activeSection === 'danger' && currentAccount && currentAccount.id !== 'new' && (
+                    <div className="animate-in fade-in zoom-in-95 duration-200">
+                        <div className="bg-rose-50 p-8 rounded-2xl border border-rose-100">
+                            <h3 className="font-bold text-rose-800 flex items-center gap-2 mb-4">
+                                <AlertTriangle size={20} />
+                                Danger Zone
+                            </h3>
+                            <p className="text-sm text-rose-600 mb-6">
+                                Deleting this campaign <strong>({currentAccount.committee_name})</strong> will remove all associated webhooks and data. This action cannot be undone.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={handleDeleteClick}
+                                className="bg-white border border-rose-200 text-rose-600 font-bold py-3 px-6 rounded-xl hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                            >
+                                Delete Campaign
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+            </SettingsLayout>
+
+            {isDeleteModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-in zoom-in-95 duration-200">
+                        <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center text-rose-600 mb-4 mx-auto">
+                            <AlertTriangle size={24} />
+                        </div>
+                        <h3 className="text-xl font-bold text-stone-800 mb-2 text-center">Delete Campaign?</h3>
+                        <p className="text-stone-500 mb-4 text-center text-sm">
+                            This will permanently delete <strong>{currentAccount?.committee_name}</strong> and all its data.
+                        </p>
+
+                        <div className="mb-4">
+                            <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">
+                                Type "DELETE" to confirm
+                            </label>
+                            <input
+                                type="text"
+                                value={deleteConfirmation}
+                                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                                className="w-full p-2 border border-stone-200 rounded-lg text-center font-bold text-rose-600 focus:ring-2 focus:ring-rose-500 outline-none"
+                                placeholder="DELETE"
+                            />
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setIsDeleteModalOpen(false)}
+                                className="flex-1 py-2.5 rounded-xl font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                disabled={deleteConfirmation !== 'DELETE'}
+                                className="flex-1 py-2.5 rounded-xl font-bold text-white bg-rose-600 hover:bg-rose-700 transition-colors shadow-lg shadow-rose-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ViewState, Profile, Donation, ActBlueAccount } from './types';
+import { ViewState, Profile, Donation, ActBlueAccount, PostcardTemplate } from './types';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import PostcardBuilder from './components/PostcardBuilder';
@@ -25,6 +25,7 @@ const App: React.FC = () => {
   const [accounts, setAccounts] = useState<ActBlueAccount[]>([]);
   const [currentAccount, setCurrentAccount] = useState<ActBlueAccount | null>(null);
   const [donations, setDonations] = useState<Donation[]>([]);
+  const [templates, setTemplates] = useState<PostcardTemplate[]>([]);
 
   useEffect(() => {
     // Safety timeout to prevent infinite loading
@@ -81,6 +82,7 @@ const App: React.FC = () => {
         setAccounts([]);
         setCurrentAccount(null);
         setDonations([]);
+        setTemplates([]);
       }
     });
 
@@ -156,6 +158,19 @@ const App: React.FC = () => {
         }) as ActBlueAccount[];
       }
       setAccounts(fetchedAccounts);
+
+      // 2.3 Fetch Templates for the user's accounts
+      if (fetchedAccounts.length > 0) {
+        const { data: templatesData } = await supabase
+          .from('postcard_templates')
+          .select('*')
+          .in('actblue_account_id', fetchedAccounts.map(a => a.id))
+          .order('created_at', { ascending: false });
+
+        if (templatesData) {
+          setTemplates(templatesData as PostcardTemplate[]);
+        }
+      }
 
       const isUserProfileComplete = mappedProfile.full_name && mappedProfile.organization;
       console.log('Profile loaded:', { id: userId, complete: isUserProfileComplete, accounts: fetchedAccounts.length });
@@ -542,17 +557,47 @@ const App: React.FC = () => {
         <PostcardBuilder
           profile={profile!}
           account={currentAccount}
-          template={{
-            profile_id: profile.id,
-            template_name: 'Main',
-            frontpsc_background_image: currentAccount?.front_image_url,
-            backpsc_message_template: currentAccount?.back_message
-          }}
-          onSave={(updates) => {
-            return handleSaveAccount({
-              front_image_url: updates.frontpsc_background_image,
-              back_message: updates.backpsc_message_template
-            });
+          templates={templates.filter(t => t.actblue_account_id === currentAccount?.id)}
+          onSave={async (updates, templateId) => {
+            if (templateId) {
+              // Update existing template or create new if requested
+              const { data, error } = await supabase
+                .from('postcard_templates')
+                .upsert({
+                  id: templateId === 'new' ? undefined : templateId,
+                  actblue_account_id: currentAccount?.id,
+                  front_image_url: updates.front_image_url,
+                  back_message: updates.back_message,
+                  template_name: updates.template_name || 'My Template',
+                  is_active: true
+                })
+                .select()
+                .single();
+
+              if (error) throw error;
+
+              // Deactivate other templates if this one is active
+              await supabase
+                .from('postcard_templates')
+                .update({ is_active: false })
+                .eq('actblue_account_id', currentAccount?.id)
+                .neq('id', data.id);
+
+              // Update local state
+              setTemplates(prev => {
+                const filtered = prev.filter(t => t.id !== data.id && t.actblue_account_id === currentAccount?.id);
+                const others = prev.filter(t => t.actblue_account_id !== currentAccount?.id);
+                return [...others, { ...data, is_active: true }, ...filtered.map(t => ({ ...t, is_active: false }))];
+              });
+
+              toast("Template saved and set as active", "success");
+            } else {
+              // Save as account default
+              return handleSaveAccount({
+                front_image_url: updates.front_image_url,
+                back_message: updates.back_message
+              });
+            }
           }}
         />
       )}

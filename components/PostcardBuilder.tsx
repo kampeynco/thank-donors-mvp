@@ -2,15 +2,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Sparkles, Eye, Type, Image as ImageIcon, Plus, Loader2, Save, AlertTriangle, CheckCircle, AlertCircle, X, History, RefreshCw, Crop, Move, ZoomIn, ZoomOut, Check, Share2, Info } from 'lucide-react';
 import { generateThankYouMessage } from '../services/geminiService';
-import { Profile, Template, ActBlueAccount } from '../types';
+import { Profile, Template, ActBlueAccount, PostcardTemplate } from '../types';
 import { useToast } from './ToastContext';
 import { supabase } from '../services/supabaseClient';
 
 interface PostcardBuilderProps {
     profile: Profile;
     account: ActBlueAccount | null;
-    template: Template;
-    onSave: (data: Partial<Template>) => Promise<void>;
+    templates: PostcardTemplate[];
+    onSave: (data: { front_image_url?: string; back_message?: string; template_name?: string }, templateId?: string | 'new') => Promise<void>;
 }
 
 const VARIABLE_OPTIONS = [
@@ -41,16 +41,22 @@ const TARGET_WIDTH = 1875;
 const TARGET_HEIGHT = 1275;
 const ASPECT_RATIO = TARGET_WIDTH / TARGET_HEIGHT;
 
-const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, template, onSave }) => {
+const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, templates, onSave }) => {
     const { toast } = useToast();
     const [viewSide, setViewSide] = useState<'front' | 'back'>('front');
+    const [retryCount, setRetryCount] = useState(0);
 
-    // Message State
-    const [message, setMessage] = useState(template.backpsc_message_template || account?.back_message || "Dear %FIRST_NAME%,\n\nThank you so much for your generous support! Your contribution helps us fight for a better future.\n\nWith gratitude,");
+    // Template Management State
+    const activeTemplate = templates.find(t => t.is_active);
+    const [selectedTemplateId, setSelectedTemplateId] = useState<string | 'account'>(activeTemplate?.id || 'account');
+    const [templateName, setTemplateName] = useState(activeTemplate?.template_name || 'My Template');
+
+    // Message State - default to active template, then account default, then legacy placeholder
+    const [message, setMessage] = useState(activeTemplate?.back_message || account?.back_message || "Dear %FIRST_NAME%,\n\nThank you so much for your generous support! Your contribution helps us fight for a better future.\n\nWith gratitude,");
 
     // Image State
     // dbImage mirrors what is saved in the database (passed via props)
-    const [dbImage, setDbImage] = useState<string | null>(template.frontpsc_background_image || account?.front_image_url || null);
+    const [dbImage, setDbImage] = useState<string | null>(activeTemplate?.front_image_url || account?.front_image_url || null);
     // localImage holds the base64 preview of a newly uploaded file
     const [localImage, setLocalImage] = useState<string | null>(null);
 
@@ -62,7 +68,6 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
     const [isUploading, setIsUploading] = useState(false);
     const [tone, setTone] = useState<'warm' | 'formal' | 'urgent'>('warm');
     const [saveResult, setSaveResult] = useState<{ type: 'success' | 'warning' | 'error', message: string } | null>(null);
-    const [retryCount, setRetryCount] = useState(0);
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -169,7 +174,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                 // 1. We have history
                 // 2. There is no template image saved
                 // 3. The user hasn't uploaded/selected anything yet in this session
-                if (validUrls.length > 0 && !template.frontpsc_background_image && !localImage && !uploadedUrl) {
+                if (validUrls.length > 0 && !activeTemplate?.front_image_url && !account?.front_image_url && !localImage && !uploadedUrl) {
                     setUploadedUrl(validUrls[0]);
                 }
             }
@@ -191,36 +196,24 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
 
     // Effect 2: Sync State with Props (Template updates) & Refresh potentially stale URLs
     useEffect(() => {
-        const syncImage = async () => {
-            const incomingImage = template.frontpsc_background_image || account?.front_image_url;
-            console.log('[PostcardBuilder] Effect 2: Syncing image from props', {
-                incomingImage: incomingImage ? incomingImage.substring(0, 50) + '...' : 'null',
-                hasTemplateImage: !!template.frontpsc_background_image,
-                hasAccountImage: !!account?.front_image_url,
-                accountId: account?.id
-            });
+        const current = selectedTemplateId === 'account' ? null : templates.find(t => t.id === selectedTemplateId);
+        const incomingImage = current?.front_image_url || account?.front_image_url;
+        const incomingMessage = current?.back_message || account?.back_message;
 
+        const syncImage = async () => {
             if (!incomingImage) {
                 setDbImage(null);
             } else {
-                // Only set optimistically if it looks like a valid URL already
                 if (incomingImage.startsWith('http') || incomingImage.startsWith('data:')) {
                     setDbImage(incomingImage);
                 }
-
-                // Try to refresh it to a fresh signed URL
                 const freshUrl = await getFreshSignedUrl(incomingImage);
                 if (freshUrl) {
-                    console.log('[PostcardBuilder] Effect 2: Applying fresh URL');
                     setDbImage(freshUrl);
-                    // Force error reset
                     setImageLoadError(false);
                     setRetryCount(0);
-                    // If we have a fresh confirmed URL, clear local preview so we see the real thing
                     if (localImage) setLocalImage(null);
                 } else if (!incomingImage.startsWith('http')) {
-                    // If refresh failed and it was a relative path, we have a problem
-                    console.error('[PostcardBuilder] Failed to get signed URL for relative path:', incomingImage);
                     setImageLoadError(true);
                 }
             }
@@ -228,14 +221,13 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
 
         syncImage();
 
-        // Update message state if it has changed externally
-        if (template.backpsc_message_template && template.backpsc_message_template !== message) {
-            setMessage(template.backpsc_message_template);
+        if (incomingMessage && incomingMessage !== message) {
+            setMessage(incomingMessage);
         }
-        else if (template.backpsc_message_template && !message.includes('%FIRST_NAME%')) {
-            setMessage(template.backpsc_message_template);
+        if (current) {
+            setTemplateName(current.template_name);
         }
-    }, [template.frontpsc_background_image, template.backpsc_message_template, account?.id]);
+    }, [selectedTemplateId, templates, account?.id]);
 
     // Effect 3: Fetch history on mount/profile change
     useEffect(() => {
@@ -521,9 +513,10 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
             const imageToSave = uploadedUrl || dbImage;
 
             await onSave({
-                backpsc_message_template: message,
-                frontpsc_background_image: imageToSave || undefined
-            });
+                back_message: message,
+                front_image_url: imageToSave || undefined,
+                template_name: selectedTemplateId !== 'account' ? templateName : undefined
+            }, selectedTemplateId === 'account' ? undefined : selectedTemplateId);
 
             if (!imageToSave && !localImage) {
                 setSaveResult({
@@ -619,6 +612,64 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
                 <div className="space-y-6">
+                    {/* Template Selection Section */}
+                    <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-bold text-stone-800 flex items-center gap-2 text-sm uppercase tracking-wider">
+                                <Save size={18} className="text-rose-500" />
+                                Configuration Source
+                            </h3>
+                            <button
+                                onClick={() => {
+                                    setSelectedTemplateId('new');
+                                    setTemplateName('New Template');
+                                    setMessage('');
+                                    setDbImage(null);
+                                    setLocalImage(null);
+                                    setUploadedUrl(null);
+                                }}
+                                className="text-rose-600 hover:text-rose-700 text-xs font-bold flex items-center gap-1 bg-rose-50 px-2 py-1 rounded-md transition-colors"
+                            >
+                                <Plus size={14} /> New Template
+                            </button>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="relative">
+                                <select
+                                    value={selectedTemplateId}
+                                    onChange={(e) => setSelectedTemplateId(e.target.value as any)}
+                                    className="w-full border border-stone-200 rounded-xl py-3 pl-4 pr-10 focus:ring-2 focus:ring-rose-500 appearance-none bg-white text-stone-700 font-medium shadow-sm transition-all hover:border-stone-300"
+                                >
+                                    <option value="account">Account Default Settings</option>
+                                    <optgroup label="Custom Templates">
+                                        {templates.map(t => (
+                                            <option key={t.id} value={t.id}>
+                                                {t.template_name} {t.is_active ? '(Active)' : ''}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                    {selectedTemplateId === 'new' && (
+                                        <option value="new">New Template (Draft)</option>
+                                    )}
+                                </select>
+                                <Save size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+                            </div>
+
+                            {selectedTemplateId !== 'account' && (
+                                <div className="animate-in slide-in-from-top-2 duration-300">
+                                    <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1.5 ml-1">Template Name</label>
+                                    <input
+                                        type="text"
+                                        value={templateName}
+                                        onChange={(e) => setTemplateName(e.target.value)}
+                                        placeholder="Enter template name..."
+                                        className="w-full border border-stone-200 rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-rose-500 bg-stone-50/50 text-stone-700 font-medium"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
 
                     {viewSide === 'front' ? (
                         <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm animate-in fade-in duration-300">
@@ -628,6 +679,16 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                         <ImageIcon size={20} className="text-rose-500" />
                                         Front Image
                                     </h3>
+                                    <div className="flex gap-2 mt-0.5">
+                                        {(selectedTemplateId !== 'account' || activeTemplate) && (
+                                            <span className={`text-[10px] uppercase font-black px-1.5 py-0.5 rounded ${templates.find(t => t.id === selectedTemplateId)?.front_image_url || (selectedTemplateId === 'account' && activeTemplate?.front_image_url) ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                {templates.find(t => t.id === selectedTemplateId)?.front_image_url || (selectedTemplateId === 'account' && activeTemplate?.front_image_url) ? 'Template Source' : 'Account Default'}
+                                            </span>
+                                        )}
+                                        {!account?.front_image_url && !activeTemplate?.front_image_url && !templates.find(t => t.id === selectedTemplateId)?.front_image_url && (
+                                            <span className="text-[10px] uppercase font-black px-1.5 py-0.5 rounded bg-stone-100 text-stone-500">No Default Set</span>
+                                        )}
+                                    </div>
                                     {/* Removed Shared from badge */}
                                 </div>
                                 <span className="text-xs text-stone-400 bg-stone-100 px-2 py-1 rounded">1875 × 1275 px</span>
@@ -736,6 +797,13 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                         <Type size={20} className="text-rose-500" />
                                         Message Builder
                                     </h3>
+                                    <div className="flex gap-2 mt-0.5">
+                                        {(selectedTemplateId !== 'account' || activeTemplate) && (
+                                            <span className={`text-[10px] uppercase font-black px-1.5 py-0.5 rounded ${templates.find(t => t.id === selectedTemplateId)?.back_message || (selectedTemplateId === 'account' && activeTemplate?.back_message) ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                {templates.find(t => t.id === selectedTemplateId)?.back_message || (selectedTemplateId === 'account' && activeTemplate?.back_message) ? 'Template Source' : 'Account Default'}
+                                            </span>
+                                        )}
+                                    </div>
                                     {/* Removed Shared from badge */}
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
