@@ -777,8 +777,6 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                         </div>
                                     </div>
 
-                                    {/* Vertical Divider */}
-                                    <div className="absolute left-[50%] top-6 bottom-6 w-px bg-stone-200"></div>
 
                                     {/* Branding Stamp (Top Right) */}
                                     {currentAccount?.entity?.branding_enabled !== false && (
@@ -799,7 +797,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                     <div className="absolute left-[52%] top-0 right-0 bottom-0 p-6 flex flex-col justify-end">
 
                                         {/* Middle Section: Return Address & Indicia (on same line) */}
-                                        <div className="flex items-end justify-between gap-4 mb-4 pb-2 border-b border-stone-100">
+                                        <div className="flex items-end justify-between gap-4 mb-4 pb-2">
                                             {/* Return Address */}
                                             <div className="text-[8px] text-stone-500 uppercase leading-snug font-medium max-w-[60%]">
                                                 <div className="font-bold text-stone-700 truncate">{currentAccount?.committee_name || 'Committee Name'}</div>
@@ -811,12 +809,9 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                                 </div>
                                             </div>
 
-                                            {/* Postage Indicia (Lob Style) */}
-                                            <div className="w-20 h-10 border border-stone-800 flex flex-col items-center justify-center p-0.5 text-center font-bold bg-white shrink-0">
-                                                <span className="text-[6px] uppercase tracking-tighter leading-none">US Postage Paid</span>
-                                                <span className="text-[7px] uppercase leading-none my-0.5">Lob.com</span>
-                                                <div className="w-full h-px bg-stone-800 my-0.5 scale-x-90"></div>
-                                                <span className="text-[6px] leading-none uppercase">Standard</span>
+                                            {/* Postage Indicia */}
+                                            <div className="flex flex-col items-center justify-center p-0.5 text-center font-bold bg-white shrink-0">
+                                                <span className="text-[8px] uppercase tracking-tighter leading-none">Postage Indicia</span>
                                             </div>
                                         </div>
 
@@ -835,7 +830,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
 
                                         {/* Committee Disclaimer (Required) */}
                                         {(currentAccount?.entity?.disclaimer || currentAccount?.disclaimer) && (
-                                            <div className="mt-2 pt-2 border-t border-stone-200">
+                                            <div className="mt-2 pt-2">
                                                 <p className="text-[7px] text-stone-500 uppercase leading-[1.1] tracking-tighter italic text-center">
                                                     Paid for by {currentAccount?.entity?.disclaimer || currentAccount?.disclaimer}. Not authorized by any candidate or candidate's committee.
                                                 </p>
