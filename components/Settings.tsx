@@ -315,7 +315,7 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSect
                                 <div className="flex items-center justify-between p-4 border border-stone-200 rounded-xl bg-stone-50">
                                     <div className="pr-4">
                                         <div className="font-bold text-stone-800">Remove Thank Donors branding</div>
-                                        <div className="text-sm text-stone-500">Hide the "Powered by Thank Donors" badge from the back of your postcards.</div>
+                                        <div className="text-sm text-stone-500">Hide the Thank Donors badge from the back of your postcards.</div>
                                         {currentAccount?.entity?.tier !== 'pro' && (
                                             <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full uppercase tracking-wider">
                                                 <Sparkles size={10} />
