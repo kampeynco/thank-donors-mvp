@@ -203,18 +203,25 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
             if (!incomingImage) {
                 setDbImage(null);
             } else {
-                // Optimistically set it first so UI isn't blank while refreshing
-                setDbImage(incomingImage);
+                // Only set optimistically if it looks like a valid URL already
+                if (incomingImage.startsWith('http') || incomingImage.startsWith('data:')) {
+                    setDbImage(incomingImage);
+                }
 
                 // Try to refresh it to a fresh signed URL
                 const freshUrl = await getFreshSignedUrl(incomingImage);
                 if (freshUrl) {
                     console.log('[PostcardBuilder] Effect 2: Applying fresh URL');
                     setDbImage(freshUrl);
-                    // Force error reset in case freshUrl === incomingImage
+                    // Force error reset
                     setImageLoadError(false);
+                    setRetryCount(0);
                     // If we have a fresh confirmed URL, clear local preview so we see the real thing
                     if (localImage) setLocalImage(null);
+                } else if (!incomingImage.startsWith('http')) {
+                    // If refresh failed and it was a relative path, we have a problem
+                    console.error('[PostcardBuilder] Failed to get signed URL for relative path:', incomingImage);
+                    setImageLoadError(true);
                 }
             }
         };
@@ -839,15 +846,34 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                             <>
                                                 <AlertCircle size={48} className="text-rose-400 opacity-80" />
                                                 <p className="font-medium text-rose-500">Failed to load image</p>
-                                                <button
-                                                    onClick={() => {
-                                                        setImageLoadError(false);
-                                                        setRetryCount(c => c + 1);
-                                                    }}
-                                                    className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm text-xs font-bold text-stone-600 hover:text-stone-800 transition-colors"
-                                                >
-                                                    <RefreshCw size={12} /> Retry Load
-                                                </button>
+                                                <div className="text-[10px] text-stone-400 max-w-[200px] break-all bg-stone-50 p-2 rounded border border-stone-100">
+                                                    URL: {activeImage?.substring(0, 100)}...
+                                                </div>
+                                                <div className="flex flex-col gap-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            setImageLoadError(false);
+                                                            setRetryCount(c => c + 1);
+                                                        }}
+                                                        className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm text-xs font-bold text-stone-600 hover:text-stone-800 transition-colors"
+                                                    >
+                                                        <RefreshCw size={12} /> Retry Load
+                                                    </button>
+                                                    <button
+                                                        onClick={async () => {
+                                                            setImageLoadError(false);
+                                                            const fresh = await getFreshSignedUrl(activeImage);
+                                                            if (fresh) {
+                                                                setDbImage(fresh);
+                                                                setUploadedUrl(null);
+                                                                setLocalImage(null);
+                                                            }
+                                                        }}
+                                                        className="flex items-center gap-2 px-4 py-2 bg-rose-50 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-100 transition-colors"
+                                                    >
+                                                        <RefreshCw size={12} /> Force Refresh URL
+                                                    </button>
+                                                </div>
                                             </>
                                         ) : (
                                             <>
