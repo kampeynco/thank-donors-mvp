@@ -540,6 +540,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
     };
 
     const previewText = getPreviewMessage(message);
+    const dynamicFontSize = Math.max(9, 11 - (message.length / 500) * 2);
 
     return (
         <div className="space-y-8 relative">
@@ -743,13 +744,14 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                 ref={textareaRef}
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
+                                maxLength={500}
                                 className="w-full h-64 p-4 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none text-stone-700 leading-relaxed text-base font-sans"
                                 placeholder="Write your thank you message here..."
                             />
 
                             <div className="flex justify-between items-center mt-3">
                                 <p className="text-xs text-stone-400 italic">Use variables to personalize each card.</p>
-                                <p className={`text-xs font-bold ${message.length > 300 ? 'text-rose-500' : 'text-stone-400'}`}>{message.length} chars</p>
+                                <p className={`text-xs font-bold ${message.length >= 500 ? 'text-rose-500' : 'text-stone-400'}`}>{message.length} / 500 characters</p>
                             </div>
                         </div>
                     )}
@@ -829,7 +831,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                 <div className="w-full h-full bg-stone-50 relative flex flex-col p-6 overflow-hidden">
                                     <div className="flex-1 pr-[45%] flex flex-col">
                                         <div className="flex-1 overflow-hidden">
-                                            <p className="text-stone-800 leading-[1.3] whitespace-pre-wrap font-sans" style={{ fontSize: '11pt' }}>
+                                            <p className="text-stone-800 leading-[1.3] whitespace-pre-wrap font-sans transition-all duration-300" style={{ fontSize: `${dynamicFontSize}pt` }}>
                                                 {previewText || "Your thank you message will appear here. Use variables like %FIRST_NAME% to personalize your message for each donor."}
                                             </p>
                                         </div>

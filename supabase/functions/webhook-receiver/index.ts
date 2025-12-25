@@ -18,7 +18,7 @@ const PRICING = {
   free: 149
 } as const;
 
-const BRANDING_NOTE = "Mailed by Thank Donors";
+const BRANDING_NOTE = "Mailed by ThankDonors.com";
 
 // Helper function to escape HTML to prevent injection
 function escapeHtml(text: string): string {
@@ -51,6 +51,7 @@ function substituteVariables(template: string, donor: any, donationDate: string)
 function generatePostcardBackHtml(message: string, showBranding: boolean = true): string {
   // Escape the message to prevent HTML injection
   const escapedMessage = escapeHtml(message);
+  const fontSize = Math.max(9, 11 - (message.length / 500) * 2);
 
   return `
   <html>
@@ -87,7 +88,7 @@ function generatePostcardBackHtml(message: string, showBranding: boolean = true)
     .message-text {
   width: 95%;
   max-width: 95%;
-  font-size: 11pt;
+  font-size: ${fontSize}pt;
   line-height: 1.5;
   color: #1c1917;
   white-space: pre-wrap;
