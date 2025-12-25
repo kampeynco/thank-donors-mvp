@@ -855,6 +855,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                                             return match ? `${match[1]}/${match[2]}` : 'not a storage URL';
                                                         })()}</span><br />
                                                         <hr className="my-1 border-stone-100" />
+                                                        Profile UUID: <span className="text-orange-500">{profile.id}</span><br />
                                                         Account UUID (id): <span className="text-purple-500">{account?.id}</span><br />
                                                         Account Entity ID (int): <span className="text-blue-500">{account?.entity_id}</span><br />
                                                         Entity UUID (joined): <span className="text-green-500">{(account?.entity as any)?.id}</span><br />
