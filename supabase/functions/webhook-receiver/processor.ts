@@ -1,0 +1,184 @@
+import { sendPostcardViaLob } from "./lob.ts";
+import { Donor } from "./types.ts";
+
+export const PRICING = {
+    pro: 99,
+    free: 149
+} as const;
+
+export async function processLineItem(
+    item: any,
+    donor: any,
+    actBlueId: string,
+    donationDate: string,
+    isTestMode: boolean,
+    supabase: any
+): Promise<{ success: boolean; error?: string }> {
+    const entityId = item.entityId || item.entity_id;
+    const amount = parseFloat(item.amount || "0");
+    console.log(`🔍 Checking line item. Entity ID: ${entityId}, Amount: ${amount}`);
+
+    // 1. Fetch the Entity and its linked Account
+    const { data: entity, error: entityError } = await supabase
+        .from("actblue_entities")
+        .select(`
+      entity_id,
+      committee_name,
+      tier,
+      balance_cents,
+      stripe_customer_id,
+      front_image_url,
+      back_message,
+      disclaimer,
+      street_address,
+      city,
+      state,
+      postal_code,
+      branding_enabled,
+      actblue_accounts(
+        id,
+        profile_id
+      )
+    `)
+        .eq("entity_id", entityId)
+        .single();
+
+    if (entityError || !entity) {
+        console.warn(`⚠️ Entity ID ${entityId} not found or query error: ${entityError?.message}. Skipping.`);
+        return { success: false, error: `Entity not found: ${entityId}` };
+    }
+
+    const account = entity.actblue_accounts?.[0];
+    if (!account) {
+        console.warn(`⚠️ No linked profile found for Entity ID ${entityId}. Skipping.`);
+        return { success: false, error: 'No linked profile' };
+    }
+
+    console.log(`✅ Resolved entity: ${entity.committee_name} and profile: ${account.profile_id}`);
+
+    // 2. Determine pricing
+    const priceCents = PRICING[entity.tier as keyof typeof PRICING] || PRICING.free;
+
+    // 3. Atomic balance deduction
+    const { data: updatedEntity, error: deductError } = await supabase
+        .from('actblue_entities')
+        .update({ balance_cents: entity.balance_cents - priceCents })
+        .eq('entity_id', entityId)
+        .gte('balance_cents', priceCents)
+        .select('balance_cents')
+        .single();
+
+    if (deductError || !updatedEntity) {
+        console.warn(`❌ Entity ${entityId} has insufficient balance or concurrent update. Current: ${entity.balance_cents}c, Need: ${priceCents}c.`);
+        return { success: false, error: 'Insufficient balance' };
+    }
+
+    console.log(`💰 Deducted ${priceCents}c from entity ${entityId}. New balance: ${updatedEntity.balance_cents}c`);
+
+    // 4. Record transaction
+    await supabase.from('billing_transactions').insert({
+        entity_id: entityId,
+        profile_id: account.profile_id,
+        amount_cents: -priceCents,
+        type: 'postcard_deduction',
+        description: `Postcard for donor ${donor.firstname} ${donor.lastname}`
+    });
+
+    // 5. Create normalized donor object
+    const normalizedDonor: Donor = {
+        firstname: donor.firstname || donor.firstName || 'Friend',
+        lastname: donor.lastname || donor.lastName || '',
+        email: donor.email || '',
+        addr1: donor.addr1 || donor.address_line1 || donor.addressLine1 || '',
+        addr2: donor.addr2 || donor.address_line2 || donor.addressLine2 || '',
+        city: donor.city || '',
+        state: donor.state || '',
+        zip: donor.zip || donor.postalCode || donor.postal_code || '',
+        amount: amount
+    };
+
+    // 6. Insert Donation Record
+    const donationUid = `${actBlueId}_${entityId}`;
+    console.log(`💾 Saving donation record ${donationUid} to database...`);
+
+    const { data: donation, error: donationError } = await supabase
+        .from('donations')
+        .insert({
+            profile_id: account.profile_id,
+            actblue_account_id: account.id,
+            actblue_donation_id: donationUid,
+            amount: amount,
+            donor_firstname: normalizedDonor.firstname,
+            donor_lastname: normalizedDonor.lastname,
+            donor_email: normalizedDonor.email,
+            donor_addr1: normalizedDonor.addr1,
+            donor_city: normalizedDonor.city,
+            donor_state: normalizedDonor.state,
+            donor_zip: normalizedDonor.zip
+        })
+        .select()
+        .single();
+
+    if (donationError) {
+        if (donationError.code === '23505') {
+            console.log(`ℹ️ Duplicate donation item received (${donationUid}). Refunding balance.`);
+            await supabase.rpc('increment_entity_balance', {
+                p_entity_id: entityId,
+                p_amount: priceCents
+            });
+            return { success: false, error: 'Duplicate donation' };
+        }
+
+        console.error("❌ Error inserting donation:", JSON.stringify(donationError));
+        await supabase.rpc('increment_entity_balance', {
+            p_entity_id: entityId,
+            p_amount: priceCents
+        });
+        return { success: false, error: donationError.message };
+    }
+
+    // 7. Send Postcard via Lob.com API
+    const lobResult = await sendPostcardViaLob(normalizedDonor, entity, donationDate, isTestMode, {});
+
+    // 8. If Lob failed, refund the balance
+    if (!lobResult.success) {
+        console.warn(`⚠️ Lob API failed. Refunding ${priceCents}c to entity ${entityId}`);
+        await supabase.rpc('increment_entity_balance', {
+            p_entity_id: entityId,
+            p_amount: priceCents
+        });
+    }
+
+    // 9. Create Postcard Record
+    console.log(`📝 Recording postcard status: ${lobResult.success ? 'processed' : 'failed'}`);
+    const postcardStatus = lobResult.success ? 'processed' : 'failed';
+
+    const { data: postcardData, error: postcardError } = await supabase
+        .from('postcards')
+        .insert({
+            donation_id: donation.id,
+            profile_id: account.profile_id,
+            status: postcardStatus,
+            front_image_url: entity.front_image_url,
+            back_message: entity.back_message,
+            lob_postcard_id: lobResult.lobId || null,
+            lob_url: lobResult.url || null,
+            error_message: lobResult.error || null
+        })
+        .select()
+        .single();
+
+    if (postcardError) {
+        console.error("❌ Error creating postcard record:", JSON.stringify(postcardError));
+    } else if (postcardData) {
+        await supabase.from('postcard_events').insert({
+            postcard_id: postcardData.id,
+            status: postcardStatus,
+            details: lobResult.success
+                ? 'Postcard successfully sent to Lob.com'
+                : `Failed to send to Lob.com: ${lobResult.error}`
+        });
+    }
+
+    return { success: lobResult.success };
+}

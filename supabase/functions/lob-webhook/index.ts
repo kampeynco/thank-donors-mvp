@@ -31,11 +31,11 @@ serve(async (req) => {
 
         // 3. Verify Event Type and Map to Enum
         const eventType = payload.event_type_id; // e.g., "postcard.in_transit"
-        const resourceId = payload.body.id;
+        const resourceId = payload.body?.id;
 
-        if (!resourceId) {
-            console.error("No resource ID found in payload");
-            return new Response(JSON.stringify({ error: "No resource ID found" }), {
+        if (!eventType || !resourceId) {
+            console.error("Missing event_type_id or resource ID in payload", { eventType, resourceId });
+            return new Response(JSON.stringify({ error: "Invalid payload structure" }), {
                 headers: { ...corsHeaders, "Content-Type": "application/json" },
                 status: 400,
             });
