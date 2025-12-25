@@ -283,6 +283,9 @@ serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  let eventId: string | undefined;
+  let supabase: any;
+
   try {
     // 1. Setup Supabase Client (Service Role required for data ingestion bypassing RLS)
     // @ts-ignore
@@ -294,11 +297,26 @@ serve(async (req) => {
       throw new Error("Missing Supabase Service Role configuration.");
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // 2. Parse ActBlue Payload
     let payload = await req.json();
     console.log("Received Webhook Payload. Keys:", Object.keys(payload));
+
+    // 2.a Initial Webhook Event Logger
+    const { data: eventRecord, error: eventError } = await supabase
+      .from('webhook_events')
+      .insert({
+        payload,
+        status: 'received'
+      })
+      .select('id')
+      .single();
+
+    if (eventError) {
+      console.error("❌ Failed to log initial webhook event:", JSON.stringify(eventError));
+    }
+    eventId = eventRecord?.id;
 
     // Check if Hookdeck wrapped the body
     if (payload.body && !payload.contribution && !payload.donor) {
@@ -356,7 +374,7 @@ serve(async (req) => {
       // 1. Fetch the Entity (for template design and billing)
       const { data: entity, error: entityError } = await supabase
         .from('actblue_entities')
-        .select('*')
+        .select('entity_id, committee_name, tier, balance_cents, stripe_customer_id, billing_email')
         .eq('entity_id', entityId)
         .single();
 
@@ -391,6 +409,14 @@ serve(async (req) => {
         continue;
       }
       const account = linkedAccounts[0];
+
+      // Update event record with profile_id if we have one (usually the first one we find)
+      if (eventId && account.profile_id) {
+        await supabase
+          .from('webhook_events')
+          .update({ profile_id: account.profile_id })
+          .eq('id', eventId);
+      }
 
       // 2.1 Resolve fields based on Account defaults
       const resolvedOverrides = {
@@ -512,11 +538,31 @@ serve(async (req) => {
       }
     }
 
+    // 4. Update Event Status
+    if (eventId) {
+      await supabase
+        .from('webhook_events')
+        .update({ status: 'processed' })
+        .eq('id', eventId);
+    }
+
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {
     console.error("❌ Critical Webhook Error:", error.message);
+
+    // Update Event Status to Error
+    if (eventId) {
+      await supabase
+        .from('webhook_events')
+        .update({
+          status: 'error',
+          error_message: error.message
+        })
+        .eq('id', eventId);
+    }
+
     return new Response(JSON.stringify({ error: error.message }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
