@@ -53,9 +53,8 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
       position: absolute;
       bottom: 0.4in;
       left: 0.4in;
-      font-size: 8pt;
-      color: #71717a;
-      opacity: 0.8;
+      font-size: 9pt;
+      color: #52525b;
     }
     </style>
   </head>
@@ -66,7 +65,9 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
     </div>
     ${showBranding ? `
     <div class="branding-note">
+    <strong>
       ${BRANDING_NOTE}
+    </strong>
     </div>
     ` : ''}
   </div>
