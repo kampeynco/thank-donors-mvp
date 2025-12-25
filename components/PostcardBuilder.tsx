@@ -1,3 +1,49 @@
+import React, { useState, useRef, useEffect } from 'react';
+import {
+    Check, CheckCircle, AlertTriangle, AlertCircle, X,
+    ImageIcon, Loader2, Upload, History, Sparkles,
+    RefreshCw, Trash2, Camera, Save, Undo,
+    Maximize2, CheckCircle2, Plus, Eye, Type,
+    Crop, ZoomIn, ZoomOut, Move
+} from 'lucide-react';
+import { supabase } from '../services/supabaseClient';
+import { useToast } from './ToastContext';
+import { Template, ActBlueAccount, Profile } from '../types';
+import { generateThankYouMessage } from '../services/geminiService';
+
+const TARGET_WIDTH = 1875;
+const TARGET_HEIGHT = 1275;
+const ASPECT_RATIO = TARGET_WIDTH / TARGET_HEIGHT;
+
+const VARIABLE_OPTIONS = [
+    { label: 'Full Name', value: '%FULL_NAME%' },
+    { label: 'First Name', value: '%FIRST_NAME%' },
+    { label: 'Last Name', value: '%LAST_NAME%' },
+    { label: 'Donation Date', value: '%DONATION_DAY%' },
+    { label: 'Current Date', value: '%CURRENT_DAY%' },
+    { label: 'Address Line 1', value: '%ADDRESS%' },
+    { label: 'City', value: '%CITY%' },
+    { label: 'State', value: '%STATE%' },
+];
+
+const DEMO_DONOR = {
+    firstname: 'John',
+    lastname: 'Donor',
+    addr1: '123 Gratitude Way',
+    addr2: '',
+    city: 'Hopeville',
+    state: 'CA',
+    zip: '90210',
+    date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+};
+
+interface PostcardBuilderProps {
+    currentAccount: ActBlueAccount | null;
+    template: Template | null;
+    onSave: (updates: { back_message: string; front_image_url?: string }) => Promise<void>;
+    isLoading?: boolean;
+}
+
 const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, template, onSave, isLoading }) => {
     const { toast } = useToast();
     const [viewSide, setViewSide] = useState<'front' | 'back'>('front');
@@ -149,16 +195,30 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
         }
     }, [template, currentAccount?.id]);
 
-    useEffect(() => {
-        fetchImageHistory();
-    }, [currentAccount?.entity_id]);
-
     const activeImage = localImage || uploadedUrl || dbImage;
+
+    // Monitor for image load errors and try to refresh signed URL once
+    const handleImageError = async () => {
+        if (!activeImage || activeImage.startsWith('data:') || activeImage.startsWith('blob:')) {
+            setImageLoadError(true);
+            return;
+        }
+
+        if (retryCount < 2) {
+            setRetryCount(prev => prev + 1);
+            const freshUrl = await getFreshSignedUrl(activeImage);
+            if (freshUrl && freshUrl !== activeImage) {
+                if (activeImage === dbImage) setDbImage(freshUrl);
+                else if (activeImage === uploadedUrl) setUploadedUrl(freshUrl);
+                return;
+            }
+        }
+        setImageLoadError(true);
+    };
 
     useEffect(() => {
         if (activeImage) {
             setImageLoadError(false);
-            setRetryCount(0);
         }
     }, [activeImage]);
 
@@ -201,7 +261,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
         try {
             const sanitizedName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, '_');
             const timestamp = Date.now();
-            const entityId = currentAccount?.entity_id;
+            const entityId = currentAccount?.entity_id || currentAccount?.entity?.id;
             const storagePath = entityId ? `entity_${entityId}` : 'default';
             const filePath = `${storagePath}/${timestamp}_${sanitizedName}`;
 
@@ -679,46 +739,108 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                     <div className="w-full max-w-lg">
                         <div className="relative aspect-[6/4] bg-white shadow-2xl rounded-sm overflow-hidden">
                             {viewSide === 'front' ? (
-                                activeImage && !imageLoadError ? (
-                                    <img
-                                        key={`${activeImage}-${retryCount}`}
-                                        src={activeImage}
-                                        alt="Postcard Front"
-                                        className="w-full h-full object-cover bg-stone-100"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center bg-stone-50 border-2 border-dashed border-stone-200 rounded-sm">
-                                        <ImageIcon size={48} className="text-stone-200 mb-4" />
-                                        <p className="text-stone-400 font-medium">No front image uploaded</p>
-                                    </div>
-                                )
+                                <div className="w-full h-full relative group">
+                                    {activeImage && !imageLoadError ? (
+                                        <img
+                                            key={`${activeImage}-${retryCount}`}
+                                            src={activeImage}
+                                            onError={handleImageError}
+                                            alt="Postcard Front"
+                                            className="w-full h-full object-cover bg-stone-100"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center bg-stone-50 border-2 border-dashed border-stone-200 rounded-sm">
+                                            <ImageIcon size={48} className="text-stone-200 mb-4" />
+                                            <p className="text-stone-400 font-medium">
+                                                {imageLoadError ? 'Failed to load image' : 'No front image uploaded'}
+                                            </p>
+                                            {imageLoadError && (
+                                                <button
+                                                    onClick={() => setRetryCount(0)}
+                                                    className="mt-4 text-xs bg-stone-200 px-3 py-1.5 rounded-full hover:bg-stone-300 transition-colors font-bold text-stone-600"
+                                                >
+                                                    Retry Loading
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                    <div className="absolute inset-0 border-8 border-white/10 pointer-events-none"></div>
+                                </div>
                             ) : (
-                                <div className="w-full h-full p-8 flex flex-col bg-stone-50/30 relative">
-                                    <div className="flex-1 flex flex-col pt-4">
-                                        <div className="flex gap-4 items-start mb-6">
-                                            <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-500 flex-shrink-0">
-                                                <Sparkles size={24} />
+                                <div className="w-full h-full bg-stone-50 relative flex flex-col p-6 overflow-hidden">
+                                    {/* Left Side: Message */}
+                                    <div className="flex-1 pr-[45%] flex flex-col">
+                                        <div className="flex-1 overflow-hidden">
+                                            <p className="text-stone-800 leading-[1.3] whitespace-pre-wrap font-sans" style={{ fontSize: '11pt' }}>
+                                                {previewText || "Your thank you message will appear here. Use variables like %FIRST_NAME% to personalize your message for each donor."}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Vertical Divider */}
+                                    <div className="absolute left-[50%] top-6 bottom-6 w-px bg-stone-200"></div>
+
+                                    {/* Branding Stamp (Top Right) */}
+                                    {currentAccount?.entity?.branding_enabled !== false && (
+                                        <div className="absolute top-4 right-4 w-16 h-16 pointer-events-none opacity-80">
+                                            <img
+                                                src="/thank_donors_stamp.png"
+                                                alt="Thank Donors Stamp"
+                                                className="w-full h-full object-contain"
+                                                onError={(e) => {
+                                                    // Fallback if image missing
+                                                    e.currentTarget.style.display = 'none';
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Right Side: Address & Postage Information */}
+                                    <div className="absolute left-[52%] top-0 right-0 bottom-0 p-6 flex flex-col justify-end">
+
+                                        {/* Middle Section: Return Address & Indicia (on same line) */}
+                                        <div className="flex items-end justify-between gap-4 mb-4 pb-2 border-b border-stone-100">
+                                            {/* Return Address */}
+                                            <div className="text-[8px] text-stone-500 uppercase leading-snug font-medium max-w-[60%]">
+                                                <div className="font-bold text-stone-700 truncate">{currentAccount?.committee_name || 'Committee Name'}</div>
+                                                <div className="truncate">{currentAccount?.entity?.street_address || currentAccount?.street_address || '123 Campaign St'}</div>
+                                                <div className="truncate">
+                                                    {currentAccount?.entity?.city || currentAccount?.city || 'City'},
+                                                    {currentAccount?.entity?.state || currentAccount?.state || 'ST'}
+                                                    {currentAccount?.entity?.postal_code || currentAccount?.postal_code || '12345'}
+                                                </div>
                                             </div>
-                                            <div className="flex-1 pt-1">
-                                                <p className="text-xl font-serif text-stone-800 leading-relaxed italic whitespace-pre-wrap">
-                                                    {previewText || "Your message will appear here..."}
+
+                                            {/* Postage Indicia (Lob Style) */}
+                                            <div className="w-20 h-10 border border-stone-800 flex flex-col items-center justify-center p-0.5 text-center font-bold bg-white shrink-0">
+                                                <span className="text-[6px] uppercase tracking-tighter leading-none">US Postage Paid</span>
+                                                <span className="text-[7px] uppercase leading-none my-0.5">Lob.com</span>
+                                                <div className="w-full h-px bg-stone-800 my-0.5 scale-x-90"></div>
+                                                <span className="text-[6px] leading-none uppercase">Standard</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Recipient Address */}
+                                        <div className="mb-6 space-y-0.5 px-2 py-1 bg-white/50 rounded">
+                                            <div className="text-[13px] font-bold text-stone-800 uppercase tracking-wide">
+                                                {DEMO_DONOR.firstname} {DEMO_DONOR.lastname}
+                                            </div>
+                                            <div className="text-[11px] text-stone-700 uppercase">
+                                                {DEMO_DONOR.addr1}
+                                            </div>
+                                            <div className="text-[11px] text-stone-700 uppercase">
+                                                {DEMO_DONOR.city}, {DEMO_DONOR.state} {DEMO_DONOR.zip}
+                                            </div>
+                                        </div>
+
+                                        {/* Committee Disclaimer (Required) */}
+                                        {(currentAccount?.entity?.disclaimer || currentAccount?.disclaimer) && (
+                                            <div className="mt-2 pt-2 border-t border-stone-200">
+                                                <p className="text-[7px] text-stone-500 uppercase leading-[1.1] tracking-tighter italic text-center">
+                                                    Paid for by {currentAccount?.entity?.disclaimer || currentAccount?.disclaimer}. Not authorized by any candidate or candidate's committee.
                                                 </p>
                                             </div>
-                                        </div>
-                                    </div>
-                                    <div className="absolute right-8 top-12 w-32 h-40 border-2 border-stone-200 flex items-center justify-center bg-stone-50/50 group">
-                                        <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest vertical-text">Stamp Area</span>
-                                    </div>
-                                    <div className="mt-auto border-t border-stone-200 pt-6">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-stone-200 flex items-center justify-center text-stone-500">
-                                                <X size={20} />
-                                            </div>
-                                            <div className="space-y-1 pt-1 opacity-50">
-                                                <div className="h-2 w-32 bg-stone-200 rounded"></div>
-                                                <div className="h-2 w-24 bg-stone-200 rounded"></div>
-                                            </div>
-                                        </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
