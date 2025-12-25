@@ -569,8 +569,7 @@ id,
       {view === ViewState.DASHBOARD && <Dashboard donations={donations} />}
       {view === ViewState.POSTCARD_BUILDER && (
         <PostcardBuilder
-          profile={profile!}
-          account={currentAccount}
+          currentAccount={currentAccount}
           template={{
             profile_id: profile!.id,
             template_name: 'Default',
