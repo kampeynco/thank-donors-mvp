@@ -51,11 +51,14 @@ function substituteVariables(template: string, donor: any, donationDate: string)
 function generatePostcardBackHtml(message: string, showBranding: boolean = true): string {
   // Escape the message to prevent HTML injection
   const escapedMessage = escapeHtml(message);
-  const fontSize = Math.max(6, 9 - (message.length / 500) * 4);
+  // Refined scaling: 8pt for short messages, down to 5pt for long ones
+  const fontSize = Math.max(5, 8 - (message.length / 500) * 3);
+  console.log(`📏 Calculated font size for message (length ${message.length}): ${fontSize}pt`);
 
   return `
   <html>
   <head>
+  <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
     body {
@@ -78,7 +81,7 @@ function generatePostcardBackHtml(message: string, showBranding: boolean = true)
   position: absolute;
   top: 0.4in;
   left: 0.4in;
-  width: 2.7in;
+  width: 2.5in;
   height: 3.2in;
   display: flex;
   flex-direction: column;
@@ -86,10 +89,9 @@ function generatePostcardBackHtml(message: string, showBranding: boolean = true)
   box-sizing: border-box;
 }
     .message-text {
-  width: 95%;
-  max-width: 95%;
+  width: 100%;
   font-size: ${fontSize}pt;
-  line-height: 1.5;
+  line-height: 1.4;
   color: #1c1917;
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -131,6 +133,7 @@ function generatePostcardFrontHtml(imageUrl: string, disclaimer: string | null, 
   return `
 <html>
 <head>
+<meta charset="UTF-8">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
   <style>
     body {
