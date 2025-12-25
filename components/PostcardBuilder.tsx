@@ -1,67 +1,14 @@
-
-import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Sparkles, Eye, Type, Image as ImageIcon, Plus, Loader2, Save, AlertTriangle, CheckCircle, AlertCircle, X, History, RefreshCw, Crop, Move, ZoomIn, ZoomOut, Check, Share2, Info } from 'lucide-react';
-import { generateThankYouMessage } from '../services/geminiService';
-import { Profile, Template, ActBlueAccount, PostcardTemplate } from '../types';
-import { useToast } from './ToastContext';
-import { supabase } from '../services/supabaseClient';
-
-interface PostcardBuilderProps {
-    profile: Profile;
-    account: ActBlueAccount | null;
-    templates: PostcardTemplate[];
-    onSave: (data: { front_image_url?: string; back_message?: string; template_name?: string }, templateId?: string | 'new') => Promise<void>;
-}
-
-const VARIABLE_OPTIONS = [
-    { label: 'Full Name', value: '%FULL_NAME%' },
-    { label: 'First Name', value: '%FIRST_NAME%' },
-    { label: 'Last Name', value: '%LAST_NAME%' },
-    { label: 'Address Line 1', value: '%ADDRESS%' },
-    { label: 'Address Line 2', value: '%ADDRESS2%' },
-    { label: 'City', value: '%CITY%' },
-    { label: 'State', value: '%STATE%' },
-    { label: 'Zip Code', value: '%ZIP%' },
-    { label: 'Donation Date', value: '%DONATION_DAY%' },
-];
-
-const DEMO_DONOR = {
-    firstname: 'John',
-    lastname: 'Smith',
-    addr1: '123 Democracy Lane',
-    addr2: 'Apt 4B',
-    city: 'Washington',
-    state: 'DC',
-    zip: '20001',
-    date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-};
-
-// Postcard dimensions ratio (approx 1.47)
-const TARGET_WIDTH = 1875;
-const TARGET_HEIGHT = 1275;
-const ASPECT_RATIO = TARGET_WIDTH / TARGET_HEIGHT;
-
-const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, templates, onSave }) => {
+const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, template, onSave, isLoading }) => {
     const { toast } = useToast();
     const [viewSide, setViewSide] = useState<'front' | 'back'>('front');
     const [retryCount, setRetryCount] = useState(0);
 
-    // Template Management State
-    const activeTemplate = templates.find(t => t.is_active);
-    const [selectedTemplateId, setSelectedTemplateId] = useState<string | 'account'>(activeTemplate?.id || 'account');
-    const [templateName, setTemplateName] = useState(activeTemplate?.template_name || 'My Template');
-
-    // Message State - default to active template, then account default, then legacy placeholder
-    const [message, setMessage] = useState(activeTemplate?.back_message || account?.back_message || "Dear %FIRST_NAME%,\n\nThank you so much for your generous support! Your contribution helps us fight for a better future.\n\nWith gratitude,");
-
-    // Image State
-    // dbImage mirrors what is saved in the database (passed via props)
-    const [dbImage, setDbImage] = useState<string | null>(activeTemplate?.front_image_url || account?.front_image_url || null);
-    // localImage holds the base64 preview of a newly uploaded file
+    // State for the postcard content
+    const [message, setMessage] = useState(template?.backpsc_message_template || '');
+    const [dbImage, setDbImage] = useState<string | null>(template?.frontpsc_background_image || null);
     const [localImage, setLocalImage] = useState<string | null>(null);
-
-    const [uploadedUrl, setUploadedUrl] = useState<string | null>(null); // Track the remote URL of the newly uploaded image
-    const [imageHistory, setImageHistory] = useState<string[]>([]); // Track recent uploads
+    const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+    const [imageHistory, setImageHistory] = useState<string[]>([]);
     const [imageLoadError, setImageLoadError] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -101,8 +48,6 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                 const pathSegments = parts[1].split('/').filter(Boolean);
                 if (pathSegments.length < 2) return url;
 
-                // Mode could be 'public', 'authenticated', 'sign', etc.
-                // If the first segment is one of these, bucket is the second segment.
                 const modes = ['public', 'authenticated', 'sign'];
                 if (modes.includes(pathSegments[0]) && pathSegments.length >= 3) {
                     bucket = pathSegments[1];
@@ -112,40 +57,29 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                     key = decodeURIComponent(pathSegments.slice(1).join('/'));
                 }
             } else if (!url.startsWith('http')) {
-                // If it's a relative path, assume it's a key in the images bucket
                 key = url;
-                console.log(`[ImageRefresh] Treating as relative key: ${key}`);
             } else {
-                console.warn('[ImageRefresh] URL is not a recognized Supabase format:', url);
                 return url;
             }
 
-            console.log(`[ImageRefresh] Refreshing - Bucket: ${bucket}, Key: ${key}`);
-
-            // Request a new signed URL
             const { data, error } = await supabase.storage
                 .from(bucket)
-                .createSignedUrl(key, 60 * 60 * 24 * 365); // 1 year validity
+                .createSignedUrl(key, 60 * 60 * 24 * 365);
 
             if (error || !data?.signedUrl) {
-                console.warn('[ImageRefresh] createSignedUrl failed, falling back to public:', error);
                 const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(key);
-                console.log('[ImageRefresh] Public fallback URL:', publicData.publicUrl);
                 return publicData.publicUrl;
             }
 
-            console.log('[ImageRefresh] Successfully got fresh signed URL');
             return data.signedUrl;
         } catch (e) {
-            console.error('[ImageRefresh] Error during refresh:', e);
             return url;
         }
     };
 
-    // Fetch recent uploads
     const fetchImageHistory = async () => {
-        const entityId = account?.entity_id;
-        const storagePath = entityId ? `entity_${entityId}` : profile.id;
+        const entityId = currentAccount?.entity_id;
+        const storagePath = entityId ? `entity_${entityId}` : 'default';
         if (!storagePath) return;
 
         try {
@@ -158,8 +92,6 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
 
             if (!error && data) {
                 const validFiles = data.filter(f => f.name !== '.emptyFolderPlaceholder');
-
-                // Use Signed URLs to ensure visibility even if bucket is private
                 const urls = await Promise.all(validFiles.map(async f => {
                     const { data: signedData } = await supabase.storage
                         .from('images')
@@ -170,11 +102,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                 const validUrls = urls.filter(u => u) as string[];
                 setImageHistory(validUrls);
 
-                // Auto-select the most recent image if:
-                // 1. We have history
-                // 2. There is no template image saved
-                // 3. The user hasn't uploaded/selected anything yet in this session
-                if (validUrls.length > 0 && !activeTemplate?.front_image_url && !account?.front_image_url && !localImage && !uploadedUrl) {
+                if (validUrls.length > 0 && !template?.frontpsc_background_image && !localImage && !uploadedUrl) {
                     setUploadedUrl(validUrls[0]);
                 }
             }
@@ -183,22 +111,17 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
         }
     };
 
-    // Effect 1: Handle Account Switching
     useEffect(() => {
         setLocalImage(null);
         setUploadedUrl(null);
         setImageLoadError(false);
         setSaveResult(null);
         setRetryCount(0);
-        // When account changes, we refetch history to potentially auto-select if needed (though profile usually constant)
-        // But mainly we reset state. The next effects will handle sync.
-    }, [account?.id]);
+    }, [currentAccount?.id]);
 
-    // Effect 2: Sync State with Props (Template updates) & Refresh potentially stale URLs
     useEffect(() => {
-        const current = selectedTemplateId === 'account' ? null : templates.find(t => t.id === selectedTemplateId);
-        const incomingImage = current?.front_image_url || account?.front_image_url;
-        const incomingMessage = current?.back_message || account?.back_message;
+        const incomingImage = template?.frontpsc_background_image;
+        const incomingMessage = template?.backpsc_message_template;
 
         const syncImage = async () => {
             if (!incomingImage) {
@@ -224,28 +147,20 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
         if (incomingMessage && incomingMessage !== message) {
             setMessage(incomingMessage);
         }
-        if (current) {
-            setTemplateName(current.template_name);
-        }
-    }, [selectedTemplateId, templates, account?.id]);
+    }, [template, currentAccount?.id]);
 
-    // Effect 3: Fetch history on mount/profile change
     useEffect(() => {
         fetchImageHistory();
-    }, [profile.id, account?.entity_id]);
+    }, [currentAccount?.entity_id]);
 
     const activeImage = localImage || uploadedUrl || dbImage;
 
-    // Reset error when active image changes
     useEffect(() => {
         if (activeImage) {
-            console.log('[PostcardBuilder] Active image changed, resetting error state. URL start:', activeImage.substring(0, 50));
             setImageLoadError(false);
             setRetryCount(0);
         }
     }, [activeImage]);
-
-    // --- Image Upload & Crop Handlers ---
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -269,7 +184,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
             });
         };
         reader.readAsDataURL(file);
-        e.target.value = ''; // Reset input
+        e.target.value = '';
     };
 
     const performUpload = async (file: File | Blob, fileName: string) => {
@@ -277,7 +192,6 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
         setUploadedUrl(null);
         setImageLoadError(false);
 
-        // Generate local preview immediately for UX
         const reader = new FileReader();
         reader.onloadend = () => {
             setLocalImage(reader.result as string);
@@ -287,18 +201,16 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
         try {
             const sanitizedName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, '_');
             const timestamp = Date.now();
-            const entityId = account?.entity_id;
-            const storagePath = entityId ? `entity_${entityId}` : profile.id;
+            const entityId = currentAccount?.entity_id;
+            const storagePath = entityId ? `entity_${entityId}` : 'default';
             const filePath = `${storagePath}/${timestamp}_${sanitizedName}`;
 
-            // Attempt upload
             const { error: uploadError } = await supabase.storage
                 .from('images')
                 .upload(filePath, file, { upsert: true, contentType: file.type });
 
             if (uploadError) throw uploadError;
 
-            // Get fresh signed URL
             const { data: signedData } = await supabase.storage
                 .from('images')
                 .createSignedUrl(filePath, 60 * 60 * 24 * 365);
@@ -315,8 +227,6 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
             }
 
         } catch (error: any) {
-            const errMsg = error?.message || "Upload failed";
-            console.error("Upload failed:", errMsg);
             toast("Cloud upload failed. Using local preview.", "info");
         } finally {
             setIsUploading(false);
@@ -326,7 +236,6 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
     const handleCropSave = async () => {
         if (!cropState.imageSrc) return;
 
-        // Create a canvas to draw the cropped image
         const canvas = document.createElement('canvas');
         canvas.width = TARGET_WIDTH;
         canvas.height = TARGET_HEIGHT;
@@ -344,17 +253,12 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
             img.onload = resolve;
         });
 
-        // Calculate crop parameters
-        // The view window size:
-        const viewW = 500; // Fixed width of the cropper view
-        const viewH = viewW / ASPECT_RATIO; // ~340px
+        const viewW = 500;
+        const viewH = viewW / ASPECT_RATIO;
 
-        // The scale of the image relative to the view window
-        // We used object-fit: cover logic to display it.
-        // Calculate how the image was rendered in the view:
         const scaleX = viewW / img.naturalWidth;
         const scaleY = viewH / img.naturalHeight;
-        const baseScale = Math.max(scaleX, scaleY); // 'Cover' logic
+        const baseScale = Math.max(scaleX, scaleY);
 
         const renderedW = img.naturalWidth * baseScale * cropState.zoom;
         const renderedH = img.naturalHeight * baseScale * cropState.zoom;
@@ -362,11 +266,8 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
         const renderedX = (viewW - renderedW) / 2 + cropState.offset.x;
         const renderedY = (viewH - renderedH) / 2 + cropState.offset.y;
 
-        // Map rendered coordinates to canvas coordinates
-        // Canvas is larger than view, so we scale up
         const outputScale = TARGET_WIDTH / viewW;
 
-        // We draw the image onto the canvas with the same offsets, scaled up
         ctx.drawImage(
             img,
             renderedX * outputScale,
@@ -407,9 +308,6 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
         setCropState(prev => ({ ...prev, isDragging: false }));
     };
 
-    // --- End Cropper Handlers ---
-
-
     const handleSelectHistoryImage = (url: string) => {
         setLocalImage(null);
         setUploadedUrl(url);
@@ -417,7 +315,6 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
     };
 
     const handleHistoryImageCrop = async (url: string) => {
-        // Fetch the image and convert to base64 for cropping
         try {
             const response = await fetch(url);
             const blob = await response.blob();
@@ -443,7 +340,6 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
         e.stopPropagation();
 
         try {
-            // Parse the URL to get the file path
             const urlObj = new URL(url);
             const pathSegments = urlObj.pathname.split('/object/');
             if (pathSegments.length < 2) return;
@@ -458,25 +354,22 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
 
             if (error) throw error;
 
-            // If deleted image was active, clear it
             if (activeImage === url) {
                 setLocalImage(null);
                 setUploadedUrl(null);
                 setDbImage(null);
             }
 
-            // Refresh history
             await fetchImageHistory();
             toast("Image deleted", "info");
         } catch (e) {
-            console.error("Delete failed:", e);
             toast("Failed to delete image", "error");
         }
     };
 
     const handleAiGenerate = async () => {
         setIsGenerating(true);
-        const cName = account?.committee_name || 'My Campaign';
+        const cName = currentAccount?.committee_name || 'My Campaign';
         try {
             const generated = await generateThankYouMessage(cName, tone);
             setMessage(generated);
@@ -515,8 +408,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
             await onSave({
                 back_message: message,
                 front_image_url: imageToSave || undefined,
-                template_name: selectedTemplateId !== 'account' ? templateName : undefined
-            }, selectedTemplateId === 'account' ? undefined : selectedTemplateId);
+            });
 
             if (!imageToSave && !localImage) {
                 setSaveResult({
@@ -557,13 +449,14 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
 
     return (
         <div className="space-y-8 relative">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">                <div>
-                <h2 className="text-3xl font-serif font-bold text-stone-800">Postcard Designer</h2>
-                <p className="text-stone-500 mt-2 flex items-center gap-1.5 grayscale-0">
-                    <Check size={14} className="text-emerald-500 flex-shrink-0" />
-                    <span>Changes apply to all postcards sent from <b>{account?.committee_name || 'this campaign'}</b>.</span>
-                </p>
-            </div>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 className="text-3xl font-serif font-bold text-stone-800">Postcard Designer</h2>
+                    <p className="text-stone-500 mt-2 flex items-center gap-1.5 grayscale-0">
+                        <Check size={14} className="text-emerald-500 flex-shrink-0" />
+                        <span>Changes apply to all postcards sent from <b>{currentAccount?.committee_name || 'this campaign'}</b>.</span>
+                    </p>
+                </div>
 
                 <div className="flex bg-stone-200 p-1 rounded-xl shadow-inner">
                     <button
@@ -610,67 +503,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
                 <div className="space-y-6">
-                    {/* Template Selection Section */}
-                    <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h3 className="font-bold text-stone-800 flex items-center gap-2 text-sm uppercase tracking-wider">
-                                <Save size={18} className="text-rose-500" />
-                                Configuration Source
-                            </h3>
-                            <button
-                                onClick={() => {
-                                    setSelectedTemplateId('new');
-                                    setTemplateName('New Template');
-                                    setMessage('');
-                                    setDbImage(null);
-                                    setLocalImage(null);
-                                    setUploadedUrl(null);
-                                }}
-                                className="text-rose-600 hover:text-rose-700 text-xs font-bold flex items-center gap-1 bg-rose-50 px-2 py-1 rounded-md transition-colors"
-                            >
-                                <Plus size={14} /> New Template
-                            </button>
-                        </div>
-
-                        <div className="space-y-3">
-                            <div className="relative">
-                                <select
-                                    value={selectedTemplateId}
-                                    onChange={(e) => setSelectedTemplateId(e.target.value as any)}
-                                    className="w-full border border-stone-200 rounded-xl py-3 pl-4 pr-10 focus:ring-2 focus:ring-rose-500 appearance-none bg-white text-stone-700 font-medium shadow-sm transition-all hover:border-stone-300"
-                                >
-                                    <option value="account">Account Default Settings</option>
-                                    <optgroup label="Custom Templates">
-                                        {templates.map(t => (
-                                            <option key={t.id} value={t.id}>
-                                                {t.template_name} {t.is_active ? '(Active)' : ''}
-                                            </option>
-                                        ))}
-                                    </optgroup>
-                                    {selectedTemplateId === 'new' && (
-                                        <option value="new">New Template (Draft)</option>
-                                    )}
-                                </select>
-                                <Save size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
-                            </div>
-
-                            {selectedTemplateId !== 'account' && (
-                                <div className="animate-in slide-in-from-top-2 duration-300">
-                                    <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1.5 ml-1">Template Name</label>
-                                    <input
-                                        type="text"
-                                        value={templateName}
-                                        onChange={(e) => setTemplateName(e.target.value)}
-                                        placeholder="Enter template name..."
-                                        className="w-full border border-stone-200 rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-rose-500 bg-stone-50/50 text-stone-700 font-medium"
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
                     {viewSide === 'front' ? (
                         <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm animate-in fade-in duration-300">
                             <div className="flex items-center justify-between mb-4">
@@ -679,27 +512,10 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                         <ImageIcon size={20} className="text-rose-500" />
                                         Front Image
                                     </h3>
-                                    <div className="flex gap-2 mt-0.5">
-                                        {(selectedTemplateId !== 'account' || activeTemplate) && (
-                                            <span className={`text-[10px] uppercase font-black px-1.5 py-0.5 rounded ${templates.find(t => t.id === selectedTemplateId)?.front_image_url || (selectedTemplateId === 'account' && activeTemplate?.front_image_url) ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'}`}>
-                                                {templates.find(t => t.id === selectedTemplateId)?.front_image_url || (selectedTemplateId === 'account' && activeTemplate?.front_image_url) ? 'Template Source' : 'Account Default'}
-                                            </span>
-                                        )}
-                                        {!account?.front_image_url && !activeTemplate?.front_image_url && !templates.find(t => t.id === selectedTemplateId)?.front_image_url && (
-                                            <span className="text-[10px] uppercase font-black px-1.5 py-0.5 rounded bg-stone-100 text-stone-500">No Default Set</span>
-                                        )}
-                                    </div>
-                                    {/* Removed Shared from badge */}
                                 </div>
                                 <span className="text-xs text-stone-400 bg-stone-100 px-2 py-1 rounded">1875 × 1275 px</span>
                             </div>
 
-                            <div className="flex items-center justify-between mb-2">
-                                <label className="block text-sm font-medium text-stone-700">
-                                    Front Image URL
-                                </label>
-                                {/* Removed Shared from badge */}
-                            </div>
                             <label className="border-2 border-dashed border-stone-200 rounded-xl p-12 flex flex-col items-center justify-center cursor-pointer hover:bg-stone-50 hover:border-rose-300 transition-all group h-64 relative overflow-hidden">
                                 {isUploading ? (
                                     <div className="flex flex-col items-center text-rose-500 z-20">
@@ -759,14 +575,8 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                                             src={url}
                                                             className="w-full h-full object-cover transition-transform group-hover:scale-110"
                                                             alt="History"
-                                                            onError={(e) => {
-                                                                e.currentTarget.style.display = 'none';
-                                                                e.currentTarget.parentElement!.style.display = 'none';
-                                                            }}
                                                         />
                                                     </button>
-
-                                                    {/* Delete Button */}
                                                     <button
                                                         onClick={(e) => handleDeleteHistoryImage(url, e)}
                                                         className="absolute top-1 right-1 bg-rose-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-rose-600 z-10"
@@ -774,7 +584,6 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                                     >
                                                         <X size={10} />
                                                     </button>
-
                                                     {isActive && (
                                                         <div className="absolute inset-0 bg-rose-500/20 flex items-center justify-center pointer-events-none">
                                                             <div className="bg-white rounded-full p-1 shadow-sm">
@@ -797,17 +606,8 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                         <Type size={20} className="text-rose-500" />
                                         Message Builder
                                     </h3>
-                                    <div className="flex gap-2 mt-0.5">
-                                        {(selectedTemplateId !== 'account' || activeTemplate) && (
-                                            <span className={`text-[10px] uppercase font-black px-1.5 py-0.5 rounded ${templates.find(t => t.id === selectedTemplateId)?.back_message || (selectedTemplateId === 'account' && activeTemplate?.back_message) ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'}`}>
-                                                {templates.find(t => t.id === selectedTemplateId)?.back_message || (selectedTemplateId === 'account' && activeTemplate?.back_message) ? 'Template Source' : 'Account Default'}
-                                            </span>
-                                        )}
-                                    </div>
-                                    {/* Removed Shared from badge */}
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
-
                                     <div className="relative">
                                         <select
                                             onChange={(e) => {
@@ -824,9 +624,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                         </select>
                                         <Plus size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
                                     </div>
-
                                     <div className="h-4 w-px bg-stone-200 hidden md:block"></div>
-
                                     <select
                                         value={tone}
                                         onChange={(e) => setTone(e.target.value as any)}
@@ -836,7 +634,6 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                         <option value="formal">Formal Tone</option>
                                         <option value="urgent">Urgent Tone</option>
                                     </select>
-
                                     <button
                                         onClick={handleAiGenerate}
                                         disabled={isGenerating}
@@ -881,156 +678,73 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
 
                     <div className="w-full max-w-lg">
                         <div className="relative aspect-[6/4] bg-white shadow-2xl rounded-sm overflow-hidden">
-
                             {viewSide === 'front' ? (
                                 activeImage && !imageLoadError ? (
-                                    <>
-                                        <img
-                                            key={`${activeImage}-${retryCount}`}
-                                            src={activeImage}
-                                            alt="Postcard Front"
-                                            className="w-full h-full object-cover bg-stone-100"
-                                            onError={(e) => {
-                                                console.error("[PostcardBuilder] Front Image load failed", {
-                                                    url: activeImage,
-                                                    retryCount,
-                                                    naturalWidth: e.currentTarget.naturalWidth,
-                                                    src: e.currentTarget.src
-                                                });
-                                                setImageLoadError(true);
-                                            }}
-                                        />
-                                        {account?.disclaimer && (
-                                            <div className="absolute bottom-2 left-0 right-0 px-2 py-2 md:px-3 md:py-2.5">
-                                                <p className="text-white text-[6px] sm:text-[7px] md:text-[8px] text-center font-sans leading-tight opacity-90 [text-shadow:0_1px_2px_rgba(0,0,0,0.8)]">
-                                                    {account.disclaimer}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </>
+                                    <img
+                                        key={`${activeImage}-${retryCount}`}
+                                        src={activeImage}
+                                        alt="Postcard Front"
+                                        className="w-full h-full object-cover bg-stone-100"
+                                    />
                                 ) : (
-                                    <div className="w-full h-full bg-stone-100 flex flex-col items-center justify-center text-stone-300 gap-4 p-8 text-center">
-                                        {activeImage && imageLoadError ? (
-                                            <>
-                                                <AlertCircle size={48} className="text-rose-400 opacity-80" />
-                                                <p className="font-medium text-rose-500">Failed to load image</p>
-                                                <div className="flex flex-col gap-2">
-                                                    <button
-                                                        onClick={() => {
-                                                            setImageLoadError(false);
-                                                            setRetryCount(c => c + 1);
-                                                        }}
-                                                        className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm text-xs font-bold text-stone-600 hover:text-stone-800 transition-colors"
-                                                    >
-                                                        <RefreshCw size={12} /> Retry Load
-                                                    </button>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <ImageIcon size={48} className="opacity-50" />
-                                                <p className="font-medium">No front image uploaded</p>
-                                            </>
-                                        )}
+                                    <div className="w-full h-full flex flex-col items-center justify-center bg-stone-50 border-2 border-dashed border-stone-200 rounded-sm">
+                                        <ImageIcon size={48} className="text-stone-200 mb-4" />
+                                        <p className="text-stone-400 font-medium">No front image uploaded</p>
                                     </div>
                                 )
                             ) : (
-                                <div className="w-full h-full flex bg-white relative">
-                                    <div className="w-[45%] h-full p-4 md:p-8 flex flex-col">
-                                        <div
-                                            className="flex-1 font-sans text-stone-800 leading-relaxed whitespace-pre-wrap overflow-hidden break-words"
-                                            style={{ fontSize: '11pt' }}
-                                        >
-                                            {previewText}
-                                        </div>
-                                    </div>
-
-                                    <div className="w-[45%] h-full relative flex flex-col justify-between py-4 md:py-8">
-                                        {/* Postage Indicia - Aligned with Return Address */}
-                                        <div className="absolute bottom-[45%] right-2 md:right-4 w-[40px] h-[35px] md:w-[55px] md:h-[45px] border border-stone-800 flex flex-col items-center justify-center gap-0.5">
-                                            <span className="text-[4px] md:text-[6px] font-bold uppercase tracking-wider text-stone-800">Postage</span>
-                                            <span className="text-[4px] md:text-[6px] font-bold uppercase tracking-wider text-stone-800">Indicia</span>
-                                        </div>
-
-                                        {/* Return Address - Above Recipient */}
-                                        <div className="absolute bottom-[45%] left-2 md:left-4 text-[6px] sm:text-[8px] md:text-[9px] text-stone-600 font-sans leading-tight">
-                                            <p className="text-stone-900 font-bold uppercase mb-0.5">
-                                                {account?.committee_name || 'CAMPAIGN NAME'}
-                                            </p>
-                                            {account?.street_address ? (
-                                                <>
-                                                    <p>{account.street_address}</p>
-                                                    <p>{account.city}, {account.state} {account.postal_code}</p>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <p>123 CAMPAIGN WAY</p>
-                                                    <p>CITY, ST 12345</p>
-                                                </>
-                                            )}
-                                        </div>
-
-                                        {/* Recipient Address - Bottom */}
-                                        <div className="absolute bottom-4 left-4 right-2 md:bottom-10 md:left-8 md:right-4 text-[8px] sm:text-[10px] md:text-xs font-sans text-stone-800 leading-snug uppercase tracking-wide">
-                                            <p className="font-bold text-[9px] sm:text-[11px] md:text-sm mb-0.5 md:mb-1">{DEMO_DONOR.firstname} {DEMO_DONOR.lastname}</p>
-                                            <p>{DEMO_DONOR.addr1}</p>
-                                            <p>{DEMO_DONOR.addr2}</p>
-                                            <p>{DEMO_DONOR.city}, {DEMO_DONOR.state} {DEMO_DONOR.zip}</p>
-                                        </div>
-                                    </div>
-                                    {/* Branding Badge */}
-                                    {(() => {
-                                        const tier = (account as any)?.tier || account?.entity?.tier || 'free';
-                                        const brandingEnabled = (account as any)?.branding_enabled ?? account?.entity?.branding_enabled ?? true;
-                                        const showBranding = tier === 'free' || (tier === 'pro' && brandingEnabled !== false);
-
-                                        if (!showBranding) return null;
-
-                                        return (
-                                            <div className="absolute top-2 right-2 z-50 opacity-90">
-                                                <img
-                                                    src="/thank_donors_stamp.png"
-                                                    alt="Thank Donors"
-                                                    className="w-16 h-auto object-contain"
-                                                />
+                                <div className="w-full h-full p-8 flex flex-col bg-stone-50/30 relative">
+                                    <div className="flex-1 flex flex-col pt-4">
+                                        <div className="flex gap-4 items-start mb-6">
+                                            <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-500 flex-shrink-0">
+                                                <Sparkles size={24} />
                                             </div>
-                                        );
-                                    })()}
+                                            <div className="flex-1 pt-1">
+                                                <p className="text-xl font-serif text-stone-800 leading-relaxed italic whitespace-pre-wrap">
+                                                    {previewText || "Your message will appear here..."}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="absolute right-8 top-12 w-32 h-40 border-2 border-stone-200 flex items-center justify-center bg-stone-50/50 group">
+                                        <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest vertical-text">Stamp Area</span>
+                                    </div>
+                                    <div className="mt-auto border-t border-stone-200 pt-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-stone-200 flex items-center justify-center text-stone-500">
+                                                <X size={20} />
+                                            </div>
+                                            <div className="space-y-1 pt-1 opacity-50">
+                                                <div className="h-2 w-32 bg-stone-200 rounded"></div>
+                                                <div className="h-2 w-24 bg-stone-200 rounded"></div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </div>
                     </div>
-
-                    <div className="mt-6 text-center text-stone-400 text-xs max-w-xs mx-auto">
-                        {viewSide === 'front'
-                            ? "This image will cover the entire front of the 4x6 inch postcard."
-                            : "Live preview shows demo data. Actual cards will use real donor info."
-                        }
-                    </div>
                 </div>
             </div>
 
-            {/* Crop Modal */}
-            {
-                cropState.isOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/80 backdrop-blur-sm animate-in fade-in duration-200">
-                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                            <div className="p-4 border-b border-stone-100 flex justify-between items-center bg-white z-10">
-                                <h3 className="font-bold text-stone-800 flex items-center gap-2">
-                                    <Crop size={20} className="text-rose-500" />
-                                    Crop Image
-                                </h3>
-                                <button onClick={() => setCropState(prev => ({ ...prev, isOpen: false }))} className="text-stone-400 hover:text-stone-600">
-                                    <X size={24} />
-                                </button>
-                            </div>
+            {cropState.isOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-stone-900/90 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+                        <div className="p-6 border-b border-stone-100 flex items-center justify-between">
+                            <h3 className="text-xl font-serif font-bold text-stone-800 flex items-center gap-2">
+                                <Crop size={24} className="text-rose-500" />
+                                Refine Your Image
+                            </h3>
+                            <button onClick={() => setCropState(prev => ({ ...prev, isOpen: false }))} className="text-stone-400 hover:text-stone-600 transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
 
-                            <div className="flex-1 bg-stone-100 relative overflow-hidden flex items-center justify-center p-8 select-none">
-                                {/* The View Window (Fixed Aspect Ratio) */}
+                        <div className="p-8 flex flex-col items-center bg-stone-50/50">
+                            <div className="bg-stone-200 p-2 rounded-xl shadow-inner mb-8">
                                 <div
                                     ref={cropContainerRef}
-                                    className="relative bg-stone-800 shadow-2xl overflow-hidden cursor-move ring-4 ring-white"
-                                    style={{ width: 500, height: 500 / ASPECT_RATIO }}
+                                    className="relative w-[500px] aspect-[6/4] bg-stone-800 overflow-hidden cursor-move rounded-sm shadow-xl"
                                     onMouseDown={handleCropMouseDown}
                                     onMouseMove={handleCropMouseMove}
                                     onMouseUp={handleCropMouseUp}
@@ -1038,77 +752,65 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                 >
                                     <img
                                         src={cropState.imageSrc}
-                                        alt="Crop Target"
-                                        className="absolute max-w-none origin-center pointer-events-none"
-                                        style={{
-                                            // We use object-fit: cover logic to initially size it.
-                                            // But here we need manual control. 
-                                            // Let's assume natural size for transform, but scaled to fit container initially?
-                                            // Easier: CSS transform based on natural dims is hard without knowing them.
-                                            // Let's rely on the container size.
-                                            width: '100%',
-                                            height: '100%',
-                                            objectFit: 'cover', // This creates the "base" view
-                                            transform: `translate(${cropState.offset.x}px, ${cropState.offset.y}px) scale(${cropState.zoom})`,
-                                        }}
+                                        alt="Crop area"
                                         draggable={false}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '50%',
+                                            left: '50%',
+                                            transform: `translate(-50%, -50%) translate(${cropState.offset.x}px, ${cropState.offset.y}px) scale(${cropState.zoom})`,
+                                            maxWidth: 'none',
+                                            minWidth: '100%',
+                                            minHeight: '100%',
+                                            objectFit: 'cover'
+                                        }}
                                     />
-
-                                    {/* Grid Overlay */}
-                                    <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none opacity-50">
-                                        <div className="border-r border-b border-white/30"></div>
-                                        <div className="border-r border-b border-white/30"></div>
-                                        <div className="border-b border-white/30"></div>
-                                        <div className="border-r border-b border-white/30"></div>
-                                        <div className="border-r border-b border-white/30"></div>
-                                        <div className="border-b border-white/30"></div>
-                                        <div className="border-r border-white/30"></div>
-                                        <div className="border-r border-white/30"></div>
-                                        <div></div>
-                                    </div>
-                                </div>
-
-                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-stone-900/80 text-white text-xs px-3 py-1 rounded-full backdrop-blur-md pointer-events-none flex items-center gap-2">
-                                    <Move size={12} /> Drag to reposition
+                                    <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-white/20"></div>
+                                    <div className="absolute inset-0 border-[40px] border-stone-900/40 pointer-events-none"></div>
                                 </div>
                             </div>
 
-                            <div className="p-6 bg-white border-t border-stone-100 flex flex-col gap-4">
+                            <div className="w-full max-w-md space-y-6">
                                 <div className="flex items-center gap-4">
-                                    <ZoomOut size={20} className="text-stone-400" />
+                                    <ZoomOut size={18} className="text-stone-400" />
                                     <input
                                         type="range"
                                         min="1"
                                         max="3"
-                                        step="0.1"
+                                        step="0.01"
                                         value={cropState.zoom}
                                         onChange={(e) => setCropState(prev => ({ ...prev, zoom: parseFloat(e.target.value) }))}
-                                        className="flex-1 h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-rose-500"
+                                        className="flex-1 h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-rose-500"
                                     />
-                                    <ZoomIn size={20} className="text-stone-400" />
+                                    <ZoomIn size={18} className="text-stone-400" />
                                 </div>
 
-                                <div className="flex justify-end gap-3">
-                                    <button
-                                        onClick={() => setCropState(prev => ({ ...prev, isOpen: false }))}
-                                        className="px-6 py-3 font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={handleCropSave}
-                                        className="px-6 py-3 font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-colors shadow-lg shadow-rose-200 flex items-center gap-2"
-                                    >
-                                        <Check size={18} />
-                                        Apply Crop & Upload
-                                    </button>
+                                <div className="flex items-center justify-center gap-3 text-stone-400 text-sm font-medium">
+                                    <Move size={16} />
+                                    <span>Drag image to reposition</span>
                                 </div>
                             </div>
                         </div>
+
+                        <div className="p-6 bg-white border-t border-stone-100 flex justify-end gap-3">
+                            <button
+                                onClick={() => setCropState(prev => ({ ...prev, isOpen: false }))}
+                                className="px-6 py-2.5 rounded-xl font-bold text-stone-500 hover:bg-stone-100 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleCropSave}
+                                className="px-8 py-2.5 bg-rose-600 text-white rounded-xl font-bold shadow-lg shadow-rose-100 hover:bg-rose-700 transition-all flex items-center gap-2"
+                            >
+                                <Check size={20} />
+                                Apply Crop
+                            </button>
+                        </div>
                     </div>
-                )
-            }
-        </div >
+                </div>
+            )}
+        </div>
     );
 };
 

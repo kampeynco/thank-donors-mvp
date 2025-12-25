@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { ViewState, Profile, Donation, ActBlueAccount, PostcardTemplate } from './types';
+import { ViewState, Profile, ActBlueAccount, Donation, PostcardEvent } from './types';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import PostcardBuilder from './components/PostcardBuilder';
@@ -25,7 +24,6 @@ const App: React.FC = () => {
   const [accounts, setAccounts] = useState<ActBlueAccount[]>([]);
   const [currentAccount, setCurrentAccount] = useState<ActBlueAccount | null>(null);
   const [donations, setDonations] = useState<Donation[]>([]);
-  const [templates, setTemplates] = useState<PostcardTemplate[]>([]);
 
   useEffect(() => {
     // Safety timeout to prevent infinite loading
@@ -82,7 +80,6 @@ const App: React.FC = () => {
         setAccounts([]);
         setCurrentAccount(null);
         setDonations([]);
-        setTemplates([]);
       }
     });
 
@@ -159,19 +156,6 @@ const App: React.FC = () => {
       }
       setAccounts(fetchedAccounts);
 
-      // 2.3 Fetch Templates for the user's accounts
-      if (fetchedAccounts.length > 0) {
-        const { data: templatesData } = await supabase
-          .from('postcard_templates')
-          .select('*')
-          .in('actblue_account_id', fetchedAccounts.map(a => a.id))
-          .order('created_at', { ascending: false });
-
-        if (templatesData) {
-          setTemplates(templatesData as PostcardTemplate[]);
-        }
-      }
-
       const isUserProfileComplete = mappedProfile.full_name && mappedProfile.organization;
       console.log('Profile loaded:', { id: userId, complete: isUserProfileComplete, accounts: fetchedAccounts.length });
 
@@ -199,7 +183,7 @@ const App: React.FC = () => {
 
     } catch (error: any) {
       console.error('Error loading data:', error);
-      toast(`Failed to load data: ${error.message}`, 'error');
+      toast(`Failed to load data: ${error.message} `, 'error');
     } finally {
       console.log('fetchData finished, setting loading=false');
       setLoading(false);
@@ -211,29 +195,29 @@ const App: React.FC = () => {
       let query = supabase
         .from('donations')
         .select(`
-              id,
-              donor_firstname,
-              donor_lastname,
-              amount,
-              created_at,
-              donor_addr1,
-              donor_city,
-              donor_state,
-              donor_zip,
-              postcards ( 
-                id,
-                status, 
-                error_message, 
-                lob_url, 
-                lob_postcard_id,
-                postcard_events (
-                  id,
-                  status,
-                  description,
-                  created_at
-                )
-              )
-            `)
+id,
+  donor_firstname,
+  donor_lastname,
+  amount,
+  created_at,
+  donor_addr1,
+  donor_city,
+  donor_state,
+  donor_zip,
+  postcards(
+    id,
+    status,
+    error_message,
+    lob_url,
+    lob_postcard_id,
+    postcard_events(
+      id,
+      status,
+      description,
+      created_at
+    )
+  )
+    `)
         .eq('profile_id', userId)
         .order('created_at', { ascending: false });
 
@@ -317,7 +301,7 @@ const App: React.FC = () => {
     }
 
     if (errors.length > 0) {
-      toast(`Error updating profile: ${errors.join(', ')}`, 'error');
+      toast(`Error updating profile: ${errors.join(', ')} `, 'error');
     } else {
       setProfile(prev => prev ? { ...prev, ...updatedFields } : null);
       toast("Profile updated successfully", "success");
@@ -376,7 +360,7 @@ const App: React.FC = () => {
         });
 
         if (hookdeckError) {
-          throw new Error(`Webhook provisioning failed: ${hookdeckError.message}`);
+          throw new Error(`Webhook provisioning failed: ${hookdeckError.message} `);
         }
 
         // The edge function returns { account: { ... }, hookdeck: { ... } }
@@ -404,7 +388,7 @@ const App: React.FC = () => {
 
     } catch (e: any) {
       console.error("Failed to save account", e);
-      toast(`Error saving account: ${e.message}`, 'error');
+      toast(`Error saving account: ${e.message} `, 'error');
       throw e;
     }
   };
@@ -452,7 +436,7 @@ const App: React.FC = () => {
         handleAddAccount();
       }
     } catch (e: any) {
-      toast(`Failed to delete account: ${e.message}`, 'error');
+      toast(`Failed to delete account: ${e.message} `, 'error');
     }
   };
 
@@ -470,7 +454,7 @@ const App: React.FC = () => {
       setView(ViewState.AUTH);
       toast("User account deleted", "info");
     } catch (e: any) {
-      toast(`Failed to delete user: ${e.message}`, 'error');
+      toast(`Failed to delete user: ${e.message} `, 'error');
     }
   };
 
@@ -557,47 +541,17 @@ const App: React.FC = () => {
         <PostcardBuilder
           profile={profile!}
           account={currentAccount}
-          templates={templates.filter(t => t.actblue_account_id === currentAccount?.id)}
-          onSave={async (updates, templateId) => {
-            if (templateId) {
-              // Update existing template or create new if requested
-              const { data, error } = await supabase
-                .from('postcard_templates')
-                .upsert({
-                  id: templateId === 'new' ? undefined : templateId,
-                  actblue_account_id: currentAccount?.id,
-                  front_image_url: updates.front_image_url,
-                  back_message: updates.back_message,
-                  template_name: updates.template_name || 'My Template',
-                  is_active: true
-                })
-                .select()
-                .single();
-
-              if (error) throw error;
-
-              // Deactivate other templates if this one is active
-              await supabase
-                .from('postcard_templates')
-                .update({ is_active: false })
-                .eq('actblue_account_id', currentAccount?.id)
-                .neq('id', data.id);
-
-              // Update local state
-              setTemplates(prev => {
-                const filtered = prev.filter(t => t.id !== data.id && t.actblue_account_id === currentAccount?.id);
-                const others = prev.filter(t => t.actblue_account_id !== currentAccount?.id);
-                return [...others, { ...data, is_active: true }, ...filtered.map(t => ({ ...t, is_active: false }))];
-              });
-
-              toast("Template saved and set as active", "success");
-            } else {
-              // Save as account default
-              return handleSaveAccount({
-                front_image_url: updates.front_image_url,
-                back_message: updates.back_message
-              });
-            }
+          template={{
+            profile_id: profile!.id,
+            template_name: 'Default',
+            frontpsc_background_image: currentAccount?.front_image_url || undefined,
+            backpsc_message_template: currentAccount?.back_message || undefined
+          }}
+          onSave={async (updates) => {
+            return handleSaveAccount({
+              front_image_url: updates.front_image_url,
+              back_message: updates.back_message
+            });
           }}
         />
       )}
