@@ -845,31 +845,45 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                         {activeImage && imageLoadError ? (
                                             <>
                                                 <AlertCircle size={48} className="text-rose-400 opacity-80" />
-                                                <p className="font-medium text-rose-500">Failed to load image</p>
-                                                <div className="text-[10px] text-stone-400 max-w-[200px] break-all bg-stone-50 p-2 rounded border border-stone-100">
-                                                    URL: {activeImage?.substring(0, 100)}...
+                                                <p className="font-medium text-rose-500 text-sm">Image Loading Error</p>
+                                                <div className="flex flex-col gap-1 w-full max-w-[280px]">
+                                                    <div className="text-[10px] text-stone-500 font-mono break-all bg-white p-2 rounded border border-stone-200 shadow-inner max-h-[160px] overflow-y-auto">
+                                                        <span className="font-bold text-stone-700">DEBUG INFO:</span><br />
+                                                        URL: {activeImage}<br />
+                                                        <span className="text-rose-400">Path: {(() => {
+                                                            const match = activeImage?.match(/\/storage\/v1\/object\/(?:sign|public|authenticated)\/([^\/]+)\/(.+)$/);
+                                                            return match ? `${match[1]}/${match[2]}` : 'not a storage URL';
+                                                        })()}</span><br />
+                                                        <hr className="my-1 border-stone-100" />
+                                                        Account Entity ID: <span className="text-blue-500">{account?.entity_id}</span><br />
+                                                        Account ActBlue ID: <span className="text-blue-500">{account?.actblue_id}</span><br />
+                                                        Bucket In URL: {activeImage?.split('/storage/v1/object/public/')[1]?.split('/')[0] || 'unknown'}
+                                                    </div>
                                                 </div>
-                                                <div className="flex flex-col gap-2">
+                                                <div className="flex flex-col gap-2 w-full max-w-[200px]">
                                                     <button
                                                         onClick={() => {
                                                             setImageLoadError(false);
                                                             setRetryCount(c => c + 1);
                                                         }}
-                                                        className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm text-xs font-bold text-stone-600 hover:text-stone-800 transition-colors"
+                                                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-stone-800 rounded-lg text-xs font-bold text-white hover:bg-stone-900 transition-colors shadow-sm"
                                                     >
                                                         <RefreshCw size={12} /> Retry Load
                                                     </button>
                                                     <button
                                                         onClick={async () => {
+                                                            console.log('[PostcardBuilder] Manual force refresh triggered');
                                                             setImageLoadError(false);
-                                                            const fresh = await getFreshSignedUrl(activeImage);
+                                                            const fresh = await getFreshSignedUrl(activeImage || '');
                                                             if (fresh) {
                                                                 setDbImage(fresh);
                                                                 setUploadedUrl(null);
                                                                 setLocalImage(null);
+                                                            } else {
+                                                                setImageLoadError(true);
                                                             }
                                                         }}
-                                                        className="flex items-center gap-2 px-4 py-2 bg-rose-50 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-100 transition-colors"
+                                                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-rose-50 rounded-lg text-xs font-bold text-rose-600 border border-rose-100 hover:bg-rose-100 transition-colors"
                                                     >
                                                         <RefreshCw size={12} /> Force Refresh URL
                                                     </button>
