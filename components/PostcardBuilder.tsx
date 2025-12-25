@@ -851,12 +851,12 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ profile, account, tem
                                                         <span className="font-bold text-stone-700">DEBUG INFO:</span><br />
                                                         URL: {activeImage}<br />
                                                         <span className="text-rose-400">Path: {(() => {
-                                                            const match = activeImage?.match(/\/storage\/v1\/object\/(?:sign|public|authenticated)\/([^\/]+)\/(.+)$/);
+                                                            const match = activeImage?.match(/\/storage/v1 / object / (?: sign | public | authenticated) / ([^ /]+)/(.+)$ /);
                                                             return match ? `${match[1]}/${match[2]}` : 'not a storage URL';
                                                         })()}</span><br />
                                                         <hr className="my-1 border-stone-100" />
-                                                        Account Entity ID: <span className="text-blue-500">{account?.entity_id}</span><br />
-                                                        Account ActBlue ID: <span className="text-blue-500">{account?.actblue_id}</span><br />
+                                                        Account Entity ID (int): <span className="text-blue-500">{account?.entity_id}</span><br />
+                                                        Entity UUID (joined): <span className="text-green-500">{(account?.entity as any)?.id}</span><br />
                                                         Bucket In URL: {activeImage?.split('/storage/v1/object/public/')[1]?.split('/')[0] || 'unknown'}
                                                     </div>
                                                 </div>
