@@ -31,7 +31,7 @@ function substituteVariables(template: string, donor: any, donationDate: string)
 }
 
 // Helper function to generate HTML for the postcard back
-function generatePostcardHtml(message: string, showBranding: boolean = true): string {
+function generatePostcardHtml(message: string, showBranding: boolean = true, brandingImageUrl: string = ""): string {
   // This HTML mimics the frontend preview while adhering to Lob's 4x6 specifications
   return `
 <html>
@@ -39,8 +39,8 @@ function generatePostcardHtml(message: string, showBranding: boolean = true): st
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
   <style>
     body {
-      width: 6in;
-      height: 4in;
+      width: 6.25in;
+      height: 4.25in;
       margin: 0;
       padding: 0;
       background: white;
@@ -48,50 +48,57 @@ function generatePostcardHtml(message: string, showBranding: boolean = true): st
       -webkit-font-smoothing: antialiased;
     }
     .back-container {
-      width: 6in;
-      height: 4in;
+      width: 6.25in;
+      height: 4.25in;
       position: relative;
-      background: white;
+      background: #fafaf9; /* stone-50 background from frontend */
       overflow: hidden;
+      box-sizing: border-box;
+      padding: 0.4in;
     }
-    .message-section {
-      position: absolute;
-      top: 0.4in;
-      left: 0.4in;
-      width: 2.7in; /* Reduced slightly to ensure no bleed */
-      height: 3.2in;
+    .content-area {
+      width: 55%; /* Reserve right 45% for address and indicia */
+      height: 100%;
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
-      box-sizing: border-box;
     }
-    .text-body {
-      width: 95%;
-      max-width: 95%;
+    .message-text {
       font-size: 11pt;
-      line-height: 1.5;
-      color: #1c1917;
+      line-height: 1.35;
+      color: #1c1917; /* stone-900 / stone-800 from frontend */
       white-space: pre-wrap;
       word-wrap: break-word;
       overflow-wrap: break-word;
+      margin: 0;
     }
-    .branding-badge {
+    .branding-stamp {
       position: absolute;
-      top: 15px;
-      right: 15px;
+      top: 0.4in;
+      right: 0.4in;
+      width: 1in;
+      height: 1in;
+      opacity: 0.8;
       z-index: 50;
-      opacity: 0.9;
-      width: 64px;
     }
-
-    /* The right 45% of the card is reserved for the address block and indicia */
+    .branding-stamp img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
   </style>
 </head>
 <body>
   <div class="back-container">
-    <div class="message-section">
-      <div class="text-body">${message}</div>
+    <div class="content-area">
+      <p class="message-text">${message}</p>
     </div>
+    ${showBranding && brandingImageUrl ? `
+    <div class="branding-stamp">
+      <img src="${brandingImageUrl}" alt="Thank Donors Branding" />
+    </div>
+    ` : ''}
+  </div>
+</body>
 </html>
 `.trim();
 }
@@ -196,7 +203,11 @@ async function sendPostcardViaLob(
       overrides.front_image_url || entity.front_image_url || "https://via.placeholder.com/1875x1275",
       overrides.disclaimer || entity.disclaimer
     ),
-    back: generatePostcardHtml(backMessage, showBranding),
+    back: generatePostcardHtml(
+      backMessage,
+      showBranding,
+      "https://kampeyn.co/thank_donors_stamp.png"
+    ),
     size: "4x6",
     mail_type: "usps_first_class",
   };
