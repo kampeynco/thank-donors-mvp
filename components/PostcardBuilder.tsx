@@ -815,10 +815,10 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                     <div className="absolute inset-0 border-8 border-white/10 pointer-events-none"></div>
 
                                     {/* Committee Disclaimer (Front) */}
-                                    {(currentAccount?.disclaimer || currentAccount?.entity?.disclaimer) && (
+                                    {currentAccount?.disclaimer && (
                                         <div className="absolute bottom-0 left-0 right-0 px-4 py-2 z-10">
                                             <p className="text-[7px] text-white uppercase leading-[1.2] tracking-tight text-center">
-                                                Paid for by {currentAccount?.disclaimer || currentAccount?.entity?.disclaimer}. Not authorized by any candidate or candidate's committee.
+                                                Paid for by {currentAccount.disclaimer}. Not authorized by any candidate or candidate's committee.
                                             </p>
                                         </div>
                                     )}
@@ -876,10 +876,10 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                             </div>
                                         </div>
 
-                                        {(currentAccount?.disclaimer || currentAccount?.entity?.disclaimer) && (
+                                        {currentAccount?.disclaimer && (
                                             <div className="mt-2 pt-2">
                                                 <p className="text-[7px] text-stone-500 uppercase leading-[1.1] tracking-tighter italic text-center">
-                                                    Paid for by {currentAccount?.disclaimer || currentAccount?.entity?.disclaimer}. Not authorized by any candidate or candidate's committee.
+                                                    Paid for by {currentAccount.disclaimer}. Not authorized by any candidate or candidate's committee.
                                                 </p>
                                             </div>
                                         )}
