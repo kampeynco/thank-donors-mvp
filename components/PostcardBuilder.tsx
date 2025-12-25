@@ -869,8 +869,8 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
 
                                     {/* Branding Note (Back) */}
                                     {currentAccount?.entity?.branding_enabled !== false && (
-                                        <div className="absolute bottom-4 left-6 text-[9px] text-stone-400 font-medium opacity-70">
-                                            Mailed by Thank Donors
+                                        <div className="absolute bottom-4 left-6 text-[9px] font-medium opacity-70">
+                                            Mailed by ThankDonors.com
                                         </div>
                                     )}
                                 </div>
