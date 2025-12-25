@@ -108,10 +108,10 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSect
 
     const menuItems = [
         { id: 'general', label: 'General Information', icon: Home },
-        { id: 'billing', label: 'Billing', icon: CreditCard },
         { id: 'webhook', label: 'Webhook Details', icon: Webhook },
-        { id: 'branding', label: 'Branding', icon: Sparkles },
         { id: 'disclaimer', label: 'Disclaimer', icon: FileText },
+        { id: 'branding', label: 'Branding', icon: Sparkles },
+        { id: 'billing', label: 'Billing', icon: CreditCard },
         { id: 'danger', label: 'Danger Zone', icon: AlertTriangle },
     ];
 
