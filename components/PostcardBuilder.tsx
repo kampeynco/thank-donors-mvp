@@ -813,6 +813,15 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                         </div>
                                     )}
                                     <div className="absolute inset-0 border-8 border-white/10 pointer-events-none"></div>
+
+                                    {/* Committee Disclaimer (Front) */}
+                                    {(currentAccount?.entity?.disclaimer || currentAccount?.disclaimer) && (
+                                        <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm px-4 py-2">
+                                            <p className="text-[7px] text-white uppercase leading-[1.2] tracking-tight text-center">
+                                                Paid for by {currentAccount?.entity?.disclaimer || currentAccount?.disclaimer}. Not authorized by any candidate or candidate's committee.
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="w-full h-full bg-stone-50 relative flex flex-col p-6 overflow-hidden">
