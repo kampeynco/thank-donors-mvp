@@ -43,7 +43,7 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
       overflow: hidden;
     }
     .message-text {
-      width: 100%;
+      width: 90%;
       font-size: ${fontSize}pt;
       line-height: 1.4;
       color: #1c1917;
