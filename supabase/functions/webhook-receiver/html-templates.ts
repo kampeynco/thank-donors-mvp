@@ -38,6 +38,7 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
       flex-direction: column;
       justify-content: flex-start;
       box-sizing: border-box;
+      overflow: hidden;
     }
     .message-text {
       width: 100%;
@@ -47,6 +48,7 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
       white-space: pre-wrap;
       word-wrap: break-word;
       overflow-wrap: break-word;
+      word-break: break-word;
       margin: 0;
     }
     .branding-note {
