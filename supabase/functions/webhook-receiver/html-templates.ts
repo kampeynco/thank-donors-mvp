@@ -5,7 +5,7 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
   const processedMessage = message.replace(/\\n/g, '\n');
   const escapedMessage = escapeHtml(processedMessage);
   // Refined scaling: 8pt for short messages, down to 5pt for long ones
-  const fontSize = Math.max(6, 11 - (processedMessage.length / 500) * 6);
+  const fontSize = Math.max(6, 11 - (processedMessage.length / 500) * 5);
   console.log(`📏 Calculated font size for message (length ${processedMessage.length}): ${fontSize}pt`);
 
   return `
@@ -48,9 +48,7 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
       line-height: 1.4;
       color: #1c1917;
       white-space: pre-wrap;
-      word-wrap: break-word;
       overflow-wrap: break-word;
-      word-break: break-word;
       margin: 0;
     }
     .branding-note {
