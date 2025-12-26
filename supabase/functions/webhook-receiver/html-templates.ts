@@ -43,12 +43,14 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
       overflow: hidden;
     }
     .message-text {
-      width: 90%;
+      width: 100%;
       font-size: ${fontSize}pt;
       line-height: 1.4;
       color: #1c1917;
       white-space: pre-wrap;
-      overflow-wrap: break-word;
+      word-wrap: break-word;     /* Legacy support */
+      word-break: break-word;    /* Standard */
+      overflow-wrap: anywhere;   /* Force breaking at any point if necessary */
       margin: 0;
     }
     .branding-note {
