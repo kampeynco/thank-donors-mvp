@@ -117,9 +117,31 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "Missing Authorization header" }, 401);
     }
 
+    // @ts-ignore
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
+      return jsonResponse(
+        { error: "Missing env vars: SUPABASE_URL, SUPABASE_ANON_KEY, or SUPABASE_SERVICE_ROLE_KEY" },
+        500,
+      );
+    }
+
+    // ... (HOOKDECK_API_KEY check) ...
+
+    // 2) Auth Check
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return jsonResponse({ error: "Missing Authorization header" }, 401);
+    }
+
+    // Client for Auth checks (User context)
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } },
     });
+
+    // Client for DB Ops (Admin context to bypass RLS for Entity creation)
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const { data: userData, error: userErr } = await supabase.auth.getUser();
     const user = userData?.user;
@@ -254,7 +276,8 @@ Deno.serve(async (request) => {
 
     console.log("✅ Validation passed");
 
-    const { data: existing, error: existingError } = await supabase
+    // 4) Idempotency Check - more comprehensive
+    const { data: existing, error: existingError } = await supabaseAdmin
       .from("actblue_accounts")
       .select("*")
       .eq("profile_id", user.id)
@@ -490,7 +513,7 @@ Deno.serve(async (request) => {
 
     console.log("📝 Entity upsert payload:", entityPayload);
 
-    const { error: entityErr } = await supabase
+    const { error: entityErr } = await supabaseAdmin
       .from("actblue_entities")
       .upsert(entityPayload, { onConflict: 'entity_id' });
 
@@ -513,7 +536,7 @@ Deno.serve(async (request) => {
 
     console.log("📝 Account insert payload:", accountPayload);
 
-    const { data: inserted, error: insertErr } = await supabase
+    const { data: inserted, error: insertErr } = await supabaseAdmin
       .from("actblue_accounts")
       .upsert(accountPayload, { onConflict: 'entity_id' }) // Use upsert to handle reprovisioning
       .select("*, entity:actblue_entities(*)")
