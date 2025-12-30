@@ -82,18 +82,17 @@ Deno.serve(async (request) => {
   try {
     // 1) Env Var Setup
     // @ts-ignore
-    const SBASE_URL = Deno.env.get("SBASE_URL") ?? Deno.env.get("SBASE_URL");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     // @ts-ignore
-    const SBASE_ANON_KEY =
-      Deno.env.get("SBASE_ANON_KEY") ?? Deno.env.get("SBASE_ANON_KEY");
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
     // @ts-ignore
     const HOOKDECK_API_KEY = Deno.env.get("HOOKDECK_API_KEY");
     // @ts-ignore
     let hookdeckDestinationId = Deno.env.get("HOOKDECK_DESTINATION_ID");
 
-    if (!SBASE_URL || !SBASE_ANON_KEY) {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
       return jsonResponse(
-        { error: "Missing env vars: SBASE_URL/SBASE_URL or SBASE_ANON_KEY/SBASE_ANON_KEY" },
+        { error: "Missing env vars: SUPABASE_URL or SUPABASE_ANON_KEY" },
         500,
       );
     }
@@ -118,7 +117,7 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "Missing Authorization header" }, 401);
     }
 
-    const supabase = createClient(SBASE_URL, SBASE_ANON_KEY, {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } },
     });
 
@@ -281,7 +280,7 @@ Deno.serve(async (request) => {
 
     // 5) Ensure Destination Exists
     if (!hookdeckDestinationId) {
-      const webhookReceiverUrl = `${SBASE_URL}/functions/v1/webhook-receiver`;
+      const webhookReceiverUrl = `${SUPABASE_URL}/functions/v1/webhook-receiver`;
       const destName = "ThankDonors Receiver";
 
       const listDest = await hookdeckRequest<{ models: any[] }>(

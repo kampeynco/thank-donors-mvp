@@ -1,4 +1,3 @@
-
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -34,9 +33,9 @@ Deno.serve(async (req) => {
     // @ts-ignore
     const THANKSIO_API_KEY = Deno.env.get("THANKSIO_API_KEY");
     // @ts-ignore
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? Deno.env.get("SBASE_URL");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     // @ts-ignore
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SBASE_SERVICE_ROLE_KEY");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!HOOKDECK_API_KEY) throw new Error("Missing HOOKDECK_API_KEY");
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) throw new Error("Missing Supabase configuration");
