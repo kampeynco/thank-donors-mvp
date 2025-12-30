@@ -511,6 +511,7 @@ Deno.serve(async (request) => {
       ...(existing?.id ? { id: existing.id } : {}), // Include ID for upserting existing records
       profile_id: user.id,
       entity_id: entityId,
+      committee_name: committeeName, // Required by NOT NULL constraint
       platform,
       // Add webhook details to account record as well (required by DB constraints)
       webhook_url: source.url,
