@@ -25,8 +25,8 @@ serve(async (req) => {
         const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash",
             generationConfig: {
-                temperature: 0.9,
-                maxOutputTokens: 500,
+                temperature: 0.7,
+                maxOutputTokens: 750,
             }
         });
 
