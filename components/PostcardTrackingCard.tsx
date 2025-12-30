@@ -63,6 +63,10 @@ const PostcardTrackingCard: React.FC<PostcardTrackingCardProps> = ({ donation, o
             donation.error_message?.toLowerCase().includes('zip') ||
             donation.error_message?.toLowerCase().includes('incomplete'));
 
+    const isDesignError =
+        donation.status === 'failed' &&
+        (!donation.front_image_url || !donation.back_message);
+
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
@@ -155,6 +159,14 @@ const PostcardTrackingCard: React.FC<PostcardTrackingCardProps> = ({ donation, o
                             >
                                 <MapPin className="w-4 h-4" />
                                 <span>Update Address</span>
+                            </button>
+                        ) : isDesignError && onNavigate ? (
+                            <button
+                                onClick={() => onNavigate(ViewState.POSTCARD_BUILDER)}
+                                className="text-sm font-bold text-rose-600 hover:text-rose-700 hover:underline flex items-center justify-center gap-2 py-1"
+                            >
+                                <Palette className="w-4 h-4" />
+                                <span>Design Postcard</span>
                             </button>
                         ) : (
                             <button

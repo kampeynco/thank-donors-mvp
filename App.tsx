@@ -220,6 +220,8 @@ id,
     error_message,
     lob_url,
     lob_postcard_id,
+    front_image_url,
+    back_message,
     postcard_events(
       id,
       status,
@@ -256,6 +258,8 @@ id,
             address_city: d.donor_city,
             address_state: d.donor_state,
             address_zip: d.donor_zip,
+            front_image_url: postcard?.front_image_url,
+            back_message: postcard?.back_message,
             events: postcard?.postcard_events || []
           };
         });

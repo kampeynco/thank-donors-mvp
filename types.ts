@@ -92,6 +92,8 @@ export interface Donation {
   address_city?: string;
   address_state?: string;
   address_zip?: string;
+  front_image_url?: string;
+  back_message?: string;
   events?: PostcardEvent[];
 }
 

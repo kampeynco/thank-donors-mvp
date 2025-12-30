@@ -48,12 +48,27 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh, onNavigate 
   const failedCount = donations.filter(d => ['failed', 'returned_to_sender'].includes(d.status)).length;
   const totalRaised = donations.reduce((acc, curr) => acc + curr.amount, 0);
 
+  const isBalanceError = (donation: Donation) =>
+    donation.status === 'failed' &&
+    (donation.error_message?.toLowerCase().includes('balance') ||
+      donation.error_message?.toLowerCase().includes('funds') ||
+      donation.error_message?.toLowerCase().includes('credit'));
+
+  const isAddressError = (donation: Donation) =>
+    donation.status === 'failed' &&
+    (donation.error_message?.toLowerCase().includes('address') ||
+      donation.error_message?.toLowerCase().includes('zip') ||
+      donation.error_message?.toLowerCase().includes('incomplete'));
+
+  const isDesignError = (donation: Donation) =>
+    donation.status === 'failed' &&
+    (!donation.front_image_url || !donation.back_message);
+
   const handleRetryPostcard = async (e: React.MouseEvent | null, donationId: string, address?: any) => {
     if (e) e.stopPropagation();
     if (retryingId) return;
 
     setRetryingId(donationId);
-    toast("Initiating retry...", "info");
 
     try {
       const { data, error } = await supabase.functions.invoke('retry-postcard', {
@@ -62,15 +77,15 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh, onNavigate 
 
       if (error) throw error;
 
-      if (data?.success) {
-        toast("Postcard successfully retried!", "success");
+      if (data.success) {
+        toast("Postcard sent successfully!", "success");
         onRefresh?.();
       } else {
-        toast(`Retry failed: ${data?.error || 'Unknown error'}`, "error");
+        toast(`Retry failed: ${data.error}`, "error");
       }
     } catch (err: any) {
       console.error("Retry failed:", err);
-      toast(`Error: ${err.message || 'Failed to retry postcard'}`, "error");
+      toast(`Retry failed: ${err.message}`, "error");
     } finally {
       setRetryingId(null);
     }
@@ -325,6 +340,16 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh, onNavigate 
                                     className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline uppercase tracking-tight whitespace-nowrap"
                                   >
                                     Update Address
+                                  </button>
+                                ) : isDesignError(donation) ? (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onNavigate?.(ViewState.POSTCARD_BUILDER);
+                                    }}
+                                    className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline uppercase tracking-tight whitespace-nowrap"
+                                  >
+                                    Design Postcard
                                   </button>
                                 ) : (
                                   <button
