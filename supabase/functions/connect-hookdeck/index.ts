@@ -86,16 +86,19 @@ Deno.serve(async (request) => {
     // @ts-ignore
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
     // @ts-ignore
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    // @ts-ignore
     const HOOKDECK_API_KEY = Deno.env.get("HOOKDECK_API_KEY");
     // @ts-ignore
     let hookdeckDestinationId = Deno.env.get("HOOKDECK_DESTINATION_ID");
 
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
       return jsonResponse(
-        { error: "Missing env vars: SUPABASE_URL or SUPABASE_ANON_KEY" },
+        { error: "Missing env vars: SUPABASE_URL, SUPABASE_ANON_KEY, or SUPABASE_SERVICE_ROLE_KEY" },
         500,
       );
     }
+
     if (!HOOKDECK_API_KEY) {
       return jsonResponse({ error: "Missing env var: HOOKDECK_API_KEY" }, 500);
     }
@@ -110,24 +113,6 @@ Deno.serve(async (request) => {
     }
 
     console.log("✅ HOOKDECK_API_KEY present (length:", HOOKDECK_API_KEY.length, ")");
-
-    // 2) Auth Check
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader) {
-      return jsonResponse({ error: "Missing Authorization header" }, 401);
-    }
-
-    // @ts-ignore
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
-      return jsonResponse(
-        { error: "Missing env vars: SUPABASE_URL, SUPABASE_ANON_KEY, or SUPABASE_SERVICE_ROLE_KEY" },
-        500,
-      );
-    }
-
-    // ... (HOOKDECK_API_KEY check) ...
 
     // 2) Auth Check
     const authHeader = request.headers.get("Authorization");
