@@ -34,13 +34,14 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
       position: absolute;
       top: 0.4in;
       left: 0.4in;
-      width: 2in;
+      width: 2.125in;
       height: 3.2in;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
       box-sizing: border-box;
       overflow: hidden;
+      border: 2px solid red; /* DEBUG: Verify width and deployment */
     }
     .message-text {
       width: 100%;
