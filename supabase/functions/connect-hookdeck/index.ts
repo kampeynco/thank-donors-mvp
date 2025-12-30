@@ -254,7 +254,6 @@ Deno.serve(async (request) => {
 
     console.log("✅ Validation passed");
 
-    // 4) Idempotency Check - more comprehensive
     const { data: existing, error: existingError } = await supabase
       .from("actblue_accounts")
       .select("*")
@@ -266,8 +265,11 @@ Deno.serve(async (request) => {
       console.error("Error checking existing account:", existingError);
     }
 
-    if (existing) {
-      console.log("✅ Found existing account, returning early");
+    // Check if we need to repair the account (dummy webhook or missing webhook)
+    const isDummyWebhook = existing?.webhook_url?.includes("example.com") || existing?.webhook_url?.includes("dummy");
+
+    if (existing && !isDummyWebhook && existing.webhook_url) {
+      console.log("✅ Found existing account with valid webhook, returning early");
       return jsonResponse({
         success: true,
         ok: true,
@@ -276,7 +278,13 @@ Deno.serve(async (request) => {
       });
     }
 
-    console.log("🔧 No existing account found, creating new resources...");
+    if (existing && isDummyWebhook) {
+      console.log("⚠️ Found account with dummy webhook. Reprovisioning...");
+    } else if (existing) {
+      console.log("⚠️ Found account but missing webhook info. Reprovisioning...");
+    } else {
+      console.log("🔧 No existing account found, creating new resources...");
+    }
 
     // 5) Ensure Destination Exists
     if (!hookdeckDestinationId) {
@@ -507,7 +515,7 @@ Deno.serve(async (request) => {
 
     const { data: inserted, error: insertErr } = await supabase
       .from("actblue_accounts")
-      .insert(accountPayload)
+      .upsert(accountPayload, { onConflict: 'entity_id' }) // Use upsert to handle reprovisioning
       .select("*, entity:actblue_entities(*)")
       .single();
 
