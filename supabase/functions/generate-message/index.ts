@@ -21,7 +21,13 @@ serve(async (req) => {
         }
 
         const genAI = new GoogleGenAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({
+            model: "gemini-1.5-flash",
+            generationConfig: {
+                temperature: 0.9,
+                maxOutputTokens: 100,
+            }
+        });
 
         const prompt = `
       Write a short, sincere thank you message (max 50 words) for a postcard to a political donor. 
