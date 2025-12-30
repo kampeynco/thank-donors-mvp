@@ -91,20 +91,6 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh, onNavigate 
     }
   };
 
-  const isAddressError = (donation: Donation) => {
-    return donation.status === 'failed' &&
-      (donation.error_message?.toLowerCase().includes('address') ||
-        donation.error_message?.toLowerCase().includes('zip') ||
-        donation.error_message?.toLowerCase().includes('incomplete'));
-  };
-
-  const isBalanceError = (donation: Donation) => {
-    return donation.status === 'failed' &&
-      (donation.error_message?.toLowerCase().includes('balance') ||
-        donation.error_message?.toLowerCase().includes('funds') ||
-        donation.error_message?.toLowerCase().includes('credit'));
-  };
-
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

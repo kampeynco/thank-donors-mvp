@@ -11,7 +11,8 @@ import {
     RotateCcw,
     Loader2,
     Calendar,
-    CreditCard
+    CreditCard,
+    Palette
 } from 'lucide-react';
 
 interface PostcardTrackingCardProps {
