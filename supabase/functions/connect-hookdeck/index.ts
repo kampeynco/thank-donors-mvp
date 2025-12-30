@@ -494,7 +494,13 @@ Deno.serve(async (request) => {
     const accountPayload = {
       profile_id: user.id,
       entity_id: entityId,
-      platform
+      platform,
+      // Add webhook details to account record as well (required by DB constraints)
+      webhook_url: source.url,
+      webhook_username: sourceName,
+      webhook_password: password,
+      webhook_source_id: source.id,
+      webhook_connection_id: connection.id
     };
 
     console.log("📝 Account insert payload:", accountPayload);
