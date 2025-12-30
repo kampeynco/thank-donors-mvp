@@ -89,14 +89,22 @@ serve(async (req) => {
         }
 
         const account = donation.actblue_accounts;
-        const entity = account.actblue_entities;
+        const entity = account?.actblue_entities;
 
         if (!entity) {
+            console.error("❌ Linked entity not found in joined data:", { donationId, accountId: account?.id });
             return new Response(JSON.stringify({ error: 'Linked entity not found' }), {
                 status: 404,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
         }
+
+        console.log("🛠️ Extracted retry data:", {
+            donationId,
+            committeeName: entity.committee_name,
+            frontImageUrl: entity.front_image_url,
+            backMessageLength: entity.back_message?.length
+        });
 
         // 3. Check status - only retry if failed
         // Note: status is on the 'postcards' table usually, but we check joined info if needed.
@@ -171,6 +179,7 @@ serve(async (req) => {
 
         // 8. If Lob failed again, refund (same as processor.ts)
         if (!lobResult.success) {
+            console.error("❌ Lob API Retry Failed:", lobResult.error);
             await supabaseAdmin.rpc('increment_entity_balance', {
                 p_entity_id: entity.entity_id,
                 p_amount: priceCents
@@ -186,6 +195,8 @@ serve(async (req) => {
                 lob_postcard_id: lobResult.lobId || null,
                 lob_url: lobResult.url || null,
                 error_message: lobResult.error || null,
+                front_image_url: entity.front_image_url,
+                back_message: entity.back_message,
                 updated_at: new Date().toISOString()
             })
             .eq('id', postcard.id);
