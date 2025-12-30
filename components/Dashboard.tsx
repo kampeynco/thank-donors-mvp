@@ -1,4 +1,6 @@
-import { CheckCircle2, Clock, AlertCircle, TrendingUp, ChevronDown, ExternalLink, Activity, Search, X, RotateCcw, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ViewState, Donation } from '../types';
+import { CheckCircle2, Clock, AlertCircle, TrendingUp, ChevronDown, ExternalLink, Activity, Search, X, RotateCcw, Loader2, CreditCard, MapPin } from 'lucide-react';
 import StatusTooltip from './StatusTooltip';
 import PostcardTrackingCard from './PostcardTrackingCard';
 import AddressModal from './AddressModal';
@@ -8,9 +10,10 @@ import { useToast } from './ToastContext';
 interface DashboardProps {
   donations: Donation[];
   onRefresh?: () => void;
+  onNavigate?: (view: ViewState, section?: string) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh }) => {
+const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh, onNavigate }) => {
   const { toast } = useToast();
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
@@ -78,6 +81,13 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh }) => {
       (donation.error_message?.toLowerCase().includes('address') ||
         donation.error_message?.toLowerCase().includes('zip') ||
         donation.error_message?.toLowerCase().includes('incomplete'));
+  };
+
+  const isBalanceError = (donation: Donation) => {
+    return donation.status === 'failed' &&
+      (donation.error_message?.toLowerCase().includes('balance') ||
+        donation.error_message?.toLowerCase().includes('funds') ||
+        donation.error_message?.toLowerCase().includes('credit'));
   };
 
   // Close dropdown when clicking outside
@@ -296,7 +306,18 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh }) => {
                           <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                             {['failed', 'returned_to_sender'].includes(donation.status) && (
                               <>
-                                {isAddressError(donation) ? (
+                                {isBalanceError(donation) ? (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onNavigate?.(ViewState.SETTINGS, 'billing');
+                                    }}
+                                    className="p-1.5 hover:bg-stone-100 rounded-lg text-rose-600 transition-colors"
+                                    title="Add Balance"
+                                  >
+                                    <CreditCard size={16} />
+                                  </button>
+                                ) : isAddressError(donation) ? (
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();

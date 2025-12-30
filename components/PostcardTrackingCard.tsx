@@ -1,5 +1,5 @@
 import React from 'react';
-import { Donation } from '../types';
+import { Donation, ViewState } from '../types';
 import {
     CheckCircle2,
     Truck,
@@ -9,7 +9,9 @@ import {
     X,
     MapPin,
     RotateCcw,
-    Loader2
+    Loader2,
+    Calendar,
+    CreditCard
 } from 'lucide-react';
 
 interface PostcardTrackingCardProps {
@@ -17,10 +19,11 @@ interface PostcardTrackingCardProps {
     onClose: () => void;
     onRetry?: () => void;
     onUpdateAddress?: () => void;
+    onNavigate?: (view: ViewState, section?: string) => void;
     isRetrying?: boolean;
 }
 
-const PostcardTrackingCard: React.FC<PostcardTrackingCardProps> = ({ donation, onClose, onRetry, onUpdateAddress, isRetrying }) => {
+const PostcardTrackingCard: React.FC<PostcardTrackingCardProps> = ({ donation, onClose, onRetry, onUpdateAddress, onNavigate, isRetrying }) => {
     const events = donation.events || [];
 
     // Sort events by date descending (most recent first)
@@ -47,6 +50,12 @@ const PostcardTrackingCard: React.FC<PostcardTrackingCardProps> = ({ donation, o
     const formatStatus = (status: string) => {
         return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     };
+
+    const isBalanceError =
+        donation.status === 'failed' &&
+        (donation.error_message?.toLowerCase().includes('balance') ||
+            donation.error_message?.toLowerCase().includes('funds') ||
+            donation.error_message?.toLowerCase().includes('credit'));
 
     const isAddressError =
         donation.status === 'failed' &&
@@ -128,9 +137,17 @@ const PostcardTrackingCard: React.FC<PostcardTrackingCardProps> = ({ donation, o
                 </div>
             </div>
 
-            {['failed', 'returned_to_sender'].includes(donation.status) && (onRetry || onUpdateAddress) && (
+            {['failed', 'returned_to_sender'].includes(donation.status) && (onRetry || onUpdateAddress || onNavigate) && (
                 <div className="p-4 bg-rose-50 border-t border-rose-100 mt-auto">
-                    {isAddressError && onUpdateAddress ? (
+                    {isBalanceError && onNavigate ? (
+                        <button
+                            onClick={() => onNavigate(ViewState.SETTINGS, 'billing')}
+                            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-rose-600 border border-rose-500 rounded-xl text-sm font-semibold text-white hover:bg-rose-700 transition-all shadow-sm active:scale-[0.98]"
+                        >
+                            <CreditCard className="w-4 h-4" />
+                            <span>Add Balance</span>
+                        </button>
+                    ) : isAddressError && onUpdateAddress ? (
                         <button
                             onClick={onUpdateAddress}
                             className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-rose-600 border border-rose-500 rounded-xl text-sm font-semibold text-white hover:bg-rose-700 transition-all shadow-sm active:scale-[0.98]"

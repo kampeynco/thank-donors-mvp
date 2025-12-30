@@ -579,6 +579,10 @@ id,
         <Dashboard
           donations={donations}
           onRefresh={() => profile && currentAccount && fetchDonations(profile.id, currentAccount.id)}
+          onNavigate={(v, section) => {
+            setView(v);
+            if (v === ViewState.SETTINGS && section) setSettingsActiveSection(section);
+          }}
         />
       )}
       {view === ViewState.POSTCARD_BUILDER && (
