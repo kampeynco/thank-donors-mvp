@@ -66,40 +66,34 @@ serve(async (req) => {
             }
         }
 
-        // 1. Fetch donation and verify ownership
+        // 1. Fetch donation, linked account, and entity with security check
         const { data: donation, error: donationError } = await supabaseAdmin
             .from('donations')
-            .select('*, actblue_entities(*)')
+            .select(`
+                *,
+                actblue_accounts!inner(
+                    *,
+                    actblue_entities!inner(*)
+                )
+            `)
             .eq('id', donationId)
+            .eq('actblue_accounts.profile_id', user.id)
             .single();
 
         if (donationError || !donation) {
-            return new Response(JSON.stringify({ error: 'Donation not found' }), {
-                status: 404,
+            console.error("❌ Donation fetch/auth error:", donationError);
+            return new Response(JSON.stringify({ error: donationError ? donationError.message : 'Donation not found or unauthorized' }), {
+                status: donationError?.code === 'PGRST116' ? 404 : 403,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
         }
 
-        const entity = donation.actblue_entities;
+        const account = donation.actblue_accounts;
+        const entity = account.actblue_entities;
+
         if (!entity) {
             return new Response(JSON.stringify({ error: 'Linked entity not found' }), {
                 status: 404,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            });
-        }
-
-        // 2. Security Check: Ensure user owns this donation
-        // We check if there's an actblue_account for this user and entity
-        const { data: account, error: accountError } = await supabaseAdmin
-            .from('actblue_accounts')
-            .select('id')
-            .eq('profile_id', user.id)
-            .eq('entity_id', entity.entity_id)
-            .single();
-
-        if (accountError || !account) {
-            return new Response(JSON.stringify({ error: 'Unauthorized to retry this donation' }), {
-                status: 403,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
         }
