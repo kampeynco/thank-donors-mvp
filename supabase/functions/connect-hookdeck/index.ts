@@ -508,6 +508,7 @@ Deno.serve(async (request) => {
     }
 
     const accountPayload = {
+      ...(existing?.id ? { id: existing.id } : {}), // Include ID for upserting existing records
       profile_id: user.id,
       entity_id: entityId,
       platform,
@@ -523,7 +524,7 @@ Deno.serve(async (request) => {
 
     const { data: inserted, error: insertErr } = await supabaseAdmin
       .from("actblue_accounts")
-      .upsert(accountPayload, { onConflict: 'entity_id' }) // Use upsert to handle reprovisioning
+      .upsert(accountPayload) // Supabase will use 'id' if present, otherwise insert
       .select("*, entity:actblue_entities(*)")
       .single();
 
