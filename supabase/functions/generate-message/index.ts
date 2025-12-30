@@ -23,7 +23,7 @@ serve(async (req) => {
 
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: "gemini-pro",
+            model: "gemini-3-flash-preview",
             generationConfig: {
                 temperature: 0.9,
                 maxOutputTokens: 100,
@@ -39,7 +39,7 @@ serve(async (req) => {
         const response = await result.response;
         const text = response.text();
 
-        return new Response(JSON.stringify({ generatedText: text }), {
+        return new Response(JSON.stringify({ message: text }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
     } catch (error) {
