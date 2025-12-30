@@ -33,7 +33,7 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
     .content-area {
       position: absolute;
       top: 0.4in;
-      left: 0.4in;
+      left: 0.35in;
       width: 2in;
       height: 3.2in;
       display: flex;
