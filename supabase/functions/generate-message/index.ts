@@ -26,7 +26,7 @@ serve(async (req) => {
             model: "gemini-2.5-flash",
             generationConfig: {
                 temperature: 0.9,
-                maxOutputTokens: 100,
+                maxOutputTokens: 500,
             }
         });
 
