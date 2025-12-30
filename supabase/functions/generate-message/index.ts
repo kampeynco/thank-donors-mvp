@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.3";
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.24.1";
 
 const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -23,17 +23,18 @@ serve(async (req) => {
 
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash",
+            model: "gemini-3-flash-preview",
             generationConfig: {
                 temperature: 0.7,
-                maxOutputTokens: 750,
+                maxOutputTokens: 800,
             }
         });
 
-        const prompt = `Write a short, sincere thank you message (max 50 words) from "${committeeName}" to a donor.
-    Tone: ${tone}.
-    Do NOT include a greeting or placeholder for the donor's name (like "Dear [Name]").
-    Just start with the message content.`;
+        const prompt = `Write a sincere thank you message (max 500 characters) from "${committeeName}" to a donor.
+        Tone: ${tone}.
+        Start the message with "Dear {first_name}," (literally use that placeholder).
+        Use proper paragraph breaks (double newlines) to structure the message nicely. Do not write one long block of text.
+        Ensure the message feels personal and complete.`;
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
