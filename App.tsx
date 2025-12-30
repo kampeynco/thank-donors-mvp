@@ -27,13 +27,21 @@ const App: React.FC = () => {
   const [currentAccount, setCurrentAccount] = useState<ActBlueAccount | null>(null);
   const [donations, setDonations] = useState<Donation[]>([]);
 
+  const sessionRef = React.useRef(session);
+  const loadingRef = React.useRef(loading);
+
+  useEffect(() => {
+    sessionRef.current = session;
+    loadingRef.current = loading;
+  }, [session, loading]);
+
   useEffect(() => {
     // Safety timeout to prevent infinite loading
     const safetyTimer = setTimeout(() => {
-      if (loading) {
+      if (loadingRef.current) {
         console.warn("Loading timed out, forcing auth view");
         setLoading(false);
-        if (!session) setView(ViewState.AUTH);
+        if (!sessionRef.current) setView(ViewState.AUTH);
       }
     }, 5000);
 
