@@ -8,15 +8,19 @@ import {
     ExternalLink,
     X,
     MapPin,
-    Calendar
+    RotateCcw,
+    Loader2
 } from 'lucide-react';
 
 interface PostcardTrackingCardProps {
     donation: Donation;
     onClose: () => void;
+    onRetry?: () => void;
+    onUpdateAddress?: () => void;
+    isRetrying?: boolean;
 }
 
-const PostcardTrackingCard: React.FC<PostcardTrackingCardProps> = ({ donation, onClose }) => {
+const PostcardTrackingCard: React.FC<PostcardTrackingCardProps> = ({ donation, onClose, onRetry, onUpdateAddress, isRetrying }) => {
     const events = donation.events || [];
 
     // Sort events by date descending (most recent first)
@@ -43,6 +47,12 @@ const PostcardTrackingCard: React.FC<PostcardTrackingCardProps> = ({ donation, o
     const formatStatus = (status: string) => {
         return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     };
+
+    const isAddressError =
+        donation.status === 'failed' &&
+        (donation.error_message?.toLowerCase().includes('address') ||
+            donation.error_message?.toLowerCase().includes('zip') ||
+            donation.error_message?.toLowerCase().includes('incomplete'));
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-300">
@@ -117,6 +127,36 @@ const PostcardTrackingCard: React.FC<PostcardTrackingCardProps> = ({ donation, o
                     )}
                 </div>
             </div>
+
+            {['failed', 'returned_to_sender'].includes(donation.status) && (onRetry || onUpdateAddress) && (
+                <div className="p-4 bg-rose-50 border-t border-rose-100 mt-auto">
+                    {isAddressError && onUpdateAddress ? (
+                        <button
+                            onClick={onUpdateAddress}
+                            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-rose-600 border border-rose-500 rounded-xl text-sm font-semibold text-white hover:bg-rose-700 transition-all shadow-sm active:scale-[0.98]"
+                        >
+                            <MapPin className="w-4 h-4" />
+                            <span>Update Address & Retry</span>
+                        </button>
+                    ) : (
+                        <button
+                            onClick={onRetry}
+                            disabled={isRetrying}
+                            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-rose-600 border border-rose-500 rounded-xl text-sm font-semibold text-white hover:bg-rose-700 transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isRetrying ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <RotateCcw className="w-4 h-4" />
+                            )}
+                            <span>Retry Sending Postcard</span>
+                        </button>
+                    )}
+                    <p className="text-[10px] text-rose-500 text-center mt-2 italic">
+                        This will re-deduct balance and attempt to resend the postcard.
+                    </p>
+                </div>
+            )}
 
             {donation.lob_url && (
                 <div className="p-4 bg-gray-50 border-t border-gray-100 mt-auto">

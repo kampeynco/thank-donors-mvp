@@ -575,7 +575,12 @@ id,
         onSelect: setProfileActiveSection
       } : undefined}
     >
-      {view === ViewState.DASHBOARD && <Dashboard donations={donations} />}
+      {view === ViewState.DASHBOARD && (
+        <Dashboard
+          donations={donations}
+          onRefresh={() => profile && currentAccount && fetchDonations(profile.id, currentAccount.id)}
+        />
+      )}
       {view === ViewState.POSTCARD_BUILDER && (
         <PostcardBuilder
           currentAccount={currentAccount}

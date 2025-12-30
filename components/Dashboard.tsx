@@ -1,18 +1,23 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Donation } from '../types';
-import { CheckCircle2, Clock, AlertCircle, TrendingUp, ChevronDown, ExternalLink, Activity, Search, X } from 'lucide-react';
+import { CheckCircle2, Clock, AlertCircle, TrendingUp, ChevronDown, ExternalLink, Activity, Search, X, RotateCcw, Loader2 } from 'lucide-react';
 import StatusTooltip from './StatusTooltip';
 import PostcardTrackingCard from './PostcardTrackingCard';
+import AddressModal from './AddressModal';
+import { supabase } from '../services/supabaseClient';
+import { useToast } from './ToastContext';
 
 interface DashboardProps {
   donations: Donation[];
+  onRefresh?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
+const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh }) => {
+  const { toast } = useToast();
+  const [retryingId, setRetryingId] = useState<string | null>(null);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [selectedDonationId, setSelectedDonationId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [addressModalDonation, setAddressModalDonation] = useState<Donation | null>(null);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
 
   const filteredDonations = donations.filter(donation => {
@@ -39,6 +44,41 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
   const pendingCount = donations.filter(d => ['pending', 'processing'].includes(d.status)).length;
   const failedCount = donations.filter(d => ['failed', 'returned_to_sender'].includes(d.status)).length;
   const totalRaised = donations.reduce((acc, curr) => acc + curr.amount, 0);
+
+  const handleRetryPostcard = async (e: React.MouseEvent | null, donationId: string) => {
+    if (e) e.stopPropagation();
+    if (retryingId) return;
+
+    setRetryingId(donationId);
+    toast("Initiating retry...", "info");
+
+    try {
+      const { data, error } = await supabase.functions.invoke('retry-postcard', {
+        body: { donationId }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast("Postcard successfully retried!", "success");
+        onRefresh?.();
+      } else {
+        toast(`Retry failed: ${data?.error || 'Unknown error'}`, "error");
+      }
+    } catch (err: any) {
+      console.error("Retry failed:", err);
+      toast(`Error: ${err.message || 'Failed to retry postcard'}`, "error");
+    } finally {
+      setRetryingId(null);
+    }
+  };
+
+  const isAddressError = (donation: Donation) => {
+    return donation.status === 'failed' &&
+      (donation.error_message?.toLowerCase().includes('address') ||
+        donation.error_message?.toLowerCase().includes('zip') ||
+        donation.error_message?.toLowerCase().includes('incomplete'));
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -254,6 +294,35 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
                         </td>
                         <td className="py-4 px-6 text-right">
                           <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {['failed', 'returned_to_sender'].includes(donation.status) && (
+                              <>
+                                {isAddressError(donation) ? (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setAddressModalDonation(donation);
+                                    }}
+                                    className="p-1.5 hover:bg-stone-100 rounded-lg text-rose-600 transition-colors"
+                                    title="Update Address"
+                                  >
+                                    <MapPin size={16} />
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={(e) => handleRetryPostcard(e, donation.id)}
+                                    disabled={retryingId === donation.id}
+                                    className="p-1.5 hover:bg-stone-100 rounded-lg text-rose-600 transition-colors disabled:opacity-50"
+                                    title="Retry Postcard"
+                                  >
+                                    {retryingId === donation.id ? (
+                                      <Loader2 size={16} className="animate-spin" />
+                                    ) : (
+                                      <RotateCcw size={16} />
+                                    )}
+                                  </button>
+                                )}
+                              </>
+                            )}
                             {donation.lob_url && (
                               <a
                                 href={donation.lob_url}
@@ -288,6 +357,9 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
             <PostcardTrackingCard
               donation={selectedDonation}
               onClose={() => setSelectedDonationId(null)}
+              onRetry={() => handleRetryPostcard(null, selectedDonation.id)}
+              onUpdateAddress={() => setAddressModalDonation(selectedDonation)}
+              isRetrying={retryingId === selectedDonation.id}
             />
           </div>
         ) : (
@@ -302,6 +374,17 @@ const Dashboard: React.FC<DashboardProps> = ({ donations }) => {
         <div
           className="lg:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-in fade-in duration-200"
           onClick={() => setSelectedDonationId(null)}
+        />
+      )}
+
+      {addressModalDonation && (
+        <AddressModal
+          donation={addressModalDonation}
+          onClose={() => setAddressModalDonation(null)}
+          onSaveSuccess={() => {
+            onRefresh?.();
+            handleRetryPostcard(null, addressModalDonation.id);
+          }}
         />
       )}
     </div>
