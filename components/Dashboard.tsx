@@ -48,7 +48,7 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh, onNavigate 
   const failedCount = donations.filter(d => ['failed', 'returned_to_sender'].includes(d.status)).length;
   const totalRaised = donations.reduce((acc, curr) => acc + curr.amount, 0);
 
-  const handleRetryPostcard = async (e: React.MouseEvent | null, donationId: string) => {
+  const handleRetryPostcard = async (e: React.MouseEvent | null, donationId: string, address?: any) => {
     if (e) e.stopPropagation();
     if (retryingId) return;
 
@@ -57,7 +57,7 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh, onNavigate 
 
     try {
       const { data, error } = await supabase.functions.invoke('retry-postcard', {
-        body: { donationId }
+        body: { donationId, address }
       });
 
       if (error) throw error;
@@ -303,19 +303,18 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh, onNavigate 
                           )}
                         </td>
                         <td className="py-4 px-6 text-right">
-                          <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center justify-end gap-3 transition-all">
                             {['failed', 'returned_to_sender'].includes(donation.status) && (
-                              <>
+                              <div className="flex items-center gap-3">
                                 {isBalanceError(donation) ? (
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       onNavigate?.(ViewState.SETTINGS, 'billing');
                                     }}
-                                    className="p-1.5 hover:bg-stone-100 rounded-lg text-rose-600 transition-colors"
-                                    title="Add Balance"
+                                    className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline uppercase tracking-tight whitespace-nowrap"
                                   >
-                                    <CreditCard size={16} />
+                                    Add Balance
                                   </button>
                                 ) : isAddressError(donation) ? (
                                   <button
@@ -323,26 +322,21 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh, onNavigate 
                                       e.stopPropagation();
                                       setAddressModalDonation(donation);
                                     }}
-                                    className="p-1.5 hover:bg-stone-100 rounded-lg text-rose-600 transition-colors"
-                                    title="Update Address"
+                                    className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline uppercase tracking-tight whitespace-nowrap"
                                   >
-                                    <MapPin size={16} />
+                                    Update Address
                                   </button>
                                 ) : (
                                   <button
                                     onClick={(e) => handleRetryPostcard(e, donation.id)}
                                     disabled={retryingId === donation.id}
-                                    className="p-1.5 hover:bg-stone-100 rounded-lg text-rose-600 transition-colors disabled:opacity-50"
-                                    title="Retry Postcard"
+                                    className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline uppercase tracking-tight whitespace-nowrap flex items-center gap-1 disabled:opacity-50"
                                   >
-                                    {retryingId === donation.id ? (
-                                      <Loader2 size={16} className="animate-spin" />
-                                    ) : (
-                                      <RotateCcw size={16} />
-                                    )}
+                                    {retryingId === donation.id && <Loader2 size={10} className="animate-spin" />}
+                                    Retry
                                   </button>
                                 )}
-                              </>
+                              </div>
                             )}
                             {donation.lob_url && (
                               <a
@@ -380,6 +374,7 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh, onNavigate 
               onClose={() => setSelectedDonationId(null)}
               onRetry={() => handleRetryPostcard(null, selectedDonation.id)}
               onUpdateAddress={() => setAddressModalDonation(selectedDonation)}
+              onNavigate={onNavigate}
               isRetrying={retryingId === selectedDonation.id}
             />
           </div>
@@ -402,9 +397,9 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh, onNavigate 
         <AddressModal
           donation={addressModalDonation}
           onClose={() => setAddressModalDonation(null)}
-          onSaveSuccess={() => {
+          onSaveSuccess={(addressData) => {
             onRefresh?.();
-            handleRetryPostcard(null, addressModalDonation.id);
+            handleRetryPostcard(null, addressModalDonation.id, addressData);
           }}
         />
       )}

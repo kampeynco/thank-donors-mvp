@@ -139,39 +139,41 @@ const PostcardTrackingCard: React.FC<PostcardTrackingCardProps> = ({ donation, o
 
             {['failed', 'returned_to_sender'].includes(donation.status) && (onRetry || onUpdateAddress || onNavigate) && (
                 <div className="p-4 bg-rose-50 border-t border-rose-100 mt-auto">
-                    {isBalanceError && onNavigate ? (
-                        <button
-                            onClick={() => onNavigate(ViewState.SETTINGS, 'billing')}
-                            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-rose-600 border border-rose-500 rounded-xl text-sm font-semibold text-white hover:bg-rose-700 transition-all shadow-sm active:scale-[0.98]"
-                        >
-                            <CreditCard className="w-4 h-4" />
-                            <span>Add Balance</span>
-                        </button>
-                    ) : isAddressError && onUpdateAddress ? (
-                        <button
-                            onClick={onUpdateAddress}
-                            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-rose-600 border border-rose-500 rounded-xl text-sm font-semibold text-white hover:bg-rose-700 transition-all shadow-sm active:scale-[0.98]"
-                        >
-                            <MapPin className="w-4 h-4" />
-                            <span>Update Address & Retry</span>
-                        </button>
-                    ) : (
-                        <button
-                            onClick={onRetry}
-                            disabled={isRetrying}
-                            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-rose-600 border border-rose-500 rounded-xl text-sm font-semibold text-white hover:bg-rose-700 transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isRetrying ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <RotateCcw className="w-4 h-4" />
-                            )}
-                            <span>Retry Sending Postcard</span>
-                        </button>
-                    )}
-                    <p className="text-[10px] text-rose-500 text-center mt-2 italic">
-                        This will re-deduct balance and attempt to resend the postcard.
-                    </p>
+                    <div className="flex flex-col gap-3">
+                        {isBalanceError && onNavigate ? (
+                            <button
+                                onClick={() => onNavigate(ViewState.SETTINGS, 'billing')}
+                                className="text-sm font-bold text-rose-600 hover:text-rose-700 hover:underline flex items-center justify-center gap-2 py-1"
+                            >
+                                <CreditCard className="w-4 h-4" />
+                                <span>Add Balance</span>
+                            </button>
+                        ) : isAddressError && onUpdateAddress ? (
+                            <button
+                                onClick={onUpdateAddress}
+                                className="text-sm font-bold text-rose-600 hover:text-rose-700 hover:underline flex items-center justify-center gap-2 py-1"
+                            >
+                                <MapPin className="w-4 h-4" />
+                                <span>Update Address</span>
+                            </button>
+                        ) : (
+                            <button
+                                onClick={onRetry}
+                                disabled={isRetrying}
+                                className="text-sm font-bold text-rose-600 hover:text-rose-700 hover:underline flex items-center justify-center gap-2 py-1 disabled:opacity-50"
+                            >
+                                {isRetrying ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <RotateCcw className="w-4 h-4" />
+                                )}
+                                <span>Retry Sending Postcard</span>
+                            </button>
+                        )}
+                        <p className="text-[10px] text-rose-500 text-center italic">
+                            This will re-deduct balance and attempt to resend the postcard.
+                        </p>
+                    </div>
                 </div>
             )}
 

@@ -40,12 +40,30 @@ serve(async (req) => {
             });
         }
 
-        const { donationId } = await req.json();
+        const { donationId, address } = await req.json();
         if (!donationId) {
             return new Response(JSON.stringify({ error: 'donationId is required' }), {
                 status: 400,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
+        }
+
+        // 0. Update address if provided
+        if (address) {
+            const { error: updateAddrError } = await supabaseAdmin
+                .from('donations')
+                .update({
+                    donor_addr1: address.address_street,
+                    donor_city: address.address_city,
+                    donor_state: address.address_state,
+                    donor_zip: address.address_zip
+                })
+                .eq('id', donationId);
+
+            if (updateAddrError) {
+                console.error("❌ Error updating address before retry:", updateAddrError);
+                // We'll continue anyway, but log it
+            }
         }
 
         // 1. Fetch donation and verify ownership

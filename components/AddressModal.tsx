@@ -7,7 +7,7 @@ import { useToast } from './ToastContext';
 interface AddressModalProps {
     donation: Donation;
     onClose: () => void;
-    onSaveSuccess?: () => void;
+    onSaveSuccess?: (addressData: { address_street: string, address_city: string, address_state: string, address_zip: string }) => void;
 }
 
 const AddressModal: React.FC<AddressModalProps> = ({ donation, onClose, onSaveSuccess }) => {
@@ -30,25 +30,12 @@ const AddressModal: React.FC<AddressModalProps> = ({ donation, onClose, onSaveSu
         setIsSaving(true);
 
         try {
-            // Map back to the database column names
-            const { error } = await supabase
-                .from('donations')
-                .update({
-                    donor_addr1: formData.address_street,
-                    donor_city: formData.address_city,
-                    donor_state: formData.address_state,
-                    donor_zip: formData.address_zip
-                })
-                .eq('id', donation.id);
-
-            if (error) throw error;
-
-            toast("Address updated successfully!", "success");
-            onSaveSuccess?.();
+            // We now delegate the saving to the retry-postcard function which uses service role
+            onSaveSuccess?.(formData);
             onClose();
         } catch (err: any) {
-            console.error("Failed to update address:", err);
-            toast(`Failed to update address: ${err.message}`, "error");
+            console.error("Failed to process address update:", err);
+            toast(`Failed to process address update: ${err.message}`, "error");
         } finally {
             setIsSaving(false);
         }

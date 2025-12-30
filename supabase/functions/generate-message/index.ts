@@ -32,7 +32,7 @@ serve(async (req) => {
 
         const prompt = `Write a sincere thank you message (max 500 characters) from "${committeeName}" to a donor.
         Tone: ${tone}.
-        Start the message with "Dear {first_name}," (literally use that placeholder).
+        Start the message with "Dear %FIRST_NAME%," (literally use that placeholder).
         Use proper paragraph breaks (double newlines) to structure the message nicely. Do not write one long block of text.
         Ensure the message feels personal and complete.`;
 
