@@ -41,7 +41,7 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
       justify-content: flex-start;
       box-sizing: border-box;
       overflow: hidden;
-      border: 2px solid red; /* DEBUG: Verify width and deployment */
+      /*border: 2px solid red; /* DEBUG: Verify width and deployment */
     }
     .message-text {
       width: 100%;
