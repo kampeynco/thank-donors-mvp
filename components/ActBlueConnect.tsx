@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, ExternalLink, AlertTriangle, ArrowRight, Building, Loader2, MapPin, Palette, Image as ImageIcon, Sparkles, Upload, Check, MessageSquare } from 'lucide-react';
+import { Copy, ExternalLink, AlertTriangle, ArrowRight, Building, Loader2, MapPin, Palette, Image as ImageIcon, Sparkles, Upload, Check, MessageSquare, X, Eye } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { Profile, ActBlueAccount } from '../types';
 import { useToast } from './ToastContext';
@@ -36,6 +36,7 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
     const [backMessage, setBackMessage] = useState('');
     const [isUploading, setIsUploading] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
 
     const [copied, setCopied] = useState(false);
 
@@ -384,12 +385,13 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
                             {frontImage && (
                                 <div className="space-y-3">
                                     <label className="text-sm font-medium text-stone-700 block">Preview</label>
-                                    <div className="aspect-[1.5] bg-stone-100 rounded-lg overflow-hidden border border-stone-200 relative shadow-md w-full max-w-sm mx-auto">
+                                    <div className="aspect-[6/4] bg-stone-100 rounded-xl overflow-hidden border border-stone-200 relative shadow-lg w-full max-w-md mx-auto group">
                                         <img src={frontImage} alt="Preview" className="w-full h-full object-cover" />
-                                        <div className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-full shadow-sm text-emerald-600">
-                                            <Check size={16} />
+                                        <div className="absolute top-3 right-3 bg-white/90 p-1.5 rounded-full shadow-sm text-emerald-600">
+                                            <Check size={18} />
                                         </div>
                                     </div>
+                                    <p className="text-center text-xs text-stone-400">Your design will be printed on high-quality 4x6" cardstock</p>
                                 </div>
                             )}
                         </div>
@@ -436,15 +438,68 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
                                     Write with AI
                                 </button>
                             </div>
-                            <textarea
-                                value={backMessage}
-                                onChange={(e) => setBackMessage(e.target.value)}
-                                placeholder="Dear %FIRST_NAME%, thank you for your support..."
-                                rows={6}
-                                className="w-full p-4 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none transition-all resize-none text-base leading-relaxed"
-                            />
+                            <div className="relative">
+                                <textarea
+                                    value={backMessage}
+                                    onChange={(e) => setBackMessage(e.target.value)}
+                                    placeholder="Dear %FIRST_NAME%, thank you for your support..."
+                                    rows={6}
+                                    className="w-full p-4 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none transition-all resize-none text-base leading-relaxed"
+                                />
+                                <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                                    <button
+                                        onClick={() => setShowPreview(true)}
+                                        className="bg-white/80 backdrop-blur-sm border border-stone-200 text-stone-600 hover:text-stone-900 hover:border-stone-300 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all shadow-sm"
+                                        title="Preview Back"
+                                    >
+                                        <Eye size={14} /> Preview
+                                    </button>
+                                </div>
+                            </div>
                             <p className="text-xs text-stone-400 text-right">{backMessage.length} characters</p>
                         </div>
+
+                        {showPreview && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200" onClick={() => setShowPreview(false)}>
+                                <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden" onClick={e => e.stopPropagation()}>
+                                    <div className="bg-stone-50 border-b border-stone-100 p-4 flex justify-between items-center">
+                                        <h3 className="font-bold text-stone-800 flex items-center gap-2">
+                                            <Eye size={16} className="text-stone-400" /> Back Preview
+                                        </h3>
+                                        <button onClick={() => setShowPreview(false)} className="text-stone-400 hover:text-stone-600">
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                    <div className="p-6 bg-white">
+                                        <div className="aspect-[6/4] bg-white border-2 border-stone-100 rounded-lg shadow-sm flex relative overflow-hidden">
+                                            {/* Message visual */}
+                                            <div className="w-1/2 p-4 flex items-center justify-center border-r border-stone-100 border-dashed">
+                                                <div className="w-full h-full overflow-hidden text-[10px] leading-relaxed text-stone-800 font-handwriting italic whitespace-pre-wrap font-serif">
+                                                    {backMessage || <span className="text-stone-300 not-italic font-sans">Your message will appear here...</span>}
+                                                </div>
+                                            </div>
+                                            {/* Address placeholder */}
+                                            <div className="w-1/2 p-4 flex flex-col items-center justify-center relative">
+                                                <div className="w-16 h-20 border border-stone-200 absolute top-4 right-4 bg-stone-50 flex items-center justify-center text-[8px] text-stone-400 uppercase tracking-widest text-center">
+                                                    Stamp
+                                                </div>
+                                                <div className="w-full max-w-[140px] space-y-2 mt-8 opacity-40">
+                                                    <div className="h-0.5 bg-stone-300 w-full mb-4"></div>
+                                                    <div className="h-0.5 bg-stone-300 w-11/12"></div>
+                                                    <div className="h-0.5 bg-stone-300 w-3/4"></div>
+                                                    <div className="h-0.5 bg-stone-300 w-1/2"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-stone-50 p-4 text-center">
+                                        <button onClick={() => setShowPreview(false)} className="text-sm font-medium text-stone-600 hover:text-stone-900">
+                                            Close Preview
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="flex justify-between pt-4">
                             <button
