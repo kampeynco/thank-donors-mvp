@@ -5,7 +5,7 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
   const processedMessage = message.replace(/\\n/g, '\n');
   const escapedMessage = escapeHtml(processedMessage);
   // Refined scaling: 8pt for short messages, down to 5pt for long ones
-  const fontSize = Math.max(6, 11 - (processedMessage.length / 500) * 5);
+  const fontSize = Math.max(7, 11 - (processedMessage.length / 500) * 4);
   console.log(`📏 Calculated font size for message (length ${processedMessage.length}): ${fontSize}pt`);
 
   return `
