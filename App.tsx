@@ -340,7 +340,10 @@ id,
               events: postcard?.postcard_events || []
             };
 
-            setDonations(prev => [mappedDonation, ...prev]);
+            setDonations(prev => {
+              if (prev.some(d => d.id === mappedDonation.id)) return prev;
+              return [mappedDonation, ...prev];
+            });
             toast(`New donation from ${mappedDonation.donor_firstname}!`, 'success');
           }
         }
