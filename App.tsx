@@ -270,6 +270,119 @@ id,
     }
   };
 
+  // Real-time subscriptions
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    console.log('🔌 Setting up real-time subscriptions for user:', session.user.id);
+
+    const channel = supabase.channel('dashboard_updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'donations',
+          filter: `profile_id=eq.${session.user.id}`
+        },
+        async (payload) => {
+          console.log('🔔 New Donation Received:', payload.new);
+          // Fetch the full donation with relations to ensure consistent state
+          const { data: newDonationData, error } = await supabase
+            .from('donations')
+            .select(`
+              id,
+              donor_firstname,
+              donor_lastname,
+              amount,
+              created_at,
+              donor_addr1,
+              donor_city,
+              donor_state,
+              donor_zip,
+              postcards(
+                id,
+                status,
+                error_message,
+                lob_url,
+                lob_postcard_id,
+                front_image_url,
+                back_message,
+                postcard_events(
+                  id,
+                  status,
+                  description,
+                  created_at
+                )
+              )
+            `)
+            .eq('id', payload.new.id)
+            .single();
+
+          if (!error && newDonationData) {
+            const postcard = newDonationData.postcards?.[0];
+            const mappedDonation: Donation = {
+              id: newDonationData.id,
+              donor_firstname: newDonationData.donor_firstname,
+              donor_lastname: newDonationData.donor_lastname,
+              amount: newDonationData.amount,
+              created_at: newDonationData.created_at,
+              status: postcard?.status || 'pending',
+              error_message: postcard?.error_message,
+              lob_url: postcard?.lob_url,
+              lob_postcard_id: postcard?.lob_postcard_id,
+              address_street: newDonationData.donor_addr1,
+              address_city: newDonationData.donor_city,
+              address_state: newDonationData.donor_state,
+              address_zip: newDonationData.donor_zip,
+              front_image_url: postcard?.front_image_url,
+              back_message: postcard?.back_message,
+              events: postcard?.postcard_events || []
+            };
+
+            setDonations(prev => [mappedDonation, ...prev]);
+            toast(`New donation from ${mappedDonation.donor_firstname}!`, 'success');
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen for INSERT and UPDATE on postcards
+          schema: 'public',
+          table: 'postcards',
+          filter: `profile_id=eq.${session.user.id}`
+        },
+        async (payload) => {
+          console.log('🔔 Postcard Update:', payload.eventType, payload.new);
+          const newPostcard = payload.new as any;
+
+          setDonations(prev => prev.map(d => {
+            if (d.id === newPostcard.donation_id) {
+              return {
+                ...d,
+                status: newPostcard.status,
+                error_message: newPostcard.error_message,
+                lob_url: newPostcard.lob_url,
+                lob_postcard_id: newPostcard.lob_postcard_id,
+                front_image_url: newPostcard.front_image_url,
+                back_message: newPostcard.back_message
+              };
+            }
+            return d;
+          }));
+        }
+      )
+      .subscribe((status) => {
+        console.log('🔌 Subscription status:', status);
+      });
+
+    return () => {
+      console.log('🔌 Cleaning up subscriptions');
+      supabase.removeChannel(channel);
+    };
+  }, [session?.user?.id]);
+
   const handleUpdateProfile = async (updatedFields: Partial<Profile>) => {
     if (!profile || !session) return;
 

@@ -38,11 +38,20 @@ export async function sendPostcardViaLob(
         };
     }
 
+    const frontImage = overrides.front_image_url || entity.front_image_url;
     const rawBackMessage = overrides.back_message || entity.back_message;
-    const backMessage = rawBackMessage
-        ? substituteVariables(rawBackMessage, normalizedDonor, donationDate)
-        : `Dear ${normalizedDonor.firstname},\n\nThank you for your generous support!`;
 
+    if (!frontImage) {
+        console.error("❌ Missing front image URL. Cannot send postcard.");
+        return { success: false, error: "Missing front image design" };
+    }
+
+    if (!rawBackMessage) {
+        console.error("❌ Missing back message. Cannot send postcard.");
+        return { success: false, error: "Missing back message design" };
+    }
+
+    const backMessage = substituteVariables(rawBackMessage, normalizedDonor, donationDate);
     const showBranding = entity.tier === 'free' || (entity.tier === 'pro' && entity.branding_enabled !== false);
 
     const lobPayload = {
@@ -57,13 +66,13 @@ export async function sendPostcardViaLob(
         },
         from: {
             name: entity.committee_name || "Campaign",
-            address_line1: entity.street_address || "123 Main St",
+            address_line1: entity.street_address || "PO Box 123", // Keep address fallback for now as it's less critical than design? detailed.
             address_city: entity.city || "City",
             address_state: entity.state || "ST",
             address_zip: entity.postal_code || "12345",
         },
         front: generatePostcardFrontHtml(
-            overrides.front_image_url || entity.front_image_url || "https://via.placeholder.com/1875x1275",
+            frontImage,
             overrides.disclaimer || entity.disclaimer,
             showBranding
         ),
