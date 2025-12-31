@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, ExternalLink, AlertTriangle, ArrowRight, Building, Loader2, MapPin, Palette } from 'lucide-react';
+import { Copy, ExternalLink, AlertTriangle, ArrowRight, Building, Loader2, MapPin, Palette, Image as ImageIcon, Sparkles, Upload, Check, MessageSquare } from 'lucide-react';
+import { supabase } from '../services/supabaseClient';
 import { Profile, ActBlueAccount } from '../types';
 import { useToast } from './ToastContext';
-import PostcardBuilder from './PostcardBuilder';
 
 interface ActBlueConnectProps {
     profile: Profile;
@@ -31,6 +31,12 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
     const [state, setState] = useState('');
     const [zip, setZip] = useState('');
 
+    // Step 3 & 4 State (Design)
+    const [frontImage, setFrontImage] = useState<string | null>(null);
+    const [backMessage, setBackMessage] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+
     const [copied, setCopied] = useState(false);
 
     const isAccountCreated = currentAccount && currentAccount.id !== 'new';
@@ -46,9 +52,13 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
             if (currentAccount.state) setState(currentAccount.state);
             if (currentAccount.postal_code) setZip(currentAccount.postal_code);
 
+            // design
+            if (currentAccount.front_image_url) setFrontImage(currentAccount.front_image_url);
+            if (currentAccount.back_message) setBackMessage(currentAccount.back_message);
+
             // If account is fully created (has ID), jump to connected state or final step
             if (step === 1) {
-                setStep(4);
+                setStep(5);
             }
         } else {
             setEntityId('');
@@ -58,8 +68,10 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
             setCity('');
             setState('');
             setZip('');
+            setFrontImage(null);
+            setBackMessage('');
 
-            if (step === 4 && !isAccountCreated) {
+            if (step === 5 && !isAccountCreated) {
                 setStep(1);
             }
         }
@@ -94,11 +106,71 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
         setLoading(false);
     };
 
-    const handleSaveDesign = async (updates: { back_message: string; front_image_url?: string }) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+
+        setIsUploading(true);
+        const file = e.target.files[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `uploads/${profile.id}/${fileName}`;
+
+        try {
+            const { error: uploadError } = await supabase.storage
+                .from('images')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data } = await supabase.storage
+                .from('images')
+                .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year
+
+            if (data?.signedUrl) {
+                setFrontImage(data.signedUrl);
+            }
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            toast("Failed to upload image", "error");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleGenerateMessage = async () => {
+        if (!committeeName) {
+            toast("Please complete step 1 first", "error");
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('generate-message', {
+                body: {
+                    donorName: "%FIRST_NAME%", // Template placeholder
+                    donationAmount: 50, // Example
+                    accountName: committeeName,
+                    history: []
+                }
+            });
+
+            if (error) throw error;
+            if (data?.message) {
+                setBackMessage(data.message);
+            }
+        } catch (error) {
+            console.error('Error generating AI message:', error);
+            toast("Failed to generate message", "error");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleSaveAll = async () => {
         setLoading(true);
         try {
             const numericId = parseInt(entityId);
-            // Create/Update account with all details including design
+            // Create/Update account with all details
             await onSaveAccount({
                 entity_id: numericId,
                 committee_name: committeeName,
@@ -107,10 +179,10 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
                 city: city,
                 state: state,
                 postal_code: zip,
-                front_image_url: updates.front_image_url,
-                back_message: updates.back_message
+                front_image_url: frontImage || undefined,
+                back_message: backMessage
             });
-            setStep(4);
+            setStep(5);
         } catch (e) {
             // Toast handled in App.tsx
         } finally {
@@ -119,7 +191,7 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
     };
 
     return (
-        <div className={`space-y-8 mx-auto transition-all duration-500 ease-in-out ${step === 3 ? 'max-w-7xl' : 'max-w-3xl'}`}>
+        <div className={`space-y-8 mx-auto transition-all duration-500 ease-in-out max-w-3xl`}>
             <div className="text-center mb-12">
                 <h2 className="text-3xl font-serif font-bold text-stone-800">
                     {currentAccount?.id === 'new' ? 'Campaign Setup' : 'Connection Details'}
@@ -130,20 +202,20 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
             <div className="relative max-w-3xl mx-auto">
                 <div className="absolute top-5 left-0 w-full h-1 bg-stone-100 -z-10 rounded-full"></div>
                 <div className="flex justify-between w-full max-w-2xl mx-auto mb-12">
-                    {[1, 2, 3, 4].map((s) => (
+                    {[1, 2, 3, 4, 5].map((s) => (
                         <div key={s} className={`flex flex-col items-center gap-2 ${step >= s ? 'opacity-100' : 'opacity-40'}`}>
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${step >= s ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' : 'bg-stone-200 text-stone-500'}`}>
                                 {s}
                             </div>
                             <span className="text-xs font-medium text-stone-500">
-                                {s === 1 ? 'Campaign' : s === 2 ? 'Address' : s === 3 ? 'Design' : 'Webhook'}
+                                {s === 1 ? 'Campaign' : s === 2 ? 'Address' : s === 3 ? 'Visuals' : s === 4 ? 'Message' : 'Webhook'}
                             </span>
                         </div>
                     ))}
                 </div>
             </div>
 
-            <div className={`${step === 3 ? '' : 'bg-white p-8 rounded-2xl border border-stone-100 shadow-xl shadow-stone-200/50'}`}>
+            <div className={`bg-white p-8 rounded-2xl border border-stone-100 shadow-xl shadow-stone-200/50`}>
 
                 {step === 1 && (
                     <div className="space-y-6 animate-in fade-in duration-300">
@@ -281,36 +353,118 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
 
                 {step === 3 && (
                     <div className="space-y-6 animate-in fade-in duration-300">
-                        <div className="bg-blue-50 border border-blue-100 p-3 rounded-xl flex items-center gap-3 text-sm text-blue-800 mb-6 mx-auto max-w-2xl">
-                            <AlertTriangle size={16} className="shrink-0" />
-                            <p>You are designing a <b>template</b>. We've filled it with demo data so you can see how it looks.</p>
+                        <div className="flex items-start gap-4">
+                            <div className="bg-purple-50 p-3 rounded-xl text-purple-500">
+                                <ImageIcon size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-stone-800">Front Visual</h3>
+                                <p className="text-stone-500 text-sm mt-1">Upload an image for the front of your postcard.</p>
+                            </div>
                         </div>
 
-                        <PostcardBuilder
-                            currentAccount={{
-                                ...currentAccount!,
-                                committee_name: committeeName,
-                                // Mock required fields for display since account isn't created yet
-                                id: 'new',
-                                profile_id: profile.id,
-                                entity_id: parseInt(entityId) || 0,
-                                webhook_url: '',
-                                webhook_username: '',
-                                webhook_password: '',
-                                webhook_source_id: '',
-                                created_at: new Date().toISOString()
-                            }}
-                            template={null}
-                            onSave={handleSaveDesign}
-                            isLoading={loading}
-                            onBack={() => setStep(2)}
-                            isOnboarding={true}
-                        />
+                        <div className="space-y-6">
+                            <div className="border-2 border-dashed border-stone-200 rounded-xl p-8 text-center hover:border-rose-300 hover:bg-rose-50/50 transition-all cursor-pointer relative group">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                    disabled={isUploading}
+                                />
+                                <div className="flex flex-col items-center gap-3">
+                                    <div className="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center group-hover:bg-white transition-colors">
+                                        {isUploading ? <Loader2 className="animate-spin text-stone-400" /> : <Upload className="text-stone-400 group-hover:text-rose-500" />}
+                                    </div>
+                                    <div className="text-stone-600 font-medium">Click to upload an image</div>
+                                    <div className="text-xs text-stone-400">JPG or PNG, max 5MB</div>
+                                </div>
+                            </div>
 
+                            {frontImage && (
+                                <div className="space-y-3">
+                                    <label className="text-sm font-medium text-stone-700 block">Preview</label>
+                                    <div className="aspect-[1.5] bg-stone-100 rounded-lg overflow-hidden border border-stone-200 relative shadow-md w-full max-w-sm mx-auto">
+                                        <img src={frontImage} alt="Preview" className="w-full h-full object-cover" />
+                                        <div className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-full shadow-sm text-emerald-600">
+                                            <Check size={16} />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex justify-between pt-4">
+                            <button
+                                onClick={() => setStep(2)}
+                                className="px-6 py-4 text-stone-500 font-medium hover:bg-stone-50 rounded-xl transition-colors"
+                            >
+                                Back
+                            </button>
+                            <button
+                                onClick={() => setStep(4)}
+                                disabled={!frontImage}
+                                className="bg-stone-800 text-white font-bold px-8 py-4 rounded-xl hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                Next: Write Message <ArrowRight size={18} />
+                            </button>
+                        </div>
                     </div>
                 )}
 
-                {step === 4 && currentAccount && isAccountCreated && (
+                {step === 4 && (
+                    <div className="space-y-6 animate-in fade-in duration-300">
+                        <div className="flex items-start gap-4">
+                            <div className="bg-indigo-50 p-3 rounded-xl text-indigo-500">
+                                <MessageSquare size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-stone-800">Back Message</h3>
+                                <p className="text-stone-500 text-sm mt-1">Write a template message. We'll replace <code>%FIRST_NAME%</code> with the donor's name.</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <label className="text-sm font-medium text-stone-700">Message Template</label>
+                                <button
+                                    onClick={handleGenerateMessage}
+                                    disabled={isGenerating}
+                                    className="text-xs flex items-center gap-1.5 text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100 transition-colors font-medium"
+                                >
+                                    {isGenerating ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                                    Write with AI
+                                </button>
+                            </div>
+                            <textarea
+                                value={backMessage}
+                                onChange={(e) => setBackMessage(e.target.value)}
+                                placeholder="Dear %FIRST_NAME%, thank you for your support..."
+                                rows={6}
+                                className="w-full p-4 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none transition-all resize-none text-base leading-relaxed"
+                            />
+                            <p className="text-xs text-stone-400 text-right">{backMessage.length} characters</p>
+                        </div>
+
+                        <div className="flex justify-between pt-4">
+                            <button
+                                onClick={() => setStep(3)}
+                                className="px-6 py-4 text-stone-500 font-medium hover:bg-stone-50 rounded-xl transition-colors"
+                            >
+                                Back
+                            </button>
+                            <button
+                                onClick={handleSaveAll}
+                                disabled={backMessage.length < 10 || loading}
+                                className="bg-stone-800 text-white font-bold px-8 py-4 rounded-xl hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                {loading ? <Loader2 className="animate-spin" /> : <>Next: Connect <ArrowRight size={18} /></>}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {step === 5 && currentAccount && isAccountCreated && (
                     <div className="space-y-6 animate-in fade-in duration-300">
                         <div className="flex items-start gap-4">
                             <div className="bg-amber-50 p-3 rounded-xl text-amber-500">
