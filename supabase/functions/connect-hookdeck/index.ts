@@ -12,6 +12,8 @@ type ConnectHookdeckRequest = {
   state?: string | null;
   postal_code?: string | null;
   disclaimer?: string | null;
+  front_image_url?: string | null;
+  back_message?: string | null;
 };
 
 const corsHeaders = {
@@ -194,6 +196,8 @@ Deno.serve(async (request) => {
     const stateRaw = (payload as any).state;
     const postalCodeRaw = (payload as any).postalCode ?? (payload as any).postal_code;
     const disclaimerRaw = (payload as any).disclaimer;
+    const frontImageUrlRaw = (payload as any).frontImageUrl ?? (payload as any).front_image_url;
+    const backMessageRaw = (payload as any).backMessage ?? (payload as any).back_message;
 
     console.log("🔍 Extracted fields:", {
       entityIdRaw,
@@ -204,6 +208,8 @@ Deno.serve(async (request) => {
       cityRaw,
       stateRaw,
       postalCodeRaw,
+      frontImageUrlRaw,
+      backMessageRaw,
       types: {
         entityId: typeof entityIdRaw,
         committeeName: typeof committeeNameRaw,
@@ -220,6 +226,8 @@ Deno.serve(async (request) => {
     const state = stateRaw ? String(stateRaw).trim() : null;
     const postalCode = postalCodeRaw ? String(postalCodeRaw).trim() : null;
     const disclaimer = disclaimerRaw ? String(disclaimerRaw).trim() : null;
+    const frontImageUrl = frontImageUrlRaw ? String(frontImageUrlRaw).trim() : null;
+    const backMessage = backMessageRaw ? String(backMessageRaw).trim() : null;
 
     console.log("🔄 Converted values:", {
       entityId,
@@ -229,7 +237,10 @@ Deno.serve(async (request) => {
       city,
       state,
       postalCode,
+      postalCode,
       disclaimer,
+      frontImageUrl,
+      backMessage,
       entityIdIsFinite: Number.isFinite(entityId),
       committeeNameLength: committeeName.length,
     });
@@ -493,6 +504,10 @@ Deno.serve(async (request) => {
       webhook_password: password,
       webhook_source_id: source.id,
       webhook_connection_id: connection.id,
+      webhook_source_id: source.id,
+      webhook_connection_id: connection.id,
+      front_image_url: frontImageUrl,
+      back_message: backMessage,
       updated_at: new Date().toISOString()
     };
 

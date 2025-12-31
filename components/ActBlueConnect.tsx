@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, ExternalLink, AlertTriangle, ArrowRight, Building, Loader2, MapPin } from 'lucide-react';
+import { Copy, ExternalLink, AlertTriangle, ArrowRight, Building, Loader2, MapPin, Palette } from 'lucide-react';
 import { Profile, ActBlueAccount } from '../types';
 import { useToast } from './ToastContext';
+import PostcardBuilder from './PostcardBuilder';
 
 interface ActBlueConnectProps {
     profile: Profile;
@@ -45,8 +46,9 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
             if (currentAccount.state) setState(currentAccount.state);
             if (currentAccount.postal_code) setZip(currentAccount.postal_code);
 
+            // If account is fully created (has ID), jump to connected state or final step
             if (step === 1) {
-                setStep(3);
+                setStep(4);
             }
         } else {
             setEntityId('');
@@ -57,7 +59,7 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
             setState('');
             setZip('');
 
-            if (step === 3 && !isAccountCreated) {
+            if (step === 4 && !isAccountCreated) {
                 setStep(1);
             }
         }
@@ -87,9 +89,16 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
 
     const handleSaveAddress = async () => {
         setLoading(true);
+        // Advance to Step 3 (Design) - we save everything after design is confirmed
+        setStep(3);
+        setLoading(false);
+    };
+
+    const handleSaveDesign = async (updates: { back_message: string; front_image_url?: string }) => {
+        setLoading(true);
         try {
-            // Submit ALL data at once
             const numericId = parseInt(entityId);
+            // Create/Update account with all details including design
             await onSaveAccount({
                 entity_id: numericId,
                 committee_name: committeeName,
@@ -97,9 +106,11 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
                 street_address: streetAddress,
                 city: city,
                 state: state,
-                postal_code: zip
+                postal_code: zip,
+                front_image_url: updates.front_image_url,
+                back_message: updates.back_message
             });
-            setStep(3);
+            setStep(4);
         } catch (e) {
             // Toast handled in App.tsx
         } finally {
@@ -108,7 +119,7 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
     };
 
     return (
-        <div className="space-y-8 max-w-3xl mx-auto">
+        <div className={`space-y-8 mx-auto transition-all duration-500 ease-in-out ${step === 3 ? 'max-w-7xl' : 'max-w-3xl'}`}>
             <div className="text-center mb-12">
                 <h2 className="text-3xl font-serif font-bold text-stone-800">
                     {currentAccount?.id === 'new' ? 'Campaign Setup' : 'Connection Details'}
@@ -116,23 +127,23 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
                 <p className="text-stone-500 mt-2">Let's get your campaign set up to send gratitude.</p>
             </div>
 
-            <div className="relative">
+            <div className="relative max-w-3xl mx-auto">
                 <div className="absolute top-5 left-0 w-full h-1 bg-stone-100 -z-10 rounded-full"></div>
-                <div className="flex justify-between w-full max-w-xl mx-auto mb-12">
-                    {[1, 2, 3].map((s) => (
+                <div className="flex justify-between w-full max-w-2xl mx-auto mb-12">
+                    {[1, 2, 3, 4].map((s) => (
                         <div key={s} className={`flex flex-col items-center gap-2 ${step >= s ? 'opacity-100' : 'opacity-40'}`}>
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${step >= s ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' : 'bg-stone-200 text-stone-500'}`}>
                                 {s}
                             </div>
                             <span className="text-xs font-medium text-stone-500">
-                                {s === 1 ? 'Campaign' : s === 2 ? 'Address' : 'Webhook'}
+                                {s === 1 ? 'Campaign' : s === 2 ? 'Address' : s === 3 ? 'Design' : 'Webhook'}
                             </span>
                         </div>
                     ))}
                 </div>
             </div>
 
-            <div className="bg-white p-8 rounded-2xl border border-stone-100 shadow-xl shadow-stone-200/50">
+            <div className={`${step === 3 ? '' : 'bg-white p-8 rounded-2xl border border-stone-100 shadow-xl shadow-stone-200/50'}`}>
 
                 {step === 1 && (
                     <div className="space-y-6 animate-in fade-in duration-300">
@@ -262,13 +273,45 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
                                 disabled={streetAddress.length < 5 || city.length < 2 || state.length < 2 || zip.length < 5 || loading}
                                 className="col-span-2 bg-stone-800 text-white font-bold py-4 rounded-xl hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
-                                {loading ? <Loader2 className="animate-spin" /> : <>Create Account & Get Webhook <ArrowRight size={18} /></>}
+                                {loading ? <Loader2 className="animate-spin" /> : <>Next: Design Postcard <ArrowRight size={18} /></>}
                             </button>
                         </div>
                     </div>
                 )}
 
-                {step === 3 && currentAccount && isAccountCreated && (
+                {step === 3 && (
+                    <div className="space-y-6 animate-in fade-in duration-300">
+                        <div className="bg-blue-50 border border-blue-100 p-3 rounded-xl flex items-center gap-3 text-sm text-blue-800 mb-6 mx-auto max-w-2xl">
+                            <AlertTriangle size={16} className="shrink-0" />
+                            <p>You are designing a <b>template</b>. We've filled it with demo data so you can see how it looks.</p>
+                        </div>
+
+                        <PostcardBuilder
+                            currentAccount={{
+                                ...currentAccount!,
+                                committee_name: committeeName,
+                                // Mock required fields for display since account isn't created yet
+                                id: 'new',
+                                profile_id: profile.id,
+                                entity_id: parseInt(entityId) || 0,
+                                webhook_url: '',
+                                webhook_username: '',
+                                webhook_password: '',
+                                webhook_source_id: '',
+                                created_at: new Date().toISOString()
+                            }}
+                            template={null}
+                            onSave={handleSaveDesign}
+                            isLoading={loading}
+                        />
+
+                        <div className="text-center pt-4">
+                            <button onClick={() => setStep(2)} className="text-xs text-stone-400 hover:text-stone-600">Back to Address</button>
+                        </div>
+                    </div>
+                )}
+
+                {step === 4 && currentAccount && isAccountCreated && (
                     <div className="space-y-6 animate-in fade-in duration-300">
                         <div className="flex items-start gap-4">
                             <div className="bg-amber-50 p-3 rounded-xl text-amber-500">
@@ -323,7 +366,7 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
                         </button>
 
                         <div className="text-center">
-                            <button onClick={() => setStep(1)} className="text-xs text-stone-400 hover:text-stone-600">Back to Settings</button>
+                            <button onClick={() => setStep(3)} className="text-xs text-stone-400 hover:text-stone-600">Back to Design</button>
                         </div>
                     </div>
                 )}

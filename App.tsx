@@ -487,7 +487,9 @@ id,
             street_address: accountData.street_address,
             city: accountData.city,
             state: accountData.state,
-            postal_code: accountData.postal_code
+            postal_code: accountData.postal_code,
+            front_image_url: accountData.front_image_url,
+            back_message: accountData.back_message
           }
         });
 
