@@ -549,6 +549,13 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
                                                         {DEMO_DONOR.city}, {DEMO_DONOR.state} {DEMO_DONOR.zip}
                                                     </div>
                                                 </div>
+
+                                                {/* Branding Logo - Top Right */}
+                                                <img
+                                                    src="/mailed-by-logo.png"
+                                                    alt="Mailed by ThankDonors.com"
+                                                    className="absolute top-6 right-6 w-16 opacity-80 z-20"
+                                                />
                                             </div>
                                         </div>
                                     </div>

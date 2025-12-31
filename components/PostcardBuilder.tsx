@@ -897,11 +897,13 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                         </div>
                                     </div>
 
-                                    {/* Branding Note (Back) */}
+                                    {/* Branding Logo (Back) - Top Right */}
                                     {currentAccount?.entity?.branding_enabled !== false && (
-                                        <div className="absolute bottom-4 left-6 text-[9px] font-medium opacity-70">
-                                            Mailed by ThankDonors.com
-                                        </div>
+                                        <img
+                                            src="/mailed-by-logo.png"
+                                            alt="Mailed by ThankDonors.com"
+                                            className="absolute top-6 right-6 w-16 opacity-80 z-20"
+                                        />
                                     )}
                                 </div>
                             )}

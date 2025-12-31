@@ -1,4 +1,5 @@
 import { escapeHtml, BRANDING_NOTE } from "./utils.ts";
+import { MAILED_BY_LOGO_BASE64 } from "./branding-assets.ts";
 
 export function generatePostcardBackHtml(message: string, showBranding: boolean = true): string {
   // Replace literal \n with actual newlines, then escape HTML
@@ -54,8 +55,14 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
       overflow-wrap: anywhere;   /* Force breaking at any point if necessary */
       margin: 0;
     }
-    .branding-note {
+    .branding-logo {
       position: absolute;
+      top: 0.4in;
+      right: 0.4in;
+      width: 0.6in;
+      opacity: 0.8;
+      z-index: 10;
+    }
       bottom: 0.4in;
       left: 0.4in;
       font-size: 8.5pt;
@@ -69,11 +76,11 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
       <p class="message-text">${escapedMessage}</p>
     </div>
     ${showBranding ? `
-    <div class="branding-note">
-    <strong>
-      ${BRANDING_NOTE}
-    </strong>
-    </div>
+    <img 
+      src="${MAILED_BY_LOGO_BASE64}" 
+      class="branding-logo" 
+      alt="Mailed by ThankDonors.com"
+    />
     ` : ''}
   </div>
   </body>
