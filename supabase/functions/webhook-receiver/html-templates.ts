@@ -63,11 +63,7 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
       opacity: 0.8;
       z-index: 10;
     }
-      bottom: 0.4in;
-      left: 0.4in;
-      font-size: 8.5pt;
-      color: #52525b;
-    }
+
     </style>
   </head>
   <body>
