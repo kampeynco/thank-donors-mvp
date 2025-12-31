@@ -4,6 +4,18 @@ import { supabase } from '../services/supabaseClient';
 import { Profile, ActBlueAccount } from '../types';
 import { useToast } from './ToastContext';
 
+const DEMO_DONOR = {
+    firstname: 'Alex',
+    lastname: 'Donor',
+    addr1: '123 Democracy Ln',
+    addr2: '',
+    city: 'Washington',
+    state: 'DC',
+    zip: '20001',
+    amount: '50',
+    date: new Date().toLocaleDateString()
+};
+
 interface ActBlueConnectProps {
     profile: Profile;
     currentAccount?: ActBlueAccount | null;
@@ -190,6 +202,24 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
             setLoading(false);
         }
     };
+
+    const getPreviewMessage = (msg: string) => {
+        return msg
+            .replace(/%FULL_NAME%/g, `${DEMO_DONOR.firstname} ${DEMO_DONOR.lastname}`)
+            .replace(/%FIRST_NAME%/g, DEMO_DONOR.firstname)
+            .replace(/%LAST_NAME%/g, DEMO_DONOR.lastname)
+            .replace(/%DONATION_AMOUNT%/g, DEMO_DONOR.amount)
+            .replace(/%ADDRESS%/g, DEMO_DONOR.addr1)
+            .replace(/%ADDRESS2%/g, DEMO_DONOR.addr2)
+            .replace(/%CITY%/g, DEMO_DONOR.city)
+            .replace(/%STATE%/g, DEMO_DONOR.state)
+            .replace(/%ZIP%/g, DEMO_DONOR.zip)
+            .replace(/%DONATION_DAY%/g, DEMO_DONOR.date)
+            .replace(/%CURRENT_DAY%/g, DEMO_DONOR.date);
+    };
+
+    const previewText = getPreviewMessage(backMessage);
+    const dynamicFontSize = Math.max(9, 11 - (backMessage.length / 500) * 2);
 
     return (
         <div className={`space-y-8 mx-auto transition-all duration-500 ease-in-out max-w-3xl`}>
@@ -385,8 +415,18 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
                             {frontImage && (
                                 <div className="space-y-3">
                                     <label className="text-sm font-medium text-stone-700 block">Preview</label>
-                                    <div className="aspect-[6/4] bg-stone-100 rounded-xl overflow-hidden border border-stone-200 relative shadow-lg w-full max-w-md mx-auto group">
-                                        <img src={frontImage} alt="Preview" className="w-full h-full object-cover" />
+                                    <div className="aspect-[6/4] bg-white shadow-lg rounded-sm overflow-hidden border border-stone-100 relative w-full max-w-md mx-auto group">
+                                        <div className="w-full h-full relative">
+                                            <img src={frontImage} alt="Preview" className="w-full h-full object-cover" />
+                                            {/* Committee Disclaimer (Front) */}
+                                            {(disclaimer || committeeName) && (
+                                                <div className="absolute bottom-0 left-0 right-0 px-4 py-2 z-10">
+                                                    <p className="text-[7px] text-white uppercase leading-[1.2] tracking-tight text-center">
+                                                        {disclaimer || committeeName}.
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
                                         <div className="absolute top-3 right-3 bg-white/90 p-1.5 rounded-full shadow-sm text-emerald-600">
                                             <Check size={18} />
                                         </div>
@@ -470,24 +510,44 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
                                             <X size={20} />
                                         </button>
                                     </div>
-                                    <div className="p-6 bg-white">
-                                        <div className="aspect-[6/4] bg-white border-2 border-stone-100 rounded-lg shadow-sm flex relative overflow-hidden">
-                                            {/* Message visual */}
-                                            <div className="w-1/2 p-4 flex items-center justify-center border-r border-stone-100 border-dashed">
-                                                <div className="w-full h-full overflow-hidden text-[10px] leading-relaxed text-stone-800 font-handwriting italic whitespace-pre-wrap font-serif">
-                                                    {backMessage || <span className="text-stone-300 not-italic font-sans">Your message will appear here...</span>}
+                                    <div className="p-8 bg-stone-200/50 flex justify-center">
+                                        <div className="w-full max-w-md aspect-[6/4] bg-stone-50 relative flex flex-col p-6 overflow-hidden shadow-xl rounded-sm">
+                                            {/* Left message side */}
+                                            <div className="flex-1 pr-[45%] flex flex-col">
+                                                <div className="flex-1 overflow-hidden">
+                                                    <p className="text-stone-800 leading-[1.3] whitespace-pre-wrap font-sans transition-all duration-300" style={{ fontSize: `${dynamicFontSize}pt` }}>
+                                                        {previewText || "Your thank you message will appear here..."}
+                                                    </p>
                                                 </div>
                                             </div>
-                                            {/* Address placeholder */}
-                                            <div className="w-1/2 p-4 flex flex-col items-center justify-center relative">
-                                                <div className="w-16 h-20 border border-stone-200 absolute top-4 right-4 bg-stone-50 flex items-center justify-center text-[8px] text-stone-400 uppercase tracking-widest text-center">
-                                                    Stamp
+
+                                            {/* Right address side */}
+                                            <div className="absolute left-[52%] top-0 right-0 bottom-0 p-6 flex flex-col justify-end">
+                                                <div className="flex items-end justify-between gap-4 mb-4 pb-2">
+                                                    <div className="text-[8px] text-stone-500 uppercase leading-snug font-medium max-w-[60%]">
+                                                        <div className="font-bold text-stone-700 truncate">{committeeName || 'Committee Name'}</div>
+                                                        <div className="truncate">{streetAddress || '123 Campaign St'}</div>
+                                                        <div className="truncate">
+                                                            {city || 'City'}, {state || 'ST'} {zip || '12345'}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="w-14 h-10 border border-stone-800 flex flex-col items-center justify-center p-0.5 text-center font-bold bg-white shrink-0">
+                                                        <span className="text-[7px] uppercase tracking-tighter leading-none">Postage</span>
+                                                        <span className="text-[7px] uppercase tracking-tighter leading-none">Indicia</span>
+                                                    </div>
                                                 </div>
-                                                <div className="w-full max-w-[140px] space-y-2 mt-8 opacity-40">
-                                                    <div className="h-0.5 bg-stone-300 w-full mb-4"></div>
-                                                    <div className="h-0.5 bg-stone-300 w-11/12"></div>
-                                                    <div className="h-0.5 bg-stone-300 w-3/4"></div>
-                                                    <div className="h-0.5 bg-stone-300 w-1/2"></div>
+
+                                                <div className="mb-6 space-y-0.5 px-2 py-1">
+                                                    <div className="text-[13px] font-bold text-stone-800 uppercase tracking-wide">
+                                                        {DEMO_DONOR.firstname} {DEMO_DONOR.lastname}
+                                                    </div>
+                                                    <div className="text-[11px] text-stone-700 uppercase">
+                                                        {DEMO_DONOR.addr1}
+                                                    </div>
+                                                    <div className="text-[11px] text-stone-700 uppercase">
+                                                        {DEMO_DONOR.city}, {DEMO_DONOR.state} {DEMO_DONOR.zip}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
