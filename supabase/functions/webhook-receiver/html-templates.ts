@@ -1,5 +1,5 @@
 import { escapeHtml, BRANDING_NOTE } from "./utils.ts";
-import { MAILED_BY_LOGO_BASE64 } from "./branding-assets.ts";
+
 
 export function generatePostcardBackHtml(message: string, showBranding: boolean = true): string {
   // Replace literal \n with actual newlines, then escape HTML
@@ -77,7 +77,7 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
     </div>
     ${showBranding ? `
     <img 
-      src="${MAILED_BY_LOGO_BASE64}" 
+      src="https://thankdonorsmvp.netlify.app/mailed-by-logo.png" 
       class="branding-logo" 
       alt="Mailed by ThankDonors.com"
     />
