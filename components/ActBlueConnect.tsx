@@ -303,11 +303,10 @@ const ActBlueConnect: React.FC<ActBlueConnectProps> = ({
                             template={null}
                             onSave={handleSaveDesign}
                             isLoading={loading}
+                            onBack={() => setStep(2)}
+                            isOnboarding={true}
                         />
 
-                        <div className="text-center pt-4">
-                            <button onClick={() => setStep(2)} className="text-xs text-stone-400 hover:text-stone-600">Back to Address</button>
-                        </div>
                     </div>
                 )}
 

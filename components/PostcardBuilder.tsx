@@ -4,7 +4,7 @@ import {
     ImageIcon, Loader2, Upload, History, Sparkles,
     RefreshCw, Trash2, Camera, Save, Undo,
     Maximize2, CheckCircle2, Plus, Eye, Type,
-    Crop, ZoomIn, ZoomOut, Move
+    Crop, ZoomIn, ZoomOut, Move, ArrowLeft
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useToast } from './ToastContext';
@@ -44,9 +44,11 @@ interface PostcardBuilderProps {
     template: Template | null;
     onSave: (updates: { back_message: string; front_image_url?: string }) => Promise<void>;
     isLoading?: boolean;
+    onBack?: () => void;
+    isOnboarding?: boolean;
 }
 
-const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, template, onSave, isLoading }) => {
+const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, template, onSave, isLoading, onBack, isOnboarding = false }) => {
     const { toast } = useToast();
     const [viewSide, setViewSide] = useState<'front' | 'back'>('front');
     const [retryCount, setRetryCount] = useState(0);
@@ -498,6 +500,20 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
         try {
             const imageToSave = uploadedUrl || dbImage;
 
+            // Strict Validation for Onboarding
+            if (isOnboarding) {
+                if (!imageToSave && !localImage) {
+                    toast("Please upload a front image to continue.", "error");
+                    setIsSaving(false);
+                    return;
+                }
+                if (!message || message.trim().length < 10) {
+                    toast("Please write a thank you message (at least 10 chars).", "error");
+                    setIsSaving(false);
+                    return;
+                }
+            }
+
             await onSave({
                 back_message: message,
                 front_image_url: imageToSave || undefined,
@@ -546,7 +562,18 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
         <div className="space-y-8 relative">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-3xl font-serif font-bold text-stone-800">Postcard Designer</h2>
+                    <h2 className="text-3xl font-serif font-bold text-stone-800 flex items-center gap-3">
+                        {onBack && (
+                            <button
+                                onClick={onBack}
+                                className="p-2 hover:bg-stone-100 rounded-full transition-colors text-stone-500 hover:text-stone-800"
+                                title="Go Back"
+                            >
+                                <ArrowLeft size={24} />
+                            </button>
+                        )}
+                        Postcard Designer
+                    </h2>
                     <p className="text-stone-500 mt-2 flex items-center gap-1.5 grayscale-0">
                         <Check size={14} className="text-emerald-500 flex-shrink-0" />
                         <span>Changes apply to all postcards sent from <b>{currentAccount?.committee_name || 'this campaign'}</b>.</span>
@@ -762,7 +789,8 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                         className="w-full bg-rose-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-rose-200 hover:bg-rose-700 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-                        {isSaving ? 'Saving...' : 'Save Design'}
+                        {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+                        {isSaving ? 'Saving...' : isOnboarding ? 'Save & Continue' : 'Save Design'}
                     </button>
                 </div>
 
