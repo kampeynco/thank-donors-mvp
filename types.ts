@@ -95,6 +95,7 @@ export interface Donation {
   front_image_url?: string;
   back_message?: string;
   events?: PostcardEvent[];
+  updated_at?: string;
 }
 
 export interface Template {

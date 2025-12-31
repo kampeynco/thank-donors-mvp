@@ -4,6 +4,7 @@ import { CheckCircle2, Clock, AlertCircle, TrendingUp, ChevronDown, ExternalLink
 import StatusTooltip from './StatusTooltip';
 import PostcardTrackingCard from './PostcardTrackingCard';
 import AddressModal from './AddressModal';
+import { handleViewProof } from '../utils/linkHelper';
 import { supabase } from '../services/supabaseClient';
 import { useToast } from './ToastContext';
 
@@ -354,7 +355,7 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh, onNavigate 
                                 href={donation.lob_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
+                                onClick={(e) => handleViewProof(e, donation, toast)}
                                 className="p-1.5 hover:bg-stone-100 rounded-lg text-rose-600 transition-colors"
                                 title="View Proof"
                               >

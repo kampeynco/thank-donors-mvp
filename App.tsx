@@ -222,6 +222,8 @@ id,
     lob_postcard_id,
     front_image_url,
     back_message,
+    updated_at,
+    created_at,
     postcard_events(
       id,
       status,
@@ -260,7 +262,8 @@ id,
             address_zip: d.donor_zip,
             front_image_url: postcard?.front_image_url,
             back_message: postcard?.back_message,
-            events: postcard?.postcard_events || []
+            events: postcard?.postcard_events || [],
+            updated_at: postcard?.updated_at || postcard?.created_at
           };
         });
         setDonations(mappedDonations);
@@ -369,7 +372,8 @@ id,
                 lob_url: newPostcard.lob_url,
                 lob_postcard_id: newPostcard.lob_postcard_id,
                 front_image_url: newPostcard.front_image_url,
-                back_message: newPostcard.back_message
+                back_message: newPostcard.back_message,
+                updated_at: newPostcard.updated_at || newPostcard.created_at
               };
             }
             return d;

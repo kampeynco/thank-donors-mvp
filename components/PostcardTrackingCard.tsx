@@ -14,6 +14,8 @@ import {
     CreditCard,
     Palette
 } from 'lucide-react';
+import { useToast } from './ToastContext';
+import { handleViewProof } from '../utils/linkHelper';
 
 interface PostcardTrackingCardProps {
     donation: Donation;
@@ -24,7 +26,9 @@ interface PostcardTrackingCardProps {
     isRetrying?: boolean;
 }
 
+
 const PostcardTrackingCard: React.FC<PostcardTrackingCardProps> = ({ donation, onClose, onRetry, onUpdateAddress, onNavigate, isRetrying }) => {
+    const { toast } = useToast();
     const events = donation.events || [];
 
     // Sort events by date descending (most recent first)
@@ -195,7 +199,11 @@ const PostcardTrackingCard: React.FC<PostcardTrackingCardProps> = ({ donation, o
                     <a
                         href={donation.lob_url}
                         target="_blank"
+                    <a
+                        href={donation.lob_url}
+                        target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(e) => handleViewProof(e, donation, toast)}
                         className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm active:scale-[0.98]"
                     >
                         <span>View Live Proof</span>
