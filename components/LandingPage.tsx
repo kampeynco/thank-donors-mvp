@@ -23,7 +23,8 @@ import {
     X,
     Webhook,
     AlertTriangle,
-    FileText
+    FileText,
+    Lock
 } from 'lucide-react';
 
 interface LandingPageProps {
