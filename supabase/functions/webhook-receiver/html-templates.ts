@@ -33,10 +33,10 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
     }
     .content-area {
       position: absolute;
-      top: 0.4in;
+      top: 1.25in;
       left: 0.4in;
       width: 2.125in;
-      height: 3.2in;
+      height: 2.35in;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
@@ -57,10 +57,11 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
     }
     .branding-logo {
       position: absolute;
-      top: 0.4in;
-      right: 0.4in;
-      width: 0.6in;
-      opacity: 0.8;
+      top: 0.45in;
+      left: 0.4in;
+      width: 1.5in;
+      height: auto;
+      opacity: 0.9;
       z-index: 10;
     }
 
