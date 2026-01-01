@@ -802,7 +802,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                 </div>
 
                 <div className="bg-stone-200/50 rounded-3xl p-4 md:p-8 flex flex-col items-center justify-center min-h-[400px] md:min-h-[500px]">
-                    <div className="text-stone-400 text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <div className="text-stone-500 text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
                         <Eye size={14} />
                         Live {viewSide === 'front' ? 'Front' : 'Back'} Preview
                     </div>
