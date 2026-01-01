@@ -555,8 +555,15 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
             .replace(/%CURRENT_DAY%/g, DEMO_DONOR.date);
     };
 
+    const entity = currentAccount?.entity;
+    // Matching logic from lob.ts: Free tier always shows, Pro shows unless explicitly disabled
+    const showBranding = entity?.tier === 'free' || (entity?.tier === 'pro' && entity?.branding_enabled !== false);
+
+    // Dynamic limits based on branding
+    const maxChars = showBranding ? 400 : 500;
+
     const previewText = getPreviewMessage(message);
-    const dynamicFontSize = Math.max(9, 11 - (message.length / 500) * 2);
+    const dynamicFontSize = Math.max(9, 11 - (message.length / maxChars) * 2);
 
     return (
         <div className="space-y-8 relative">
@@ -771,14 +778,14 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                 ref={textareaRef}
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
-                                maxLength={500}
+                                maxLength={maxChars}
                                 className="w-full h-64 p-4 border border-stone-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none text-stone-700 leading-relaxed text-base font-sans"
                                 placeholder="Write your thank you message here..."
                             />
 
                             <div className="flex justify-between items-center mt-3">
                                 <p className="text-xs text-stone-400 italic">Use variables to personalize each card.</p>
-                                <p className={`text-xs font-bold ${message.length >= 500 ? 'text-rose-500' : 'text-stone-400'}`}>{message.length} / 500 characters</p>
+                                <p className={`text-xs font-bold ${message.length >= maxChars ? 'text-rose-500' : 'text-stone-400'}`}>{message.length} / {maxChars} characters</p>
                             </div>
                         </div>
                     )}
@@ -858,7 +865,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                             ) : (
                                 <div className="w-full h-full bg-stone-50 relative flex flex-col p-6 overflow-hidden">
                                     <div className="flex-1 pr-[45%] flex flex-col">
-                                        <div className="flex-1 overflow-hidden">
+                                        <div className={`flex-1 overflow-hidden ${showBranding ? 'pb-10' : ''}`}>
                                             <p className="text-stone-800 leading-[1.3] whitespace-pre-wrap font-sans transition-all duration-300" style={{ fontSize: `${dynamicFontSize}pt` }}>
                                                 {previewText || "Your thank you message will appear here. Use variables like %FIRST_NAME% to personalize your message for each donor."}
                                             </p>
@@ -897,12 +904,12 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                         </div>
                                     </div>
 
-                                    {/* Branding Logo (Back) - Top Right */}
-                                    {currentAccount?.entity?.branding_enabled !== false && (
+                                    {/* Branding Logo (Back) - Bottom Left */}
+                                    {showBranding && (
                                         <img
                                             src="/mailed-by-logo.png"
                                             alt="Mailed by ThankDonors.com"
-                                            className="absolute top-6 right-6 w-16 opacity-80 z-20"
+                                            className="absolute bottom-6 left-6 w-16 opacity-80 z-20"
                                         />
                                     )}
                                 </div>
