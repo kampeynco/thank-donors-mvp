@@ -267,11 +267,16 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh, onNavigate 
                     filteredDonations.map((donation) => (
                       <tr
                         key={donation.id}
-                        className={`hover:bg-stone-50 transition-colors cursor-pointer group ${selectedDonationId === donation.id ? 'bg-indigo-50/50' : ''
+                        className={`transition-colors group ${donation.status === 'failed'
+                            ? 'cursor-default'
+                            : `cursor-pointer hover:bg-stone-50 ${selectedDonationId === donation.id ? 'bg-indigo-50/50' : ''}`
                           }`}
-                        onClick={() => setSelectedDonationId(
-                          selectedDonationId === donation.id ? null : donation.id
-                        )}
+                        onClick={() => {
+                          if (donation.status === 'failed') return;
+                          setSelectedDonationId(
+                            selectedDonationId === donation.id ? null : donation.id
+                          );
+                        }}
                       >
                         <td className="py-4 px-6 text-sm text-stone-600">
                           {new Date(donation.created_at).toLocaleDateString()}

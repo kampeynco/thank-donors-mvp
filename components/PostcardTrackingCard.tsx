@@ -196,9 +196,7 @@ const PostcardTrackingCard: React.FC<PostcardTrackingCardProps> = ({ donation, o
 
             {donation.lob_url && (
                 <div className="p-4 bg-gray-50 border-t border-gray-100 mt-auto">
-                    <a
-                        href={donation.lob_url}
-                        target="_blank"
+
                     <a
                         href={donation.lob_url}
                         target="_blank"

@@ -12,7 +12,8 @@ export async function processLineItem(
     actBlueId: string,
     donationDate: string,
     isTestMode: boolean,
-    supabase: any
+    supabase: any,
+    eventId?: string
 ): Promise<{ success: boolean; error?: string }> {
     const entityId = item.entityId || item.entity_id;
     const amount = parseFloat(item.amount || "0");
@@ -55,6 +56,19 @@ export async function processLineItem(
     }
 
     console.log(`✅ Resolved entity: ${entity.committee_name} and profile: ${account.profile_id}`);
+
+    // 1b. Update Webhook Event with Profile ID (if eventId is provided)
+    if (eventId) {
+        // Fire and forget update
+        supabase
+            .from('webhook_events')
+            .update({ profile_id: account.profile_id })
+            .eq('id', eventId)
+            .then(({ error }: any) => {
+                if (error) console.error("❌ Failed to link webhook event to profile:", error);
+                else console.log(`🔗 Linked webhook event ${eventId} to profile ${account.profile_id}`);
+            });
+    }
 
     // 2. Determine pricing
     const priceCents = PRICING[entity.tier as keyof typeof PRICING] || PRICING.free;

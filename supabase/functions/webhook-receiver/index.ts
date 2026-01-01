@@ -89,7 +89,7 @@ serve(async (req) => {
       console.log(`📦 Processing batch ${Math.floor(i / BATCH_SIZE) + 1} of ${Math.ceil(lineItems.length / BATCH_SIZE)}`);
 
       const batchResults = await Promise.all(
-        batch.map(item => processLineItem(item, donor, actBlueId, donationDate, isTestMode, supabase))
+        batch.map(item => processLineItem(item, donor, actBlueId, donationDate, isTestMode, supabase, eventId))
       );
 
       results.push(...batchResults);
