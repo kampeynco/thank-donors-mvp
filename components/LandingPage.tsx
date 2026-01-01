@@ -110,15 +110,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                         <div className="relative z-10">
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold uppercase tracking-wide mb-6">
                                 <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-                                High-Touch Donor Gratitude — On Autopilot
+                                Powered by ActBlue
                             </div>
 
                             <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif font-bold text-stone-900 leading-[1.1] mb-6">
-                                The Automated Way to <span className="text-rose-600">Thank Your Donors.</span>
+                                Thank Your Donors <span className="text-rose-600">Automagically.</span>
                             </h1>
 
                             <p className="text-lg text-stone-600 mb-8 leading-relaxed max-w-lg">
-                                Seamlessly turn your ActBlue donations into personalized, handwritten postcards. Boost donor retention and build lasting relationships without lifting a finger.
+                                Every ActBlue donation triggers a campaign-branded postcard—printed and mailed for you. High-touch gratitude, zero extra effort.
                             </p>
 
                             <div className="space-y-3 mb-8">
