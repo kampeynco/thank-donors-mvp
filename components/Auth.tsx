@@ -1,34 +1,42 @@
 import React, { useState } from 'react';
 import { supabase } from '../services/supabaseClient';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Heart, ArrowRight, Lock, Mail, Eye, EyeOff } from 'lucide-react';
+import { useToast } from './ToastContext';
 
 interface AuthProps {
   onLogin: () => void;
 }
 
-export default function Auth({ onLogin }: AuthProps) {
+const Auth: React.FC<AuthProps> = ({ onLogin }) => {
+  const { toast } = useToast();
   const [isLogin, setIsLogin] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-    // Clear error when user types
-    if (error) setError(null);
+  const handleGoogleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}`,
+        },
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast(`Error with Google Login: ${error.message}`, 'error');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+    setLoading(true);
 
     try {
       if (isLogin) {
@@ -44,166 +52,193 @@ export default function Auth({ onLogin }: AuthProps) {
           password: formData.password,
         });
         if (error) throw error;
-        // Automatically log in or prompt for email confirmation depending on Supabase settings
-        onLogin();
+        toast('Registration successful! Please check your email.', 'success');
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred during authentication');
+    } catch (error: any) {
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
   const toggleMode = () => {
     setIsLogin(!isLogin);
-    setFormData({ email: '', password: '' });
-    setShowPassword(false);
     setError(null);
+    setFormData({ email: '', password: '' });
   };
 
   return (
-    <div className="w-full min-h-screen flex flex-col md:flex-row">
-      {/* Left side - Hero section */}
-      <div className="flex-1 bg-gradient-to-br from-slate-900 via-blue-900 to-orange-600 flex items-center justify-center p-12 order-2 md:order-1">
-        <div className="text-white max-w-lg">
-          <h1 className="text-4xl md:text-6xl font-bold mb-8 leading-tight">
-            Build amazing products with our creative team.
+    <div className="min-h-screen flex flex-col md:flex-row bg-stone-50 text-stone-900 font-sans">
+      {/* Left Side - Hero Section */}
+      <div className="w-full md:w-1/2 bg-gradient-to-br from-stone-800 to-rose-900 flex flex-col justify-center px-8 md:px-16 py-12 text-white order-2 md:order-1 relative overflow-hidden">
+
+        {/* Abstract shapes/texture overlay */}
+        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+          <div className="absolute top-20 left-20 w-64 h-64 bg-rose-400 rounded-full blur-3xl mix-blend-screen animate-pulse"></div>
+          <div className="absolute bottom-20 right-20 w-80 h-80 bg-orange-300 rounded-full blur-3xl mix-blend-screen animate-pulse" style={{ animationDelay: '1s' }}></div>
+        </div>
+
+        <div className="max-w-md mx-auto relative z-10">
+          <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center mb-8 shadow-xl shadow-rose-900/40">
+            <Heart className="w-6 h-6 text-white text-fill-white" />
+          </div>
+
+          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-6 leading-tight">
+            Automate your donor gratitude.
           </h1>
+
+          <p className="text-lg text-rose-100/90 mb-8 leading-relaxed">
+            Connect ActBlue, create branded postcards, and thank your donors with a personal touch—automatically.
+          </p>
+
+          <div className="grid grid-cols-2 gap-6 border-t border-white/10 pt-8">
+            <div>
+              <p className="text-2xl font-bold mb-1">100%</p>
+              <p className="text-sm text-rose-200">Automated Workflow</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold mb-1">Instant</p>
+              <p className="text-sm text-rose-200">Campaign Setup</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Right side - Login/Signup form */}
-      <div className="flex-1 bg-gray-50 flex items-center justify-center p-12 order-1 md:order-2">
-        <div className="w-full max-w-md">
-          {/* Logo/Icon */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-500 rounded-lg mb-4">
-              <div className="w-6 h-6 bg-white rounded-sm relative">
-                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-3 bg-orange-500 rounded-b-sm"></div>
-                <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 w-1 h-2 bg-red-500 rounded-t-sm"></div>
-              </div>
+      {/* Right Side - Form Section */}
+      <div className="w-full md:w-1/2 flex items-center justify-center p-6 md:p-12 order-1 md:order-2 bg-stone-50">
+        <div className="w-full max-w-sm">
+
+          {/* Mobile Logo (Visible only on small screens) */}
+          <div className="md:hidden mb-8 text-center bg-white p-4 rounded-2xl border border-stone-100 shadow-sm mx-auto w-fit">
+            <div className="w-10 h-10 bg-rose-500 rounded-full flex items-center justify-center mx-auto mb-2 text-white">
+              <Heart size={20} />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              {isLogin ? 'Welcome Back' : 'Join Us Today'}
+            <span className="font-serif font-bold text-stone-800">Thank Donors</span>
+          </div>
+
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-stone-900 font-serif">
+              {isLogin ? 'Welcome back' : 'Start your journey'}
             </h2>
-            <p className="text-gray-600">
+            <p className="text-stone-500 mt-2 text-sm">
               {isLogin
-                ? 'Welcome back to CreativeStudio — Continue your journey'
-                : 'Welcome to CreativeStudio — Start your journey'
-              }
+                ? 'Enter your details to access your dashboard'
+                : 'Create an account to start thanking donors'}
             </p>
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-lg flex items-start gap-3 text-red-600 animate-in fade-in slide-in-from-top-2">
-              <AlertCircle size={20} className="mt-0.5 shrink-0" />
-              <span className="text-sm font-medium">{error}</span>
+            <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-100 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-rose-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-rose-800">{error}</p>
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Your email
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                placeholder="Enter your email"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                {isLogin ? 'Password' : 'Create new password'}
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                  placeholder={isLogin ? "Enter your password" : "Create a secure password"}
-                  required
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  onClick={togglePasswordVisibility}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none"
-                >
-                  {showPassword ? (
-                    // Eye slash icon (hide password)
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                    </svg>
-                  ) : (
-                    // Eye icon (show password)
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {isLogin && (
-              <div className="flex items-center justify-between">
-                <label className="flex items-center">
-                  <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                  <span className="ml-2 text-sm text-gray-600">Remember me</span>
-                </label>
-                <button type="button" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                  Forgot password?
-                </button>
-              </div>
-            )}
-
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 flex items-center justify-center gap-2"
-            >
-              {loading && <Loader2 size={18} className="animate-spin" />}
-              {isLogin ? 'Sign In' : 'Create a new account'}
-            </button>
-
-            <div className="text-center">
-              <span className="text-gray-600">
-                {isLogin ? "Don't have an account?" : "Already have account?"}
-              </span>{' '}
+          <div className="space-y-4">
+            {/* Social Login Buttons */}
+            <div className="grid grid-cols-1 gap-3">
               <button
-                type="button"
-                onClick={toggleMode}
-                className="text-blue-600 hover:text-blue-700 font-semibold"
+                onClick={handleGoogleLogin}
+                className="flex items-center justify-center gap-3 px-4 py-2.5 border border-stone-200 rounded-xl hover:bg-white hover:border-stone-300 transition-all duration-200 bg-white shadow-sm hover:shadow text-sm font-medium text-stone-700 group"
               >
-                {isLogin ? 'Sign Up' : 'Login'}
+                <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" />
+                <span>Continue with Google</span>
               </button>
             </div>
-          </form>
 
-          {/* Divider */}
-          <div className="mt-8 mb-6">
-            <div className="relative">
+            <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+                <div className="w-full border-t border-stone-200"></div>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-50 text-gray-500">Or continue with</span>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-stone-50 px-3 text-stone-400 font-medium">Or continue with email</span>
               </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-stone-700 uppercase tracking-wide ml-1">Email</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail className="h-4 w-4 text-stone-400" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    className="block w-full pl-10 pr-3 py-2.5 border border-stone-200 rounded-xl leading-5 bg-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all"
+                    placeholder="you@example.com"
+                    value={formData.email}
+                    onChange={(e) => {
+                      setFormData({ ...formData, email: e.target.value });
+                      if (error) setError(null);
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-stone-700 uppercase tracking-wide ml-1">Password</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-4 w-4 text-stone-400" />
+                  </div>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    className="block w-full pl-10 pr-10 py-2.5 border border-stone-200 rounded-xl leading-5 bg-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all"
+                    placeholder={isLogin ? "••••••••" : "Create a password"}
+                    value={formData.password}
+                    onChange={(e) => {
+                      setFormData({ ...formData, password: e.target.value });
+                      if (error) setError(null);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-stone-400 hover:text-stone-600 transition-colors cursor-pointer"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {isLogin && (
+                <div className="flex items-center justify-between text-sm">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" className="w-4 h-4 rounded border-stone-300 text-rose-600 focus:ring-rose-500 transition-colors" />
+                    <span className="text-stone-500 group-hover:text-stone-700 transition-colors">Remember me</span>
+                  </label>
+                  <a href="#" className="font-medium text-rose-600 hover:text-rose-700 hover:underline">
+                    Forgot password?
+                  </a>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-lg shadow-rose-500/20 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    {isLogin ? 'Sign In' : 'Create Account'}
+                    <ArrowRight className="w-4 h-4 ml-1" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="text-center mt-6">
+              <p className="text-sm text-stone-500">
+                {isLogin ? "Don't have an account? " : "Already have an account? "}
+                <button
+                  onClick={toggleMode}
+                  className="font-bold text-stone-700 hover:text-rose-600 transition-colors"
+                >
+                </div>
             </div>
           </div>
 
