@@ -137,16 +137,28 @@ export async function processLineItem(
         if (donationError.code === '23505') {
             console.log(`ℹ️ Duplicate donation item received (${donationUid}). Refunding balance.`);
             await supabase.rpc('increment_entity_balance', {
-                p_entity_id: entityId,
                 p_amount: priceCents
+            });
+            await supabase.from('billing_transactions').insert({
+                entity_id: entityId,
+                profile_id: account.profile_id,
+                amount_cents: priceCents,
+                type: 'refund',
+                description: `Refund: Duplicate donation`
             });
             return { success: false, error: 'Duplicate donation' };
         }
 
         console.error("❌ Error inserting donation:", JSON.stringify(donationError));
         await supabase.rpc('increment_entity_balance', {
-            p_entity_id: entityId,
             p_amount: priceCents
+        });
+        await supabase.from('billing_transactions').insert({
+            entity_id: entityId,
+            profile_id: account.profile_id,
+            amount_cents: priceCents,
+            type: 'refund',
+            description: `Refund: System error`
         });
         return { success: false, error: donationError.message };
     }
@@ -158,8 +170,14 @@ export async function processLineItem(
     if (!lobResult.success) {
         console.warn(`⚠️ Lob API failed. Refunding ${priceCents}c to entity ${entityId}`);
         await supabase.rpc('increment_entity_balance', {
-            p_entity_id: entityId,
             p_amount: priceCents
+        });
+        await supabase.from('billing_transactions').insert({
+            entity_id: entityId,
+            profile_id: account.profile_id,
+            amount_cents: priceCents,
+            type: 'refund',
+            description: `Refund: Mailing service error`
         });
     }
 

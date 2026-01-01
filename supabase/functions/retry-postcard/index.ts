@@ -181,8 +181,14 @@ serve(async (req) => {
         if (!lobResult.success) {
             console.error("❌ Lob API Retry Failed:", lobResult.error);
             await supabaseAdmin.rpc('increment_entity_balance', {
-                p_entity_id: entity.entity_id,
                 p_amount: priceCents
+            });
+            await supabaseAdmin.from('billing_transactions').insert({
+                entity_id: entity.entity_id,
+                profile_id: user.id,
+                amount_cents: priceCents,
+                type: 'refund',
+                description: `Refund: Retry failed`
             });
         }
 
