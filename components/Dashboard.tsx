@@ -104,7 +104,7 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh, onNavigate 
   }, []);
 
   const StatCard = ({ title, value, icon: Icon, color, subtext }: any) => (
-    <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm flex items-start justify-between">
+    <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm flex items-start justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
       <div>
         <p className="text-stone-500 text-sm font-medium mb-1">{title}</p>
         <h3 className="text-3xl font-bold text-stone-800">{value}</h3>
@@ -268,8 +268,8 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh, onNavigate 
                       <tr
                         key={donation.id}
                         className={`transition-colors group ${donation.status === 'failed'
-                            ? 'cursor-default'
-                            : `cursor-pointer hover:bg-stone-50 ${selectedDonationId === donation.id ? 'bg-indigo-50/50' : ''}`
+                          ? 'cursor-default'
+                          : `cursor-pointer hover:bg-stone-50 ${selectedDonationId === donation.id ? 'bg-indigo-50/50' : ''}`
                           }`}
                         onClick={() => {
                           if (donation.status === 'failed') return;
