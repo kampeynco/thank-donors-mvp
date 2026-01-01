@@ -74,10 +74,38 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
         offset: { x: 0, y: 0 },
         originalFile: null as File | null,
         originalUrl: null as string | null,
+        baseScale: 1,
         isDragging: false,
         dragStart: { x: 0, y: 0 }
     });
     const cropContainerRef = useRef<HTMLDivElement>(null);
+
+    const calculateInitialCropState = async (imageSrc: string): Promise<{ baseScale: number, initialZoom: number }> => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                const viewW = 500;
+                const viewH = viewW / ASPECT_RATIO;
+
+                const scaleX = viewW / img.naturalWidth;
+                const scaleY = viewH / img.naturalHeight;
+
+                // baseScale (Cover)
+                const baseScale = Math.max(scaleX, scaleY);
+
+                // fitScale (Contain)
+                const fitScale = Math.min(scaleX, scaleY);
+
+                // If we want "fit" by default when the image is significantly cropped in cover mode:
+                // We can set zoom < 1. 
+                // Zoom 1 = Cover. Zoom (fitScale/baseScale) = Fit.
+                const initialZoom = fitScale / baseScale;
+
+                resolve({ baseScale, initialZoom });
+            };
+            img.src = imageSrc;
+        });
+    };
 
     const getFreshSignedUrl = async (url: string | null): Promise<string | null> => {
         if (!url) return null;
@@ -268,13 +296,18 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
         }
 
         const reader = new FileReader();
-        reader.onloadend = () => {
+        reader.onloadend = async () => {
+            const src = reader.result as string;
+            const { baseScale, initialZoom } = await calculateInitialCropState(src);
+
             setCropState({
                 isOpen: true,
-                imageSrc: reader.result as string,
-                zoom: 1,
+                imageSrc: src,
+                zoom: initialZoom, // Start with fit
                 offset: { x: 0, y: 0 },
                 originalFile: file,
+                originalUrl: null,
+                baseScale,
                 isDragging: false,
                 dragStart: { x: 0, y: 0 }
             });
@@ -369,13 +402,19 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
 
         const scaleX = viewW / img.naturalWidth;
         const scaleY = viewH / img.naturalHeight;
-        const baseScale = Math.max(scaleX, scaleY);
+
+        // Use the stored baseScale if available, otherwise recalculate (should be same)
+        const baseScale = cropState.baseScale || Math.max(scaleX, scaleY);
 
         const renderedW = img.naturalWidth * baseScale * cropState.zoom;
         const renderedH = img.naturalHeight * baseScale * cropState.zoom;
 
         const renderedX = (viewW - renderedW) / 2 + cropState.offset.x;
         const renderedY = (viewH - renderedH) / 2 + cropState.offset.y;
+
+        // Fill canvas with white before drawing mainly for transparent images or when zoomed out
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, TARGET_WIDTH, TARGET_HEIGHT);
 
         const outputScale = TARGET_WIDTH / viewW;
 
@@ -430,14 +469,18 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
             const response = await fetch(url);
             const blob = await response.blob();
             const reader = new FileReader();
-            reader.onloadend = () => {
+            reader.onloadend = async () => {
+                const src = reader.result as string;
+                const { baseScale, initialZoom } = await calculateInitialCropState(src);
+
                 setCropState({
                     isOpen: true,
-                    imageSrc: reader.result as string,
-                    zoom: 1,
+                    imageSrc: src,
+                    zoom: initialZoom, // Start with fit
                     offset: { x: 0, y: 0 },
                     originalFile: new File([blob], 'history_image.jpg', { type: blob.type }),
                     originalUrl: url,
+                    baseScale,
                     isDragging: false,
                     dragStart: { x: 0, y: 0 }
                 });
@@ -967,11 +1010,12 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                             position: 'absolute',
                                             top: '50%',
                                             left: '50%',
-                                            transform: `translate(-50%, -50%) translate(${cropState.offset.x}px, ${cropState.offset.y}px) scale(${cropState.zoom})`,
+                                            // Scale combines baseScale (to cover/fit context) and user zoom
+                                            transform: `translate(-50%, -50%) translate(${cropState.offset.x}px, ${cropState.offset.y}px) scale(${(cropState.baseScale || 1) * cropState.zoom})`,
                                             maxWidth: 'none',
-                                            minWidth: '100%',
-                                            minHeight: '100%',
-                                            objectFit: 'cover'
+                                            // Remove minWidth/100% constraints to allow true scaling from natural size
+                                            width: 'auto',
+                                            height: 'auto',
                                         }}
                                     />
                                     <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-white/20"></div>
@@ -984,7 +1028,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                                     <ZoomOut size={18} className="text-stone-400" />
                                     <input
                                         type="range"
-                                        min="1"
+                                        min="0.1"
                                         max="3"
                                         step="0.01"
                                         value={cropState.zoom}
