@@ -59,7 +59,7 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
       position: absolute;
       top: 0.45in;
       left: 0.4in;
-      width: 1.5in;
+      width: 0.6in;
       height: auto;
       opacity: 0.9;
       z-index: 10;
