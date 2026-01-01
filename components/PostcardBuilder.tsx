@@ -796,7 +796,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                         className="w-full bg-rose-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-rose-200 hover:bg-rose-700 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-                        {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+
                         {isSaving ? 'Saving...' : isOnboarding ? 'Save & Continue' : 'Save Design'}
                     </button>
                 </div>
