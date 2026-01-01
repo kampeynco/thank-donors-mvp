@@ -2,7 +2,7 @@ import { sendPostcardViaLob } from "./lob.ts";
 import { Donor } from "./types.ts";
 
 export const PRICING = {
-    pro: 99,
+    pro: 79,
     free: 149
 } as const;
 
