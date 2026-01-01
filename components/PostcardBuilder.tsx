@@ -73,6 +73,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
         zoom: 1,
         offset: { x: 0, y: 0 },
         originalFile: null as File | null,
+        originalUrl: null as string | null,
         isDragging: false,
         dragStart: { x: 0, y: 0 }
     });
@@ -331,6 +332,21 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
     const handleCropSave = async () => {
         if (!cropState.imageSrc) return;
 
+        // If we have an original URL and no changes were made to the crop settings,
+        // we can just use the original URL and skip the upload process.
+        // Default zoom is 1 and offset is {0, 0}.
+        if (cropState.originalUrl &&
+            cropState.zoom === 1 &&
+            cropState.offset.x === 0 &&
+            cropState.offset.y === 0) {
+
+            console.log("No crop changes detected for history image. Using original URL.");
+            setUploadedUrl(cropState.originalUrl);
+            setCropState(prev => ({ ...prev, isOpen: false }));
+            toast("Image selected successfully!", "success");
+            return;
+        }
+
         const canvas = document.createElement('canvas');
         canvas.width = TARGET_WIDTH;
         canvas.height = TARGET_HEIGHT;
@@ -421,6 +437,7 @@ const PostcardBuilder: React.FC<PostcardBuilderProps> = ({ currentAccount, templ
                     zoom: 1,
                     offset: { x: 0, y: 0 },
                     originalFile: new File([blob], 'history_image.jpg', { type: blob.type }),
+                    originalUrl: url,
                     isDragging: false,
                     dragStart: { x: 0, y: 0 }
                 });
