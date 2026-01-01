@@ -5,11 +5,12 @@ import { useToast } from './ToastContext';
 
 interface AuthProps {
   onLogin: () => void;
+  initialMode?: 'login' | 'signup';
 }
 
-const Auth: React.FC<AuthProps> = ({ onLogin }) => {
+const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login' }) => {
   const { toast } = useToast();
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(initialMode === 'login');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);

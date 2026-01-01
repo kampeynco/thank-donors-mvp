@@ -9,13 +9,15 @@ import Settings from './components/Settings';
 import ProfileView from './components/ProfileView';
 import BillingView from './components/BillingView';
 import Auth from './components/Auth';
+import LandingPage from './components/LandingPage';
 import { supabase } from './services/supabaseClient';
 import { Loader2, Home, Sparkles, AlertTriangle, Lock, User, Webhook, FileText, CreditCard } from 'lucide-react';
 import { useToast } from './components/ToastContext';
 
 const App: React.FC = () => {
   const { toast } = useToast();
-  const [view, setView] = useState<ViewState>(ViewState.AUTH);
+  const [view, setView] = useState<ViewState>(ViewState.LANDING_PAGE);
+  const [authInitialMode, setAuthInitialMode] = useState<'login' | 'signup'>('login');
   const [settingsActiveSection, setSettingsActiveSection] = useState('general');
   const [profileActiveSection, setProfileActiveSection] = useState('profile');
   const [session, setSession] = useState<any>(null);
@@ -41,7 +43,7 @@ const App: React.FC = () => {
       if (loadingRef.current) {
         console.warn("Loading timed out, forcing auth view");
         setLoading(false);
-        if (!sessionRef.current) setView(ViewState.AUTH);
+        if (!sessionRef.current) setView(ViewState.LANDING_PAGE);
       }
     }, 5000);
 
@@ -54,12 +56,12 @@ const App: React.FC = () => {
           fetchData(session.user.id, session.user.email);
         } else {
           setLoading(false);
-          setView(ViewState.AUTH);
+          setView(ViewState.LANDING_PAGE);
         }
       } catch (e) {
         console.error("Auth failed:", e);
         setLoading(false);
-        setView(ViewState.AUTH);
+        setView(ViewState.LANDING_PAGE);
       }
     };
 
@@ -85,7 +87,7 @@ const App: React.FC = () => {
       } else {
         console.log('No session, resetting view');
         loadedUserIdRef.current = null;
-        setView(ViewState.AUTH);
+        setView(ViewState.LANDING_PAGE);
         setProfile(null);
         setAccounts([]);
         setCurrentAccount(null);
@@ -191,7 +193,7 @@ const App: React.FC = () => {
         console.log('Redirecting to ACTBLUE_CONNECT');
         handleAddAccount(userId);
 
-        if (view === ViewState.AUTH) {
+        if (view === ViewState.AUTH || view === ViewState.LANDING_PAGE) {
           setView(ViewState.ACTBLUE_CONNECT);
         }
       }
@@ -601,7 +603,7 @@ id,
       if (error) throw error;
 
       await supabase.auth.signOut();
-      setView(ViewState.AUTH);
+      setView(ViewState.LANDING_PAGE);
       toast("User account deleted", "info");
     } catch (e: any) {
       toast(`Failed to delete user: ${e.message} `, 'error');
@@ -610,7 +612,7 @@ id,
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    setView(ViewState.AUTH);
+    setView(ViewState.LANDING_PAGE);
     toast("Logged out", "info");
   };
 
@@ -626,7 +628,7 @@ id,
       } else {
         // If data is already loaded or loading for this user, we might just need to update view
         console.log("User data already loaded/loading, checking view state");
-        if (view === ViewState.AUTH) {
+        if (view === ViewState.AUTH || view === ViewState.LANDING_PAGE) {
           // We can't easily know where to go without checking profile/accounts again or storing result.
           // Safe bet: just run fetchData again, it's cheap enough (DB select) or rely on existing state?
           // Actually fetchData is safe to re-run.
@@ -648,8 +650,23 @@ id,
     );
   }
 
+  if (view === ViewState.LANDING_PAGE) {
+    return (
+      <LandingPage
+        onLogin={() => {
+          setAuthInitialMode('login');
+          setView(ViewState.AUTH);
+        }}
+        onSignup={() => {
+          setAuthInitialMode('signup');
+          setView(ViewState.AUTH);
+        }}
+      />
+    );
+  }
+
   if (view === ViewState.AUTH) {
-    return <Auth onLogin={handleLogin} />;
+    return <Auth onLogin={handleLogin} initialMode={authInitialMode} />;
   }
 
   if (!profile) {
