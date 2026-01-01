@@ -57,8 +57,8 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
     }
     .branding-logo {
       position: absolute;
-      top: 0.34in;
-      left: 0.35in;
+      top: 0.4in;
+      right: 0.4in;
       width: 0.6in;
       opacity: 0.8;
       z-index: 10;
