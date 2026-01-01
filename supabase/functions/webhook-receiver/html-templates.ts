@@ -6,7 +6,7 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
   const processedMessage = message.replace(/\\n/g, '\n');
   const escapedMessage = escapeHtml(processedMessage);
   // Refined scaling: 8pt for short messages, down to 5pt for long ones
-  const fontSize = Math.max(8, 11 - (processedMessage.length / 500) * 3);
+  const fontSize = Math.max(8, 11 - (processedMessage.length / 400) * 3);
   console.log(`📏 Calculated font size for message (length ${processedMessage.length}): ${fontSize}pt`);
 
   return `
@@ -33,10 +33,10 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
     }
     .content-area {
       position: absolute;
-      top: 1.25in;
+      top: 0.4in;
       left: 0.4in;
       width: 2.125in;
-      height: 2.35in;
+      height: 2.8in; /* Reduced height to make room for logo at bottom */
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
@@ -57,7 +57,7 @@ export function generatePostcardBackHtml(message: string, showBranding: boolean 
     }
     .branding-logo {
       position: absolute;
-      top: 0.45in;
+      bottom: 0.4in;
       left: 0.4in;
       width: 0.6in;
       height: auto;
