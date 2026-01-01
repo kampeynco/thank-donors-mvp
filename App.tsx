@@ -175,9 +175,14 @@ const App: React.FC = () => {
         setCurrentAccount(null);
       } else if (fetchedAccounts.length > 0) {
         console.log('Redirecting to DASHBOARD');
-        const recent = fetchedAccounts[0];
-        setCurrentAccount(recent);
-        await fetchDonations(userId, recent.id);
+
+        // Try to restore previous selection
+        const savedAccountId = localStorage.getItem('selectedAccountId');
+        const savedAccount = savedAccountId ? fetchedAccounts.find(a => a.id === savedAccountId) : null;
+        const targetAccount = savedAccount || fetchedAccounts[0];
+
+        setCurrentAccount(targetAccount);
+        await fetchDonations(userId, targetAccount.id);
 
         if (view === ViewState.AUTH) {
           setView(ViewState.DASHBOARD);
@@ -536,7 +541,11 @@ id,
 
   const handleSwitchAccount = (account: ActBlueAccount) => {
     setCurrentAccount(account);
-    fetchDonations(session.user.id, account.id);
+    // Persist selection
+    localStorage.setItem('selectedAccountId', account.id);
+    if (session?.user?.id) {
+      fetchDonations(session.user.id, account.id);
+    }
     setView(ViewState.DASHBOARD);
   };
 
