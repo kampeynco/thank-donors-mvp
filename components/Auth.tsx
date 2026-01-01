@@ -97,8 +97,8 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
               <p className="text-sm text-rose-200">Automated Workflow</p>
             </div>
             <div>
-              <p className="text-2xl font-bold mb-1">Instant</p>
-              <p className="text-sm text-rose-200">Campaign Setup</p>
+              <p className="text-2xl font-bold mb-1">Fast</p>
+              <p className="text-sm text-rose-200">Account Setup</p>
             </div>
           </div>
         </div>
