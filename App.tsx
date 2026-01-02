@@ -753,6 +753,7 @@ id,
             setView(v);
             if (v === ViewState.SETTINGS && section) setSettingsActiveSection(section);
           }}
+          currentAccount={currentAccount}
         />
       )}
       {view === ViewState.POSTCARD_BUILDER && (
