@@ -190,7 +190,7 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
           </div>
 
           <button
-            onClick={() => handlePolarCheckout('topup')}
+            onClick={() => handlePolarCheckout('topup', (autoTopupAmount / 100).toString())}
             disabled={!!processing}
             className="w-full bg-white text-rose-600 font-bold py-3 rounded-xl hover:bg-rose-50 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
           >
