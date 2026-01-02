@@ -269,8 +269,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                                     Agency includes everything in Pro, plus:
                                 </h4>
                                 <div className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-slate-700">
-                                    <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-purple-600" /> Multiple accounts (Agency only)</div>
-                                    <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-purple-600" /> White-label reporting</div>
+                                    <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-purple-600" /> Multiple accounts</div>
                                     <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-purple-600" /> Priority Support</div>
                                 </div>
                             </div>
@@ -353,7 +352,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                                     { name: 'Postcard builder', desc: 'Drag-and-drop editor to design your cards in minutes.', free: true, pro: true, agency: true },
                                     { name: 'ActBlue integration', desc: 'Seamlessly sync data from your ActBlue account in real-time.', free: true, pro: true, agency: true },
                                     { name: 'Personalization', desc: 'Use variables like {{FirstName}} to customize each card.', free: true, pro: true, agency: true },
-                                    { name: 'Remove branding', desc: 'Send "white-label" cards with no Thank Donors logo.', free: false, pro: true, agency: true },
+                                    { name: 'Remove branding', desc: 'Send postcards with no Thank Donors logo.', free: false, pro: true, agency: true },
                                     { name: 'First-class mailing', desc: '3 to 5 business days delivery via USPS.', free: false, pro: true, agency: true },
                                     { name: 'Return handling', desc: 'We manage undeliverable mail and update your database.', free: false, pro: true, agency: true },
                                     { name: 'Priority printing', desc: 'Your order skips the queue and prints within 24 hours.', free: false, pro: true, agency: true },

@@ -17,7 +17,8 @@ const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login' }) => {
 
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
+    confirmPassword: ''
   });
 
   const handleGoogleLogin = async () => {
@@ -31,6 +32,27 @@ const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login' }) => {
       if (error) throw error;
     } catch (error: any) {
       toast(`Error with Google Login: ${error.message}`, 'error');
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      setError('Please enter your email address first to reset your password.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+        redirectTo: `${window.location.origin}/update-password`,
+      });
+      if (error) throw error;
+      toast('Password reset link sent to your email', 'success');
+      setError(null);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -48,6 +70,9 @@ const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login' }) => {
         if (error) throw error;
         onLogin();
       } else {
+        if (formData.password !== formData.confirmPassword) {
+          throw new Error("Passwords do not match");
+        }
         const { error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -65,63 +90,63 @@ const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login' }) => {
   const toggleMode = () => {
     setIsLogin(!isLogin);
     setError(null);
-    setFormData({ email: '', password: '' });
+    setFormData({ email: '', password: '', confirmPassword: '' });
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-stone-50 text-stone-900 font-sans">
+    <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 text-slate-900 font-sans">
       {/* Left Side - Hero Section */}
-      <div className="w-full md:w-1/2 bg-gradient-to-br from-stone-800 to-rose-900 flex flex-col justify-center px-8 md:px-16 py-12 text-white order-2 md:order-1 relative overflow-hidden">
+      <div className="w-full md:w-1/2 bg-[#00204E] flex flex-col justify-center px-8 md:px-16 py-12 text-white order-2 md:order-1 relative overflow-hidden">
 
-        {/* Abstract shapes/texture overlay */}
-        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-          <div className="absolute top-20 left-20 w-64 h-64 bg-rose-400 rounded-full blur-3xl mix-blend-screen animate-pulse"></div>
-          <div className="absolute bottom-20 right-20 w-80 h-80 bg-orange-300 rounded-full blur-3xl mix-blend-screen animate-pulse" style={{ animationDelay: '1s' }}></div>
+        {/* Abstract shapes/texture overlay - adjusted for Navy theme */}
+        <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
+          <div className="absolute top-20 left-20 w-64 h-64 bg-blue-500 rounded-full blur-3xl mix-blend-screen animate-pulse"></div>
+          <div className="absolute bottom-20 right-20 w-80 h-80 bg-indigo-500 rounded-full blur-3xl mix-blend-screen animate-pulse" style={{ animationDelay: '1s' }}></div>
         </div>
 
         <div className="max-w-md mx-auto relative z-10">
-          <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center mb-8 shadow-xl shadow-rose-900/40">
+          <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-8 border border-white/20">
             <Heart className="w-6 h-6 text-white text-fill-white" />
           </div>
 
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-6 leading-tight">
+          <h1 className="text-4xl md:text-5xl font-sans font-bold mb-6 leading-tight">
             Automate your donor gratitude.
           </h1>
 
-          <p className="text-lg text-rose-100/90 mb-8 leading-relaxed">
+          <p className="text-lg text-slate-300 mb-8 leading-relaxed">
             Connect ActBlue, create branded postcards, and thank your donors with a personal touch automatically.
           </p>
 
           <div className="grid grid-cols-2 gap-6 border-t border-white/10 pt-8">
             <div>
               <p className="text-2xl font-bold mb-1">100%</p>
-              <p className="text-sm text-rose-200">Automated Workflow</p>
+              <p className="text-sm text-slate-400">Automated Workflow</p>
             </div>
             <div>
               <p className="text-2xl font-bold mb-1">Instant</p>
-              <p className="text-sm text-rose-200">Account Setup</p>
+              <p className="text-sm text-slate-400">Account Setup</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Right Side - Form Section */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-6 md:p-12 order-1 md:order-2 bg-stone-50">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-6 md:p-12 order-1 md:order-2 bg-slate-50">
         <div className="w-full max-w-sm">
 
           {/* Mobile Logo (Visible only on small screens) */}
-          <div className="md:hidden mb-8 text-center bg-white p-4 rounded-2xl border border-stone-100 shadow-sm mx-auto w-fit">
-            <div className="w-10 h-10 bg-rose-500 rounded-full flex items-center justify-center mx-auto mb-2 text-white">
+          <div className="md:hidden mb-8 text-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mx-auto w-fit">
+            <div className="w-10 h-10 bg-[#00204E] rounded-full flex items-center justify-center mx-auto mb-2 text-white">
               <Heart size={20} />
             </div>
-            <span className="font-serif font-bold text-stone-800">Thank Donors</span>
+            <span className="font-sans font-bold text-slate-800">Thank Donors</span>
           </div>
 
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-stone-900 font-serif">
+            <h2 className="text-2xl font-bold text-slate-900 font-sans">
               {isLogin ? 'Welcome back' : 'Start your journey'}
             </h2>
-            <p className="text-stone-500 mt-2 text-sm">
+            <p className="text-slate-500 mt-2 text-sm">
               {isLogin
                 ? 'Enter your details to access your dashboard'
                 : 'Create an account to start thanking donors'}
@@ -129,9 +154,9 @@ const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login' }) => {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-100 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-rose-600 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-rose-800">{error}</p>
+            <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-red-800">{error}</p>
             </div>
           )}
 
@@ -140,15 +165,15 @@ const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login' }) => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-stone-700 uppercase tracking-wide ml-1">Email</label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide ml-1">Email</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="h-4 w-4 text-stone-400" />
+                    <Mail className="h-4 w-4 text-slate-400" />
                   </div>
                   <input
                     type="email"
                     required
-                    className="block w-full pl-10 pr-3 py-2.5 border border-stone-200 rounded-xl leading-5 bg-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all"
+                    className="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00204E]/20 focus:border-[#00204E] transition-all"
                     placeholder="you@example.com"
                     value={formData.email}
                     onChange={(e) => {
@@ -160,15 +185,15 @@ const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login' }) => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-stone-700 uppercase tracking-wide ml-1">Password</label>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide ml-1">Password</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-4 w-4 text-stone-400" />
+                    <Lock className="h-4 w-4 text-slate-400" />
                   </div>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
-                    className="block w-full pl-10 pr-10 py-2.5 border border-stone-200 rounded-xl leading-5 bg-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all"
+                    className="block w-full pl-10 pr-10 py-2.5 border border-slate-200 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00204E]/20 focus:border-[#00204E] transition-all"
                     placeholder={isLogin ? "••••••••" : "Create a password"}
                     value={formData.password}
                     onChange={(e) => {
@@ -178,7 +203,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login' }) => {
                   />
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-stone-400 hover:text-stone-600 transition-colors cursor-pointer"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -186,22 +211,44 @@ const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login' }) => {
                 </div>
               </div>
 
+              {!isLogin && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide ml-1">Confirm Password</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-4 w-4 text-slate-400" />
+                    </div>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      className="block w-full pl-10 pr-10 py-2.5 border border-slate-200 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00204E]/20 focus:border-[#00204E] transition-all"
+                      placeholder="Confirm your password"
+                      value={formData.confirmPassword}
+                      onChange={(e) => {
+                        setFormData({ ...formData, confirmPassword: e.target.value });
+                        if (error) setError(null);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
               {isLogin && (
                 <div className="flex items-center justify-between text-sm">
                   <label className="flex items-center gap-2 cursor-pointer group">
-                    <input type="checkbox" className="w-4 h-4 rounded border-stone-300 text-rose-600 focus:ring-rose-500 transition-colors" />
-                    <span className="text-stone-500 group-hover:text-stone-700 transition-colors">Remember me</span>
+                    <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-[#00204E] focus:ring-[#00204E] transition-colors" />
+                    <span className="text-slate-500 group-hover:text-slate-700 transition-colors">Remember me</span>
                   </label>
-                  <a href="#" className="font-medium text-rose-600 hover:text-rose-700 hover:underline">
+                  <button type="button" onClick={handleForgotPassword} className="font-medium text-[#00204E] hover:text-blue-700 hover:underline">
                     Forgot password?
-                  </a>
+                  </button>
                 </div>
               )}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-lg shadow-rose-500/20 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-lg shadow-[#00204E]/20 text-sm font-bold text-white bg-[#00204E] hover:bg-[#00204E]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00204E] disabled:opacity-70 disabled:cursor-not-allowed transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -217,10 +264,10 @@ const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login' }) => {
             {/* Divider */}
             <div className="relative mt-8">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-stone-200" />
+                <div className="w-full border-t border-slate-200" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-stone-50 text-stone-500">Or continue with</span>
+                <span className="px-2 bg-slate-50 text-slate-500">Or continue with</span>
               </div>
             </div>
 
@@ -229,7 +276,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login' }) => {
               <button
                 onClick={handleGoogleLogin}
                 type="button"
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-stone-200 shadow-sm bg-white text-sm font-bold text-stone-700 rounded-xl hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition-all hover:border-stone-300"
+                className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-slate-200 shadow-sm bg-white text-sm font-bold text-slate-700 rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00204E] transition-all hover:border-slate-300"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
                   <path
@@ -255,11 +302,11 @@ const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login' }) => {
 
             {/* Toggle Login/Signup */}
             <div className="text-center mt-6">
-              <p className="text-sm text-stone-500">
+              <p className="text-sm text-slate-500">
                 {isLogin ? "Don't have an account? " : "Already have an account? "}
                 <button
                   onClick={toggleMode}
-                  className="font-bold text-rose-600 hover:text-rose-700 hover:underline transition-colors"
+                  className="font-bold text-[#00204E] hover:text-blue-700 hover:underline transition-colors"
                 >
                   {isLogin ? 'Sign Up' : 'Sign In'}
                 </button>
