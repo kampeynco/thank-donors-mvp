@@ -15,6 +15,8 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
   const [processing, setProcessing] = useState<string | null>(null);
   const [entityData, setEntityData] = useState<any>(null);
 
+  const [selectedTier, setSelectedTier] = useState<string>('pro_starter');
+
   useEffect(() => {
     if (account?.entity_id) {
       fetchBillingData();
@@ -131,7 +133,7 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
   };
 
   const currentPlan = PLAN_DETAILS[tier] || PLAN_DETAILS['pay_as_you_go'];
-  const [selectedTier, setSelectedTier] = useState<string>('pro_starter');
+
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto pb-12">
