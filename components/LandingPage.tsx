@@ -185,7 +185,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricingC
             </section>
 
             {/* How It Works Section */}
-            <section id="how-it-works" className="py-24 bg-[#00204E] text-white">
+            <section id="how-it-works" className="py-24 bg-[#00204E] text-white scroll-mt-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center max-w-3xl mx-auto mb-20">
                         <h2 className="text-3xl md:text-5xl font-serif font-bold tracking-tight mb-6">
@@ -285,7 +285,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricingC
 
 
             {/* Features Grid ("Scalable Gratitude") */}
-            <section id="features" className="py-24 bg-white">
+            <section id="features" className="py-24 bg-white scroll-mt-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center max-w-3xl mx-auto mb-20">
                         <div className="inline-block px-3 py-1 bg-red-100 text-red-600 rounded-full text-xs font-bold uppercase tracking-widest mb-4">Features</div>
@@ -536,7 +536,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricingC
             </section>
 
             {/* FAQ Section */}
-            <section id="faq" className="py-24 bg-slate-50">
+            <section id="faq" className="py-24 bg-slate-50 scroll-mt-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center max-w-2xl mx-auto mb-16">
                         <h2 className="text-4xl md:text-5xl font-serif font-bold text-[#00204E] tracking-tight mb-6">Frequently Asked Questions</h2>

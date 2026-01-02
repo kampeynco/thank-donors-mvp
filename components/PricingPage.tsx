@@ -48,7 +48,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
                             <button onClick={onBack} className="hover:text-[#1F5EA9] transition-colors">How it Works</button>
                             <button onClick={onBack} className="hover:text-[#1F5EA9] transition-colors">Features</button>
-                            <button onClick={() => { }} className="text-[#1F5EA9] font-bold">Pricing</button>
+                            <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-[#1F5EA9] font-bold">Pricing</button>
                             <button onClick={onBack} className="hover:text-[#1F5EA9] transition-colors">FAQ</button>
                         </div>
 
@@ -82,7 +82,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                     <div className="md:hidden bg-white border-t border-slate-100 py-4 px-4 space-y-4">
                         <button onClick={() => { onBack(); setIsMobileMenuOpen(false); }} className="block text-slate-600 font-medium w-full text-left">How it Works</button>
                         <button onClick={() => { onBack(); setIsMobileMenuOpen(false); }} className="block text-slate-600 font-medium w-full text-left">Features</button>
-                        <button onClick={() => setIsMobileMenuOpen(false)} className="block text-[#1F5EA9] font-bold w-full text-left">Pricing</button>
+                        <button onClick={() => { setIsMobileMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="block text-[#1F5EA9] font-bold w-full text-left">Pricing</button>
                         <button onClick={() => { onBack(); setIsMobileMenuOpen(false); }} className="block text-slate-600 font-medium w-full text-left">FAQ</button>
                         <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
                             <button onClick={onLogin} className="w-full py-2 text-slate-600 font-bold border border-slate-200 rounded-xl">Log in</button>
