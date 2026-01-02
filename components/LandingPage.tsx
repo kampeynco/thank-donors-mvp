@@ -70,7 +70,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricingC
                             </h1>
 
                             <p className="text-lg text-slate-600 mb-8 leading-relaxed max-w-lg">
-                                Every ActBlue donation triggers a campaign-branded postcard—printed and mailed for you. High-touch gratitude, zero extra effort.
+                                Every ActBlue donation triggers a campaign created postcard that is printed and mailed for you. High-touch gratitude, zero extra effort.
                             </p>
 
                             <div className="space-y-3 mb-8">

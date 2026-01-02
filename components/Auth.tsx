@@ -114,7 +114,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, initialMode = 'login' }) => {
           </h1>
 
           <p className="text-lg text-slate-300 mb-8 leading-relaxed">
-            Connect ActBlue, create branded postcards, and thank your donors with a personal touch automatically.
+            Connect ActBlue, create postcards, and thank your donors with a personal touch automatically.
           </p>
 
           <div className="grid grid-cols-2 gap-6 border-t border-white/10 pt-8">
