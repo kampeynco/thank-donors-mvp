@@ -211,7 +211,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricingC
                             <div className="w-24 h-24 bg-[#1F5EA9] rounded-2xl border-4 border-[#00204E] flex items-center justify-center text-3xl font-bold mb-8 mx-auto shadow-xl shadow-blue-900/50">2</div>
                             <h3 className="text-xl font-bold mb-4 text-center">Customize</h3>
                             <p className="text-blue-200 text-center leading-relaxed">
-                                Upload your branding and set rules (e.g. "Send $50+ donors the Gold Card").
+                                Upload your front postcart artwork and write your custom message.
                             </p>
                         </div>
                         <div className="relative">
