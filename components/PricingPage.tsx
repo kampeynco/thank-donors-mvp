@@ -355,7 +355,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {[
-                                    { name: 'Postcard builder', desc: 'Drag-and-drop editor to design your cards in minutes.', free: true, pro: true, agency: true },
+                                    { name: 'Postcard builder', desc: 'Build custom postcards in minutes not hours.', free: true, pro: true, agency: true },
                                     { name: 'ActBlue integration', desc: 'Seamlessly sync data from your ActBlue account in real-time.', free: true, pro: true, agency: true },
                                     { name: 'Personalization', desc: 'Use variables like %FirstName% to customize each card.', free: true, pro: true, agency: true },
                                     { name: 'Remove branding', desc: 'Send postcards with no Thank Donors logo.', free: false, pro: true, agency: true },
