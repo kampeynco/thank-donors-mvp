@@ -326,26 +326,32 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                                     </div>
 
                                     {/* Canvas Area */}
-                                    <div className="flex-1 bg-slate-200/50 rounded-2xl p-6 flex items-center justify-center min-h-[300px]">
-                                        {/* Postcard Mockup */}
-                                        <div className="bg-white w-full max-w-md aspect-[6/4] shadow-xl rounded-sm flex overflow-hidden">
-                                            {/* Front (Brand Side) */}
-                                            <div className="w-1/2 bg-[#1e3a8a] text-white p-6 flex flex-col justify-center relative overflow-hidden">
+                                    <div className="flex-1 bg-slate-200/50 rounded-2xl p-6 flex flex-col items-center justify-center min-h-[300px]">
+                                        <div className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
+                                            <Eye size={12} />
+                                            Live Front Preview
+                                        </div>
+                                        {/* Postcard Mockup - Front Only (Synced with Builder) */}
+                                        <div className="bg-white w-full max-w-md aspect-[6/4] shadow-xl rounded-sm overflow-hidden relative group">
+                                            {/* Front Design (Democratic Blue Theme) */}
+                                            <div className="w-full h-full bg-[#1e3a8a] text-white p-8 flex flex-col items-center justify-center relative overflow-hidden">
                                                 <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-                                                <div className="relative z-10 w-12 h-12 border-2 border-white rounded-full flex items-center justify-center mb-4">
-                                                    <div className="w-0 h-0 border-l-[6px] border-l-transparent border-b-[10px] border-b-white border-r-[6px] border-r-transparent"></div>
+
+                                                {/* Logo Area */}
+                                                <div className="relative z-10 w-16 h-16 border-2 border-white rounded-full flex items-center justify-center mb-6">
+                                                    <div className="w-0 h-0 border-l-[8px] border-l-transparent border-b-[14px] border-b-white border-r-[8px] border-r-transparent"></div>
                                                 </div>
-                                                <h3 className="text-2xl font-serif font-bold leading-tight mb-2">Thank You<br />For Standing<br />With Us.</h3>
-                                                <p className="text-[10px] uppercase opacity-70 mt-auto">Jane for SD • 2024</p>
-                                            </div>
-                                            {/* Back (Message Side) */}
-                                            <div className="w-1/2 bg-white p-4 flex flex-col relative">
-                                                <div className="flex-1 border-b border-slate-100 pb-2 mb-2">
-                                                    <div className="w-16 h-20 bg-slate-100 border border-slate-200 absolute right-4 top-4"></div>
-                                                    <div className="font-handwriting text-slate-800 text-sm leading-relaxed mt-8 pr-12">
-                                                        "Dear Sarah, your support means the world to our team. Thank you for chipping in!"
-                                                    </div>
-                                                    <div className="font-handwriting text-slate-800 text-sm mt-4 font-bold">- Jane</div>
+
+                                                {/* Main Heading */}
+                                                <h3 className="relative z-10 text-3xl font-serif font-bold leading-tight mb-2 text-center drop-shadow-md">
+                                                    Thank You<br />For Standing<br />With Us.
+                                                </h3>
+
+                                                {/* Committee Disclaimer (Builder Implementation) */}
+                                                <div className="absolute bottom-0 left-0 right-0 px-4 py-2 z-20 bg-gradient-to-t from-[#1e3a8a]/80 to-transparent">
+                                                    <p className="text-[7px] text-white uppercase leading-[1.2] tracking-tight text-center font-medium opacity-90">
+                                                        Paid for by Jane for SD.
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
