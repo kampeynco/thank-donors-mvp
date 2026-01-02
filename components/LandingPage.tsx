@@ -61,18 +61,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricingC
                         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
                             <a href="#how-it-works" className="hover:text-[#1F5EA9] transition-colors">How it Works</a>
                             <a href="#features" className="hover:text-[#1F5EA9] transition-colors">Features</a>
-                            <a href="#pricing" className="hover:text-[#1F5EA9] transition-colors">Pricing</a>
+                            <button onClick={onPricingClick} className="hover:text-[#1F5EA9] transition-colors">Pricing</button>
                             <a href="#faq" className="hover:text-[#1F5EA9] transition-colors">FAQ</a>
                         </div>
 
                         {/* Actions */}
                         <div className="hidden md:flex items-center gap-4">
-                            <button
-                                onClick={onPricingClick}
-                                className="text-slate-600 hover:text-[#1F5EA9] font-medium text-sm transition-colors"
-                            >
-                                Pricing
-                            </button>
+
                             <button
                                 onClick={onLogin}
                                 className="text-slate-600 hover:text-[#1F5EA9] font-medium text-sm transition-colors"
@@ -101,15 +96,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricingC
                     <div className="md:hidden bg-white border-t border-slate-100 py-4 px-4 space-y-4">
                         <a href="#how-it-works" className="block text-slate-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>How it Works</a>
                         <a href="#features" className="block text-slate-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>Features</a>
-                        <a href="#pricing" className="block text-slate-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>Pricing</a>
+                        <button onClick={() => { setIsMobileMenuOpen(false); onPricingClick(); }} className="block text-slate-600 font-medium w-full text-left">Pricing</button>
                         <a href="#faq" className="block text-slate-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>FAQ</a>
                         <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
-                            <button
-                                onClick={() => { setIsMobileMenuOpen(false); onPricingClick(); }}
-                                className="w-full py-2 text-slate-600 font-bold border border-slate-200 rounded-xl"
-                            >
-                                Pricing
-                            </button>
+
                             <button onClick={onLogin} className="w-full py-2 text-slate-600 font-bold border border-slate-200 rounded-xl">Log in</button>
                             <button onClick={onSignup} className="w-full py-2 bg-[#1F5EA9] text-white font-bold rounded-xl shadow-lg shadow-blue-900/20">Connect ActBlue</button>
                         </div>
