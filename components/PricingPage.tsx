@@ -350,19 +350,28 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {[
-                                    { name: 'Postcard builder', free: true, pro: true, agency: true },
-                                    { name: 'ActBlue integration', free: true, pro: true, agency: true },
-                                    { name: 'Personalization', free: true, pro: true, agency: true },
-                                    { name: 'Remove branding', free: false, pro: true, agency: true },
-                                    { name: 'First-class mailing', free: false, pro: true, agency: true },
-                                    { name: 'Return mailbox', free: false, pro: true, agency: true },
-                                    { name: 'Speedy delivery', free: false, pro: true, agency: true },
-                                    { name: 'Multiple accounts', free: false, pro: false, agency: true },
-                                    { name: 'QR code', free: false, pro: 'Coming soon', agency: 'Coming soon' },
-                                    { name: 'Variations', free: false, pro: 'Coming soon', agency: 'Coming soon' },
+                                    { name: 'Postcard builder', desc: 'Drag-and-drop editor to design your cards in minutes.', free: true, pro: true, agency: true },
+                                    { name: 'ActBlue integration', desc: 'Seamlessly sync data from your ActBlue account in real-time.', free: true, pro: true, agency: true },
+                                    { name: 'Personalization', desc: 'Use variables like {{FirstName}} to customize each card.', free: true, pro: true, agency: true },
+                                    { name: 'Remove branding', desc: 'Send "white-label" cards with no Thank Donors logo.', free: false, pro: true, agency: true },
+                                    { name: 'First-class mailing', desc: '3 to 5 business days delivery via USPS.', free: false, pro: true, agency: true },
+                                    { name: 'Return handling', desc: 'We manage undeliverable mail and update your database.', free: false, pro: true, agency: true },
+                                    { name: 'Priority printing', desc: 'Your order skips the queue and prints within 24 hours.', free: false, pro: true, agency: true },
+                                    { name: 'Multiple accounts', desc: 'Manage multiple campaigns from a single dashboard.', free: false, pro: false, agency: true },
+                                    { name: 'QR code', desc: 'Add scannable codes to link donors back to your site.', free: false, pro: 'Coming soon', agency: 'Coming soon' },
+                                    { name: 'Variations', desc: 'A/B test different designs to optimize engagement.', free: false, pro: 'Coming soon', agency: 'Coming soon' },
                                 ].map((feature, i) => (
                                     <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                                        <td className="py-4 pl-4 font-medium text-slate-700">{feature.name}</td>
+                                        <td className="py-4 pl-4 font-medium text-slate-700 relative group cursor-help w-[fit-content]">
+                                            <span className="decoration-dotted underline underline-offset-4 decoration-slate-300">
+                                                {feature.name}
+                                            </span>
+                                            {/* Tooltip */}
+                                            <div className="invisible group-hover:visible absolute left-0 bottom-full mb-2 w-48 bg-slate-800 text-white text-xs rounded-lg py-2 px-3 shadow-xl z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                {feature.desc}
+                                                <div className="absolute left-4 -bottom-1 w-2 h-2 bg-slate-800 rotate-45"></div>
+                                            </div>
+                                        </td>
                                         <td className="py-4 px-4 text-center">
                                             {typeof feature.free === 'boolean'
                                                 ? (feature.free ? <CheckCircle2 size={20} className="mx-auto text-slate-900" /> : <span className="text-slate-300">—</span>)
