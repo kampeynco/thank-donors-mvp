@@ -1,10 +1,7 @@
 import { sendPostcardViaLob } from "./lob.ts";
 import { Donor } from "./types.ts";
 
-export const PRICING = {
-    pro: 79,
-    free: 149
-} as const;
+
 
 export async function processLineItem(
     item: any,
@@ -71,7 +68,40 @@ export async function processLineItem(
     }
 
     // 2. Determine pricing
-    const priceCents = PRICING[entity.tier as keyof typeof PRICING] || PRICING.free;
+    const TIER_CONFIG = {
+        'pay_as_you_go': { per_postcard: 199, included_cards: 0 },
+        'pro_starter': { per_postcard: 99, included_cards: 125 },
+        'pro_grow': { per_postcard: 89, included_cards: 250 },
+        'pro_scale': { per_postcard: 79, included_cards: 500 },
+        'agency_starter': { per_postcard: 89, included_cards: 500 },
+        'agency_grow': { per_postcard: 79, included_cards: 1000 },
+        'agency_scale': { per_postcard: 74, included_cards: 2500 }
+    } as const;
+
+    const tier = (entity.tier || 'pay_as_you_go') as keyof typeof TIER_CONFIG;
+    const config = TIER_CONFIG[tier] || TIER_CONFIG['pay_as_you_go'];
+
+    // 2a. Check Usage for Overage
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+    const { count: usageCount, error: usageError } = await supabase
+        .from('postcards')
+        .select('id, donations!inner(actblue_accounts!inner(entity_id))', { count: 'exact', head: true })
+        .eq('donations.actblue_accounts.entity_id', entityId)
+        .gte('created_at', startOfMonth);
+
+    if (usageError) {
+        console.error("❌ Error counting usage:", usageError);
+        // Fallback to safe overage pricing if we can't verify usage? Or lenient?
+        // Let's be lenient for now to avoid blocking sends on system error, but log it.
+    }
+
+    const currentUsage = usageCount || 0;
+    const isOverLimit = currentUsage >= config.included_cards;
+    const priceCents = isOverLimit ? 199 : config.per_postcard;
+
+    console.log(`📊 Usage Check: Tier=${tier}, Limit=${config.included_cards}, Used=${currentUsage}, Price=${priceCents}c ${isOverLimit ? '(OVERAGE)' : ''}`);
 
     // 3. Atomic balance deduction
     const { data: updatedEntity, error: deductError } = await supabase
