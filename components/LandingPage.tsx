@@ -253,20 +253,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                                     bg: "bg-blue-100",
                                     color: "text-blue-600"
                                 },
-                                {
-                                    icon: <Palette size={24} />,
-                                    title: "Set Brand Colors",
-                                    desc: "Match your hex codes perfectly.",
-                                    bg: "bg-purple-100",
-                                    color: "text-purple-600"
-                                },
-                                {
-                                    icon: <Type size={24} />,
-                                    title: "Choose & Create Styles",
-                                    desc: "From formal serif to modern sans layouts.",
-                                    bg: "bg-orange-100",
-                                    color: "text-orange-600"
-                                },
+
                                 {
                                     icon: <Eye size={24} />,
                                     title: "Live Preview",
@@ -312,18 +299,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
 
                                 <div className="flex flex-col md:flex-row gap-6">
                                     {/* Controls */}
-                                    <div className="w-full md:w-16 flex md:flex-col gap-4 items-center justify-center md:justify-start">
-                                        {/* Tools Toolbar Mockup */}
-                                        <div className="w-10 h-10 rounded-xl bg-white border-2 border-[#1F5EA9] text-[#1F5EA9] flex items-center justify-center shadow-sm">
-                                            <Palette size={20} />
-                                        </div>
-                                        <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-400 flex items-center justify-center hover:bg-slate-50 transition-colors">
-                                            <Type size={20} />
-                                        </div>
-                                        <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-400 flex items-center justify-center hover:bg-slate-50 transition-colors">
-                                            <ImageIcon size={20} />
-                                        </div>
-                                    </div>
+
 
                                     {/* Canvas Area */}
                                     <div className="flex-1 bg-slate-200/50 rounded-2xl p-6 flex flex-col items-center justify-center min-h-[300px]">
@@ -357,29 +333,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                                         </div>
                                     </div>
 
-                                    {/* Properties Panel Mockup */}
-                                    <div className="w-full md:w-48 bg-white rounded-xl border border-slate-200 p-4 space-y-4">
-                                        <div>
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Color Palette</label>
-                                            <div className="flex gap-2">
-                                                <div className="w-6 h-6 rounded-full bg-[#1e3a8a] ring-2 ring-offset-2 ring-blue-500 cursor-pointer"></div>
-                                                <div className="w-6 h-6 rounded-full bg-[#1F5EA9] cursor-pointer opacity-50"></div>
-                                                <div className="w-6 h-6 rounded-full bg-[#00204E] cursor-pointer opacity-50"></div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Font Family</label>
-                                            <div className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-serif text-slate-700 flex justify-between items-center">
-                                                Merriweather <ChevronDownIcon size={12} />
-                                            </div>
-                                        </div>
-                                        <div className="pt-2 border-t border-slate-100">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Logo</label>
-                                            <button className="w-full py-2 border border-dashed border-slate-300 rounded-lg text-xs font-medium text-slate-500 hover:text-[#1F5EA9] hover:border-slate-400 transition-colors flex items-center justify-center gap-1">
-                                                <UploadIcon size={12} /> Update
-                                            </button>
-                                        </div>
-                                    </div>
+
                                 </div>
                             </div>
                         </div>
