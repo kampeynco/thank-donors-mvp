@@ -357,7 +357,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                                     { name: 'First-class mailing', free: false, pro: true, agency: true },
                                     { name: 'Return mailbox', free: false, pro: true, agency: true },
                                     { name: 'Speedy delivery', free: false, pro: true, agency: true },
-                                    { name: 'Multiple accounts', free: false, pro: false, agency: 'Agency only' },
+                                    { name: 'Multiple accounts', free: false, pro: false, agency: true },
                                     { name: 'QR code', free: false, pro: 'Coming soon', agency: 'Coming soon' },
                                     { name: 'Variations', free: false, pro: 'Coming soon', agency: 'Coming soon' },
                                 ].map((feature, i) => (
