@@ -102,7 +102,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
             </nav>
 
             {/* Hero Section */}
-            <section className="relative overflow-hidden pt-12 pb-24 md:pt-20 md:pb-32">
+            <section className="relative overflow-hidden pt-12 pb-24 md:pt-20 md:pb-32 bg-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
 
@@ -113,7 +113,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                                 Powered by ActBlue
                             </div>
 
-                            <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif font-bold text-[#00204E] tracking-tight leading-[1.1] mb-6">
+                            <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif font-bold text-[#00204E] tracking-tighter leading-[1.1] mb-6">
                                 Thank Your Donors <span className="text-[#1F5EA9]">Automagically.</span>
                             </h1>
 
@@ -158,9 +158,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
 
                         {/* Right Visual - Dashboard Mockup */}
                         <div className="relative z-10">
-                            <div className="absolute top-0 right-0 w-[150%] h-[150%] bg-gradient-to-br from-rose-100/50 via-stone-100 to-white rounded-full blur-3xl -z-10 translate-x-1/4 -translate-y-1/4"></div>
+                            <div className="absolute top-0 right-0 w-[150%] h-[150%] bg-gradient-to-br from-blue-100/50 via-slate-100 to-white rounded-full blur-3xl -z-10 translate-x-1/4 -translate-y-1/4"></div>
 
-                            <div className="bg-white rounded-3xl p-6 shadow-2xl shadow-blue-900/20 border border-slate-100 relative scale-105">
+                            <div className="bg-white rounded-3xl p-6 shadow-2xl shadow-blue-900/40 border border-slate-100 relative scale-105">
                                 <div className="flex items-center justify-between mb-8">
                                     <div>
                                         <h3 className="text-2xl font-serif font-bold text-[#00204E] tracking-tight">Overview</h3>
@@ -176,7 +176,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                                     <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-lg transition-all cursor-default group">
                                         <div className="flex justify-between items-start mb-2">
                                             <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Postcards Sent</span>
-                                            <Mail className="text-stone-300 group-hover:text-[#1F5EA9] transition-colors" size={20} />
+                                            <Mail className="text-slate-300 group-hover:text-[#1F5EA9] transition-colors" size={20} />
                                         </div>
                                         <div className="text-3xl font-bold text-slate-900 mb-1">1,248</div>
                                         <div className="text-xs font-bold text-green-600 flex items-center gap-1">
@@ -187,7 +187,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                                     <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-lg transition-all cursor-default group">
                                         <div className="flex justify-between items-start mb-2">
                                             <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">In Queue</span>
-                                            <Clock className="text-stone-300 group-hover:text-amber-500 transition-colors" size={20} />
+                                            <Clock className="text-slate-300 group-hover:text-amber-500 transition-colors" size={20} />
                                         </div>
                                         <div className="text-3xl font-bold text-slate-900 mb-1">42</div>
                                         <div className="text-xs font-medium text-slate-500">Processing now...</div>
@@ -216,7 +216,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                                         </div>
 
                                         {/* Retention Popover */}
-                                        <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white rounded-xl shadow-xl shadow-stone-200 p-3 border border-slate-100 flex items-center gap-3 animate-bounce-subtle">
+                                        <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white rounded-xl shadow-xl shadow-slate-200 p-3 border border-slate-100 flex items-center gap-3 animate-bounce-subtle">
                                             <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
                                                 <TrendingUpIcon size={16} className="text-green-600" />
                                             </div>
@@ -234,7 +234,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
             </section>
 
             {/* Brand Assurance Section */}
-            <section className="py-24 bg-white relative overflow-hidden">
+            <section className="py-24 bg-slate-50 relative overflow-hidden">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="mb-16">
                         <div className="text-[#1F5EA9] text-sm font-bold uppercase tracking-widest mb-2">Brand Assurance</div>
@@ -295,7 +295,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
 
                         {/* Right Preview Interaction */}
                         <div className="lg:col-span-7">
-                            <div className="bg-slate-50 rounded-3xl p-8 border border-slate-200">
+                            <div className="bg-white rounded-3xl p-8 border border-slate-200">
                                 <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-200">
                                     <div className="flex items-center gap-4">
                                         <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Preview Mode</span>
@@ -341,7 +341,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                                             {/* Back (Message Side) */}
                                             <div className="w-1/2 bg-white p-4 flex flex-col relative">
                                                 <div className="flex-1 border-b border-slate-100 pb-2 mb-2">
-                                                    <div className="w-16 h-20 bg-stone-100 border border-slate-200 absolute right-4 top-4"></div>
+                                                    <div className="w-16 h-20 bg-slate-100 border border-slate-200 absolute right-4 top-4"></div>
                                                     <div className="font-handwriting text-slate-800 text-sm leading-relaxed mt-8 pr-12">
                                                         "Dear Sarah, your support means the world to our team. Thank you for chipping in!"
                                                     </div>
@@ -397,7 +397,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
             </section>
 
             {/* Features Grid ("Scalable Gratitude") */}
-            <section className="py-24 bg-slate-50">
+            <section className="py-24 bg-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center max-w-3xl mx-auto mb-20">
                         <div className="inline-block px-3 py-1 bg-red-100 text-red-600 rounded-full text-xs font-bold uppercase tracking-widest mb-4">Platform Capabilities</div>
@@ -407,7 +407,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
 
                     <div className="grid md:grid-cols-2 gap-8 mb-8">
                         {/* Feature 1: AI Writing */}
-                        <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-stone-200/40 border border-slate-100">
+                        <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-slate-200/40 border border-slate-100">
                             <div className="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mb-6">
                                 <SparklesIcon size={28} />
                             </div>
@@ -432,7 +432,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                         </div>
 
                         {/* Feature 2: Analytics */}
-                        <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-stone-200/40 border border-slate-100">
+                        <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-slate-200/40 border border-slate-100">
                             <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
                                 <Activity size={28} />
                             </div>
@@ -512,7 +512,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
             </section>
 
             {/* FAQ Section */}
-            <section id="faq" className="py-24 bg-white">
+            <section id="faq" className="py-24 bg-slate-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center max-w-2xl mx-auto mb-16">
                         <h2 className="text-4xl md:text-5xl font-serif font-bold text-[#00204E] tracking-tight mb-6">Frequently Asked Questions</h2>
