@@ -125,7 +125,7 @@ export async function processLineItem(
         profile_id: account.profile_id,
         amount_cents: -priceCents,
         type: 'postcard_deduction',
-        description: `Postcard for donor ${donor.firstname} ${donor.lastname}`
+        description: `Postcard for donor: ${donor.firstname} ${donor.lastname}`
     });
 
     // 5. Create normalized donor object

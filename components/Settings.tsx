@@ -16,7 +16,7 @@ interface SettingsProps {
     onUpdateEntity: (updates: any) => Promise<void>;
 }
 
-import { supabase } from '../services/supabaseClient';
+
 
 const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSection, setActiveSection, onUpdate, onDeleteAccount, onSaveAccount, onUpdateEntity }) => {
     const { toast } = useToast();
@@ -108,53 +108,7 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSect
         }
     };
 
-    const handleSeedTestAccounts = async () => {
-        if (!profile) return;
 
-        const testEntities = [
-            { id: 157973, name: 'AB charities for CA' },
-            { id: 157975, name: 'Forever recurring for CA' },
-            { id: 157971, name: 'Self employed for CA' },
-            { id: 157977, name: 'Monthly recurring for CA' },
-            { id: 157979, name: 'Weekly recurring for CA' },
-            { id: 157981, name: 'Paypal for CA' }
-        ];
-
-        if (!confirm(`This will attempt to provision ${testEntities.length} test accounts with real webhooks. Continue?`)) return;
-
-        setIsSaving(true);
-        toast("Starting seed process... this may take a minute.", "info");
-
-        for (const entity of testEntities) {
-            try {
-                console.log(`Provisioning ${entity.name}...`);
-                const { error } = await supabase.functions.invoke('connect-hookdeck', {
-                    body: {
-                        committee_name: entity.name,
-                        entity_id: entity.id,
-                        profile_id: profile.id,
-                        street_address: '123 Test Lane',
-                        city: 'Testville',
-                        state: 'CA',
-                        postal_code: '90210'
-                    }
-                });
-
-                if (error) {
-                    console.error(`Failed to provision ${entity.name}`, error);
-                    toast(`Failed: ${entity.name}`, 'error');
-                } else {
-                    toast(`Success: ${entity.name}`, 'success');
-                }
-            } catch (e) {
-                console.error(`Exception provisioning ${entity.name}`, e);
-            }
-        }
-
-        setIsSaving(false);
-        toast("Seeding complete. Please refresh to see accounts.", "success");
-        window.location.reload();
-    };
 
     const menuItems = [
         { id: 'general', label: 'General Information', icon: Home },
@@ -474,18 +428,7 @@ const Settings: React.FC<SettingsProps> = ({ profile, currentAccount, activeSect
                                 Delete Campaign
                             </button>
 
-                            <div className="mt-8 pt-6 border-t border-rose-200">
-                                <h4 className="font-bold text-rose-800 mb-2">Developer Tools</h4>
-                                <button
-                                    type="button"
-                                    onClick={handleSeedTestAccounts}
-                                    disabled={isSaving}
-                                    className="bg-rose-100 border border-rose-200 text-rose-700 font-bold py-2 px-4 rounded-xl hover:bg-rose-200 transition-all text-sm flex items-center gap-2"
-                                >
-                                    {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
-                                    Seed Test Accounts (Real Webhooks)
-                                </button>
-                            </div>
+
                         </div>
                     </div>
                 )}
