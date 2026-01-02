@@ -11,6 +11,7 @@ import {
     Image as ImageIcon,
     Eye,
     Zap,
+    Sparkles,
     BarChart3,
     QrCode,
     Search,
@@ -248,12 +249,25 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                             {[
                                 {
                                     icon: <ImageIcon size={24} />,
-                                    title: "Upload Campaign Logos",
+                                    title: "Upload Custom Art",
                                     desc: "High-res support for crisp printing.",
                                     bg: "bg-blue-100",
                                     color: "text-blue-600"
                                 },
-
+                                {
+                                    icon: <Zap size={24} />,
+                                    title: "Smart Variable Data",
+                                    desc: "Personalize every card with donor names.",
+                                    bg: "bg-purple-100",
+                                    color: "text-purple-600"
+                                },
+                                {
+                                    icon: <Sparkles size={24} />,
+                                    title: "AI Writing Assistant",
+                                    desc: "Draft perfect messages in seconds.",
+                                    bg: "bg-orange-100",
+                                    color: "text-orange-600"
+                                },
                                 {
                                     icon: <Eye size={24} />,
                                     title: "Live Preview",
@@ -313,10 +327,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                                             <div className="w-full h-full bg-[#1e3a8a] text-white p-8 flex flex-col items-center justify-center relative overflow-hidden">
                                                 <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
 
-                                                {/* Logo Area */}
-                                                <div className="relative z-10 w-16 h-16 border-2 border-white rounded-full flex items-center justify-center mb-6">
-                                                    <div className="w-0 h-0 border-l-[8px] border-l-transparent border-b-[14px] border-b-white border-r-[8px] border-r-transparent"></div>
-                                                </div>
+
 
                                                 {/* Main Heading */}
                                                 <h3 className="relative z-10 text-3xl font-serif font-bold leading-tight mb-2 text-center drop-shadow-md">
