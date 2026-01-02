@@ -27,8 +27,11 @@ import {
     FileText,
     Lock,
     XCircle,
-    RotateCcw
+    RotateCcw,
+    Sparkles as SparklesIcon // Alias for clarity if needed, though Sparkles is already imported
 } from 'lucide-react';
+import Navbar from './Navbar';
+import Footer from './Footer';
 
 interface LandingPageProps {
     onLogin: () => void;
@@ -37,75 +40,18 @@ interface LandingPageProps {
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricingClick }) => {
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100 selection:text-[#00204E]">
 
             {/* Navigation */}
-            <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-20">
-                        {/* Logo */}
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-[#1F5EA9] rounded-full flex items-center justify-center text-white">
-                                <Heart size={18} fill="currentColor" />
-                            </div>
-                            <div>
-                                <span className="text-xl font-serif font-bold text-[#00204E] tracking-tight block leading-none">Thank Donors</span>
-                                <span className="text-[10px] uppercase tracking-widest text-slate-500 font-medium">Automated Gratitude</span>
-                            </div>
-                        </div>
-
-                        {/* Desktop Links */}
-                        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-                            <a href="#how-it-works" className="hover:text-[#1F5EA9] transition-colors">How it Works</a>
-                            <a href="#features" className="hover:text-[#1F5EA9] transition-colors">Features</a>
-                            <button onClick={onPricingClick} className="hover:text-[#1F5EA9] transition-colors">Pricing</button>
-                            <a href="#faq" className="hover:text-[#1F5EA9] transition-colors">FAQ</a>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="hidden md:flex items-center gap-4">
-
-                            <button
-                                onClick={onLogin}
-                                className="text-slate-600 hover:text-[#1F5EA9] font-medium text-sm transition-colors"
-                            >
-                                Log in
-                            </button>
-                            <button
-                                onClick={onSignup}
-                                className="bg-[#1F5EA9] hover:bg-[#164E87] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-blue-900/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                Connect ActBlue
-                            </button>
-                        </div>
-
-                        {/* Mobile Menu Button */}
-                        <div className="md:hidden">
-                            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-slate-600">
-                                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Mobile Menu */}
-                {isMobileMenuOpen && (
-                    <div className="md:hidden bg-white border-t border-slate-100 py-4 px-4 space-y-4">
-                        <a href="#how-it-works" className="block text-slate-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>How it Works</a>
-                        <a href="#features" className="block text-slate-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>Features</a>
-                        <button onClick={() => { setIsMobileMenuOpen(false); onPricingClick(); }} className="block text-slate-600 font-medium w-full text-left">Pricing</button>
-                        <a href="#faq" className="block text-slate-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>FAQ</a>
-                        <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
-
-                            <button onClick={onLogin} className="w-full py-2 text-slate-600 font-bold border border-slate-200 rounded-xl">Log in</button>
-                            <button onClick={onSignup} className="w-full py-2 bg-[#1F5EA9] text-white font-bold rounded-xl shadow-lg shadow-blue-900/20">Connect ActBlue</button>
-                        </div>
-                    </div>
-                )}
-            </nav>
+            <Navbar
+                onLogin={onLogin}
+                onSignup={onSignup}
+                onPricingClick={onPricingClick}
+                onLandingClick={() => { }} // No-op on landing page or scroll to top
+                activePage="landing"
+            />
 
             {/* Hero Section */}
             <section className="relative overflow-hidden pt-12 pb-24 md:pt-20 md:pb-32 bg-white">
@@ -699,41 +645,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricingC
                 </div>
             </section>
 
-
-            {/* Footer */}
-            <footer className="bg-white border-t border-slate-100 py-12 md:py-20">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-8">
-                    <div className="text-center md:text-left">
-                        <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
-                            <div className="w-8 h-8 bg-[#1F5EA9] rounded-full flex items-center justify-center text-white">
-                                <Heart size={16} fill="currentColor" />
-                            </div>
-                            <div>
-                                <span className="text-lg font-serif font-bold text-slate-900 block leading-none">Thank Donors</span>
-                                <span className="text-[10px] uppercase tracking-widest text-slate-500 font-medium">Automated Gratitude</span>
-                            </div>
-                        </div>
-                        <p className="text-slate-400 text-sm max-w-xs leading-relaxed">
-                            Turning generic ActBlue notifications into personalized, physical postcards that build lasting relationships with your donors.
-                        </p>
-                    </div>
-
-                    <div className="flex flex-wrap justify-center gap-8 text-sm font-medium text-slate-500">
-                        <button onClick={onLogin} className="hover:text-[#1F5EA9] transition-colors">Login</button>
-                        <a href="#" className="hover:text-[#1F5EA9] transition-colors">Contact Support</a>
-                        <a href="#" className="hover:text-[#1F5EA9] transition-colors">Privacy Policy</a>
-                        <a href="#" className="hover:text-[#1F5EA9] transition-colors">Terms of Service</a>
-                    </div>
-                </div>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-400">
-                    <div>© 2026 Thank Donors Inc. All rights reserved.</div>
-                    <div className="flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
-                        <Heart size={10} className="text-[#1F5EA9]" fill="currentColor" />
-                        <span>Made for progressive campaigns & organizers</span>
-                    </div>
-                </div>
-            </footer>
-
+            <Footer onLogin={onLogin} />
         </div>
     );
 };
@@ -757,59 +669,6 @@ const TrendingUpIcon = ({ size, className }: { size?: number, className?: string
     </svg>
 );
 
-const UploadIcon = ({ size, className }: { size?: number, className?: string }) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width={size || 24}
-        height={size || 24}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-    >
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-        <polyline points="17 8 12 3 7 8"></polyline>
-        <line x1="12" y1="3" x2="12" y2="15"></line>
-    </svg>
-);
-
-const SparklesIcon = ({ size, className }: { size?: number, className?: string }) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width={size || 24}
-        height={size || 24}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-    >
-        <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
-    </svg>
-);
-
-const ChevronDownIcon = ({ size, className }: { size?: number, className?: string }) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width={size || 24}
-        height={size || 24}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-    >
-        <path d="m6 9 6 6 6-6"></path>
-    </svg>
-);
-
 const RotateCcwIcon = ({ size, className }: { size?: number, className?: string }) => (
     <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -823,8 +682,8 @@ const RotateCcwIcon = ({ size, className }: { size?: number, className?: string 
         strokeLinejoin="round"
         className={className}
     >
-        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-        <path d="M3 3v5h5"></path>
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+        <path d="M3 3v5h5" />
     </svg>
 );
 
