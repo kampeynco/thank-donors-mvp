@@ -132,7 +132,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                     {/* PAY AS YOU GO */}
                     {activeTier === 'pay-as-you-go' && (
                         <div className="max-w-md mx-auto">
-                            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl shadow-slate-200/50 relative overflow-hidden">
+                            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl shadow-slate-200/50 relative">
                                 <div className="absolute top-0 right-0 p-6 opacity-5">
                                     <Zap size={100} />
                                 </div>
@@ -337,7 +337,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                 <div className="mt-24 max-w-5xl mx-auto">
                     <h2 className="text-3xl font-serif font-bold text-[#00204E] mb-12 text-center">Compare Features</h2>
 
-                    <div className="overflow-x-auto">
+                    <div className="">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b-2 border-slate-100">
@@ -351,7 +351,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                                 {[
                                     { name: 'Postcard builder', desc: 'Drag-and-drop editor to design your cards in minutes.', free: true, pro: true, agency: true },
                                     { name: 'ActBlue integration', desc: 'Seamlessly sync data from your ActBlue account in real-time.', free: true, pro: true, agency: true },
-                                    { name: 'Personalization', desc: 'Use variables like {{FirstName}} to customize each card.', free: true, pro: true, agency: true },
+                                    { name: 'Personalization', desc: 'Use variables like %FirstName% to customize each card.', free: true, pro: true, agency: true },
                                     { name: 'Remove branding', desc: 'Send postcards with no Thank Donors logo.', free: false, pro: true, agency: true },
                                     { name: 'First-class mailing', desc: '3 to 5 business days delivery via USPS.', free: false, pro: true, agency: true },
                                     { name: 'Return handling', desc: 'We manage undeliverable mail and update your database.', free: false, pro: true, agency: true },

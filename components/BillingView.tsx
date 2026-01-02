@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, DollarSign, Clock, ArrowUpRight, Shield, Zap, Loader2 } from 'lucide-react';
+import { CreditCard, DollarSign, Clock, ArrowUpRight, Shield, Zap, Loader2, Check } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { Profile, BillingTransaction, ActBlueAccount, ActBlueEntity } from '../types';
 
@@ -59,7 +59,7 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
     }
   };
 
-  const handleStripeCheckout = async (type: 'topup' | 'subscription') => {
+  const handlePolarCheckout = async (type: 'topup' | 'subscription', tier?: string) => {
     try {
       setProcessing(type);
       const { data: { session } } = await supabase.auth.getSession();
@@ -72,7 +72,8 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
         },
         body: JSON.stringify({
           type,
-          entity_id: account?.entity_id
+          entity_id: account?.entity_id,
+          tier
         })
       });
 
@@ -81,7 +82,7 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
       if (url) window.location.href = url;
     } catch (err) {
       console.error('Checkout error:', err);
-      alert('Failed to initiate checkout. Please try again.');
+      // alert('Failed to initiate checkout. Please try again.');
     } finally {
       setProcessing(null);
     }
@@ -119,6 +120,19 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
     account
   });
 
+  const PLAN_DETAILS: Record<string, { name: string; price: number; per_postcard: number; included_cards: number; features: string[] }> = {
+    'pay_as_you_go': { name: 'Pay-as-you-go', price: 0, per_postcard: 199, included_cards: 0, features: ['No monthly fee', 'Pay per card'] },
+    'pro_starter': { name: 'Pro Starter', price: 9900, per_postcard: 99, included_cards: 125, features: ['Remove branding', 'First class mail'] },
+    'pro_grow': { name: 'Pro Grow', price: 19900, per_postcard: 89, included_cards: 250, features: ['250 cards included', 'Lower cost per card'] },
+    'pro_scale': { name: 'Pro Scale', price: 39900, per_postcard: 79, included_cards: 500, features: ['500 cards included', 'Lowest Pro rate'] },
+    'agency_starter': { name: 'Agency Starter', price: 49900, per_postcard: 89, included_cards: 500, features: ['Multiple accounts', 'Priority Support'] },
+    'agency_grow': { name: 'Agency Grow', price: 99500, per_postcard: 79, included_cards: 1000, features: ['1,000 cards included'] },
+    'agency_scale': { name: 'Agency Scale', price: 199500, per_postcard: 74, included_cards: 2500, features: ['2,500 cards included', 'Lowest Agency rate'] }
+  };
+
+  const currentPlan = PLAN_DETAILS[tier] || PLAN_DETAILS['pay_as_you_go'];
+  const [selectedTier, setSelectedTier] = useState<string>('pro_starter');
+
   return (
     <div className="space-y-8 max-w-4xl mx-auto pb-12">
       <div className="flex justify-between items-end">
@@ -136,9 +150,9 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
               <DollarSign size={18} />
               Available Balance
             </h3>
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm ${tier === 'pro' ? 'bg-white text-amber-600' : 'bg-white/20 text-white backdrop-blur-sm'
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm ${tier.startsWith('pro') || tier.startsWith('agency') ? 'bg-white text-amber-600' : 'bg-white/20 text-white backdrop-blur-sm'
               }`}>
-              {tier || 'Free'} Plan
+              {currentPlan.name}
             </span>
           </div>
           <div className="text-4xl font-serif font-bold mb-6">
@@ -148,8 +162,14 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
           <div className="space-y-3 mb-8">
             <div className="flex justify-between text-sm opacity-90 border-b border-white/20 pb-2">
               <span>Cost per Postcard</span>
-              <span className="font-bold">${tier === 'pro' ? '0.79' : '1.49'}</span>
+              <span className="font-bold">${(currentPlan.per_postcard / 100).toFixed(2)}</span>
             </div>
+            {currentPlan.included_cards > 0 && (
+              <div className="flex justify-between text-sm opacity-90 border-b border-white/20 pb-2">
+                <span>Included Monthly</span>
+                <span className="font-bold">{currentPlan.included_cards} cards</span>
+              </div>
+            )}
             <div className="flex justify-between items-center text-sm opacity-90 border-b border-white/20 pb-2">
               <span>Auto-topup trigger</span>
               <span className="font-bold">$10.00 balance</span>
@@ -170,48 +190,72 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
           </div>
 
           <button
-            onClick={() => handleStripeCheckout('topup')}
+            onClick={() => handlePolarCheckout('topup')}
             disabled={!!processing}
             className="w-full bg-white text-rose-600 font-bold py-3 rounded-xl hover:bg-rose-50 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
           >
             {processing === 'topup' ? <Loader2 className="animate-spin" size={20} /> : <Zap size={18} />}
-            Add $50.00 Credits
+            Add $50.00 Credits (Polar)
           </button>
         </div>
 
-        {/* Upgrade Card / Info */}
+        {/* Plan Management Card */}
         <div className="bg-white rounded-2xl border border-stone-200 p-8 shadow-sm flex flex-col justify-between">
           <div>
             <h3 className="font-bold text-stone-800 flex items-center gap-2 mb-4">
               <Shield size={20} className="text-rose-500" />
-              Upgrade to Pro
+              Subscription Plan
             </h3>
+
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-stone-500 uppercase tracking-widest mb-2">Select Tier</label>
+              <select
+                value={selectedTier}
+                onChange={(e) => setSelectedTier(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm font-bold text-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+              >
+                <optgroup label="Pay As You Go">
+                  <option value="pay_as_you_go">Pay As You Go (Free)</option>
+                </optgroup>
+                <optgroup label="Pro Plans">
+                  <option value="pro_starter">Pro Starter ($99/mo)</option>
+                  <option value="pro_grow">Pro Grow ($199/mo)</option>
+                  <option value="pro_scale">Pro Scale ($399/mo)</option>
+                </optgroup>
+                <optgroup label="Agency Plans">
+                  <option value="agency_starter">Agency Starter ($499/mo)</option>
+                  <option value="agency_grow">Agency Grow ($995/mo)</option>
+                  <option value="agency_scale">Agency Scale ($1,995/mo)</option>
+                </optgroup>
+              </select>
+            </div>
+
             <ul className="space-y-3 mb-6">
-              {[
-                'Lower cost ($0.79 vs $1.49)',
-                'First class mail (3 to 5 business days)',
-                'Remove Thank Donors branding'
-              ].map((feature, i) => (
+              {PLAN_DETAILS[selectedTier]?.features.map((feature, i) => (
                 <li key={i} className="flex items-center gap-2 text-sm text-stone-600">
                   <div className="w-1.5 h-1.5 rounded-full bg-rose-400" />
                   {feature}
                 </li>
               ))}
+              <li className="flex items-center gap-2 text-sm text-stone-600">
+                <div className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                Rate: ${(PLAN_DETAILS[selectedTier]?.per_postcard / 100).toFixed(2)} / card
+              </li>
             </ul>
           </div>
 
-          {tier === 'pro' ? (
-            <button className="w-full bg-stone-100 text-stone-500 font-bold py-3 rounded-xl cursor-default">
-              Current Plan
+          {tier === selectedTier ? (
+            <button className="w-full bg-stone-100 text-stone-500 font-bold py-3 rounded-xl cursor-default flex items-center justify-center gap-2">
+              <Check size={18} /> Current Plan
             </button>
           ) : (
             <button
-              onClick={() => handleStripeCheckout('subscription')}
+              onClick={() => handlePolarCheckout('subscription', selectedTier)}
               disabled={!!processing}
               className="w-full bg-stone-800 text-white font-bold py-3 rounded-xl hover:bg-stone-900 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
             >
               {processing === 'subscription' ? <Loader2 className="animate-spin" size={20} /> : null}
-              Upgrade for $99.00/mo
+              {tier === 'pay_as_you_go' ? 'Upgrade' : 'Switch'} to {PLAN_DETAILS[selectedTier]?.name}
             </button>
           )}
         </div>

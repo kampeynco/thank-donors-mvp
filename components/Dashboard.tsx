@@ -110,6 +110,10 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh, onNavigate,
     };
   }, []);
 
+  const handleViewProof = (url: string) => {
+    return url;
+  };
+
   const stats = [
     {
       label: 'Total Raised',

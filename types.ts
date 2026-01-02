@@ -1,5 +1,12 @@
 
-export type user_tier = 'free' | 'pro';
+export type user_tier =
+  | 'pay_as_you_go'
+  | 'pro_starter'
+  | 'pro_grow'
+  | 'pro_scale'
+  | 'agency_starter'
+  | 'agency_grow'
+  | 'agency_scale';
 
 export interface Profile {
   id: string;
@@ -45,6 +52,8 @@ export interface ActBlueEntity {
   auto_topup_amount_cents: number;
   branding_enabled?: boolean; // New field for postcards branding (default true)
   stripe_customer_id?: string;
+  polar_customer_id?: string;
+  polar_subscription_id?: string;
   created_at: string;
   updated_at: string;
 }
