@@ -31,15 +31,16 @@ import {
 interface LandingPageProps {
     onLogin: () => void;
     onSignup: () => void;
+    onPricingClick: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricingClick }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100 selection:text-[#00204E]">
 
-            {/* Navigation */}
+            {/* Navigation (Minimal) */}
             <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-20">
@@ -50,19 +51,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                             </div>
                             <div>
                                 <span className="text-xl font-serif font-bold text-[#00204E] tracking-tight block leading-none">Thank Donors</span>
-                                <span className="text-[10px] uppercase tracking-widest text-slate-500 font-medium">Automated Gratitude</span>
                             </div>
                         </div>
 
-                        {/* Desktop Links */}
-                        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-                            <a href="#how-it-works" className="hover:text-[#1F5EA9] transition-colors">How it Works</a>
-                            <a href="#features" className="hover:text-[#1F5EA9] transition-colors">Features</a>
-                            <a href="#pricing" className="hover:text-[#1F5EA9] transition-colors">Pricing</a>
-                            <a href="#faq" className="hover:text-[#1F5EA9] transition-colors">FAQ</a>
-                        </div>
-
-                        {/* Actions */}
+                        {/* Desktop Actions */}
                         <div className="hidden md:flex items-center gap-4">
                             <button
                                 onClick={onLogin}
@@ -90,11 +82,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                 {/* Mobile Menu */}
                 {isMobileMenuOpen && (
                     <div className="md:hidden bg-white border-t border-slate-100 py-4 px-4 space-y-4">
-                        <a href="#how-it-works" className="block text-slate-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>How it Works</a>
-                        <a href="#features" className="block text-slate-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>Features</a>
-                        <a href="#pricing" className="block text-slate-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>Pricing</a>
-                        <a href="#faq" className="block text-slate-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>FAQ</a>
-                        <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
+                        <div className="flex flex-col gap-3">
                             <button onClick={onLogin} className="w-full py-2 text-slate-600 font-bold border border-slate-200 rounded-xl">Log in</button>
                             <button onClick={onSignup} className="w-full py-2 bg-[#1F5EA9] text-white font-bold rounded-xl shadow-lg shadow-blue-900/20">Connect ActBlue</button>
                         </div>
@@ -102,501 +90,265 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                 )}
             </nav>
 
-            {/* Hero Section */}
-            <section className="relative overflow-hidden pt-12 pb-24 md:pt-20 md:pb-32 bg-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
+            {/* 1. Problem / Agitation Section */}
+            <section className="py-20 md:py-32 bg-white relative overflow-hidden">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <h1 className="text-4xl md:text-6xl font-serif font-bold text-[#00204E] tracking-tighter leading-tight mb-16 max-w-4xl mx-auto">
+                        If you're not thanking donors quickly, you're leaving repeat donations on the table.
+                    </h1>
 
-                        {/* Left Content */}
-                        <div className="relative z-10">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 border border-blue-100 text-[#1F5EA9] text-xs font-bold uppercase tracking-wide mb-6">
-                                <span className="w-2 h-2 rounded-full bg-[#1F5EA9] animate-pulse"></span>
-                                Powered by ActBlue
+                    <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                        <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100">
+                            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <Clock size={24} />
                             </div>
-
-                            <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif font-bold text-[#00204E] tracking-tighter leading-[1.1] mb-6">
-                                Thank Your Donors <span className="text-[#1F5EA9]">Automagically.</span>
-                            </h1>
-
-                            <p className="text-lg text-slate-600 mb-8 leading-relaxed max-w-lg">
-                                Every ActBlue donation triggers a campaign-branded postcard—printed and mailed for you. High-touch gratitude, zero extra effort.
+                            <h3 className="text-lg font-bold text-slate-900 mb-3">The "Linear" Donor</h3>
+                            <p className="text-sm text-slate-600 leading-relaxed">
+                                First-time donors who don't hear from you quick add 70% less likely to give a second time.
                             </p>
-
-                            <div className="space-y-3 mb-8">
-                                {[
-                                    "Integrates with ActBlue in seconds",
-                                    "Real pen-plotted handwritten style",
-                                    "Automated tracking & reporting"
-                                ].map((item, i) => (
-                                    <div key={i} className="flex items-center gap-3">
-                                        <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                                            <CheckCircle2 size={12} className="text-green-600" />
-                                        </div>
-                                        <span className="text-[#00204E] tracking-tight">{item}</span>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                                <button
-                                    onClick={onSignup}
-                                    className="inline-flex items-center justify-center gap-2 bg-[#1F5EA9] hover:bg-[#164E87] text-white px-8 py-4 rounded-full text-base font-bold shadow-xl shadow-blue-900/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                >
-                                    <Webhook size={20} />
-                                    Connect ActBlue
-                                </button>
-                                <button className="inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-8 py-4 rounded-full text-base font-bold shadow-sm transition-all hover:border-slate-300">
-                                    <Mail size={20} />
-                                    See a Sample Card
-                                </button>
-                            </div>
-
-                            <div className="flex items-center gap-2 text-sm text-slate-500">
-                                <ShieldCheck size={16} className="text-[#1F5EA9]" />
-                                <span>Trusted by 50+ progressive campaigns</span>
-                            </div>
                         </div>
-
-                        {/* Right Visual - Dashboard Mockup */}
-                        <div className="relative z-10">
-                            <div className="absolute top-0 right-0 w-[150%] h-[150%] bg-gradient-to-br from-blue-100/50 via-slate-100 to-white rounded-full blur-3xl -z-10 translate-x-1/4 -translate-y-1/4"></div>
-
-                            <div className="bg-white rounded-3xl p-6 shadow-2xl shadow-blue-900/40 border border-slate-100 relative scale-105">
-                                <div className="flex items-center justify-between mb-8">
-                                    <div>
-                                        <h3 className="text-2xl font-serif font-bold text-[#00204E] tracking-tight">Overview</h3>
-                                        <p className="text-slate-500 text-sm">Your gratitude efforts at a glance.</p>
-                                    </div>
-                                    <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full flex items-center gap-1">
-                                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                                        Status: Active
-                                    </span>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4 mb-8">
-                                    <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-lg transition-all cursor-default group">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Postcards Sent</span>
-                                            <Mail className="text-slate-300 group-hover:text-[#1F5EA9] transition-colors" size={20} />
-                                        </div>
-                                        <div className="text-3xl font-bold text-slate-900 mb-1">1,248</div>
-                                        <div className="text-xs font-bold text-green-600 flex items-center gap-1">
-                                            <Activity size={12} />
-                                            +12% this week
-                                        </div>
-                                    </div>
-                                    <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-lg transition-all cursor-default group">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">In Queue</span>
-                                            <Clock className="text-slate-300 group-hover:text-amber-500 transition-colors" size={20} />
-                                        </div>
-                                        <div className="text-3xl font-bold text-slate-900 mb-1">42</div>
-                                        <div className="text-xs font-medium text-slate-500">Processing now...</div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-3">
-                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Recent Activity</div>
-
-                                    {/* Activity Item 1 */}
-                                    <div className="flex items-center gap-4 p-3 rounded-xl bg-white border border-slate-100 hover:border-blue-200 transition-colors">
-                                        <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">JD</div>
-                                        <div className="flex-1">
-                                            <div className="text-sm font-bold text-slate-900">Jane Doe</div>
-                                            <div className="text-xs text-slate-500">Donated $50</div>
-                                        </div>
-                                        <span className="px-2 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-lg border border-green-100">Card Sent</span>
-                                    </div>
-
-                                    {/* Activity Item 2 */}
-                                    <div className="flex items-center gap-4 p-3 rounded-xl bg-white border border-slate-100 hover:border-blue-200 transition-colors relative">
-                                        <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-sm">MS</div>
-                                        <div className="flex-1">
-                                            <div className="text-sm font-bold text-slate-900">Mark Smith</div>
-                                            <div className="text-xs text-slate-500">Donated $25</div>
-                                        </div>
-
-                                        {/* Retention Popover */}
-                                        <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white rounded-xl shadow-xl shadow-slate-200 p-3 border border-slate-100 flex items-center gap-3 animate-bounce-subtle">
-                                            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                                                <TrendingUpIcon size={16} className="text-green-600" />
-                                            </div>
-                                            <div>
-                                                <div className="text-[10px] uppercase font-bold text-slate-400">Retention Boost</div>
-                                                <div className="text-sm font-bold text-slate-900">+24% Increase</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                        <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100">
+                            <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <FileText size={24} />
                             </div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-3">The CSV List</h3>
+                            <p className="text-sm text-slate-600 leading-relaxed">
+                                Traditional mail houses want minimums and slow turnarounds. Speed is gratitude's currency.
+                            </p>
+                        </div>
+                        <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100">
+                            <div className="w-12 h-12 bg-slate-200 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <Mail size={24} />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-3">Generic Emails</h3>
+                            <p className="text-sm text-slate-600 leading-relaxed">
+                                "Thank you for your transaction #12345" doesn't build a movement. Physical touch does.
+                            </p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Brand Assurance Section */}
+            {/* 2. How It Works Section */}
+            <section className="py-24 bg-slate-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <h2 className="text-3xl md:text-5xl font-serif font-bold text-[#00204E] tracking-tight mb-4">
+                        The only thing you do once: <span className="text-[#1F5EA9]">connect ActBlue.</span>
+                    </h2>
+                    <p className="text-slate-500 mb-16">We handle the logistics. You handle the winning.</p>
+
+                    <div className="relative max-w-4xl mx-auto">
+                        {/* Connector Line */}
+                        <div className="hidden md:block absolute top-[2.5rem] left-0 w-full h-0.5 bg-slate-200 -z-10"></div>
+
+                        <div className="grid md:grid-cols-3 gap-12">
+                            {/* Step 1 */}
+                            <div>
+                                <div className="w-20 h-20 bg-white rounded-full border-4 border-slate-50 flex items-center justify-center mx-auto mb-6 shadow-sm z-10 relative">
+                                    <span className="text-2xl font-bold text-[#1F5EA9]">1</span>
+                                </div>
+                                <h3 className="text-lg font-bold text-slate-900 mb-2">Connect</h3>
+                                <p className="text-sm text-slate-500">Securely link your ActBlue account via webhook in 30 seconds.</p>
+                            </div>
+
+                            {/* Step 2 */}
+                            <div>
+                                <div className="w-20 h-20 bg-white rounded-full border-4 border-slate-50 flex items-center justify-center mx-auto mb-6 shadow-sm z-10 relative">
+                                    <Zap size={28} className="text-purple-500" />
+                                </div>
+                                <h3 className="text-lg font-bold text-slate-900 mb-2">Auto-Trigger</h3>
+                                <p className="text-sm text-slate-500">Donation comes in? We instantly generate a personalized PDF.</p>
+                            </div>
+
+                            {/* Step 3 */}
+                            <div>
+                                <div className="w-20 h-20 bg-white rounded-full border-4 border-slate-50 flex items-center justify-center mx-auto mb-6 shadow-sm z-10 relative">
+                                    <Mail size={28} className="text-green-500" />
+                                </div>
+                                <h3 className="text-lg font-bold text-slate-900 mb-2">Mail</h3>
+                                <p className="text-sm text-slate-500">We print and mail via USPS First Class within 48 hours.</p>
+                            </div>
+                        </div>
+
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-16">
+                            "Literally works while you sleep."
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            {/* 3. Qualifiers Section */}
+            <section className="py-24 bg-white">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid md:grid-cols-2 gap-12">
+                        {/* Perfect For */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-6">
+                                <CheckCircle2 className="text-green-600" size={24} />
+                                <h3 className="text-xl font-bold text-slate-900">Perfect for campaigns that...</h3>
+                            </div>
+                            <ul className="space-y-4">
+                                <li className="flex items-start gap-3 text-sm text-slate-600">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 flex-shrink-0"></div>
+                                    Use ActBlue as their primary donation processor.
+                                </li>
+                                <li className="flex items-start gap-3 text-sm text-slate-600">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 flex-shrink-0"></div>
+                                    Raise between $5k - $500k per cycle and lack a huge fulfillment staff.
+                                </li>
+                                <li className="flex items-start gap-3 text-sm text-slate-600">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 flex-shrink-0"></div>
+                                    Want a real, non-Simulacrum way of touching supporters.
+                                </li>
+                                <li className="flex items-start gap-3 text-sm text-slate-600">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 flex-shrink-0"></div>
+                                    Values donor retention consistency across digital and physical mail.
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Not Fit For */}
+                        <div className="bg-red-50/50 rounded-2xl p-8 border border-red-50">
+                            <div className="flex items-center gap-2 mb-6">
+                                <XCircle className="text-red-500" size={24} />
+                                <h3 className="text-xl font-bold text-slate-900">Not a fit if...</h3>
+                            </div>
+                            <ul className="space-y-4">
+                                <li className="flex items-start gap-3 text-sm text-slate-600">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-red-400 mt-2 flex-shrink-0"></div>
+                                    You require 100% "wet handwritten ink" on paper (solus).
+                                </li>
+                                <li className="flex items-start gap-3 text-sm text-slate-600">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-red-400 mt-2 flex-shrink-0"></div>
+                                    You don't use ActBlue.
+                                </li>
+                                <li className="flex items-start gap-3 text-sm text-slate-600">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-red-400 mt-2 flex-shrink-0"></div>
+                                    You have more than 3 unpaid interns a month (might be cheaper to do it yourself).
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* 4. Brand Assurance Section (Existing - Reused) */}
             <section className="py-24 bg-slate-50 relative overflow-hidden">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="mb-16">
-                        <div className="text-[#1F5EA9] text-sm font-bold uppercase tracking-widest mb-2">Brand Assurance</div>
-                        <h2 className="text-4xl md:text-5xl font-serif font-bold text-[#00204E] tracking-tight mb-6">It looks like you—<br />because it is you.</h2>
-                        <p className="text-lg text-slate-600 max-w-2xl">Authenticity drives engagement. Our platform ensures every piece of gratitude sent to your donors feels like it came directly from your campaign HQ. No generic templates—just your brand, front and center.</p>
+                    <div className="text-center mb-16">
+                        <h2 className="text-4xl md:text-5xl font-serif font-bold text-[#00204E] tracking-tight mb-4">
+                            Your custom art on the front.<br />Your message on the back.
+                        </h2>
+                        <p className="text-slate-500">Complete control over your brand, without the fulfillment headache.</p>
                     </div>
 
                     <div className="grid lg:grid-cols-12 gap-12 items-center">
-                        {/* Left Features */}
-                        <div className="lg:col-span-5 space-y-8">
+                        {/* Right Preview Interaction (Swapped to Left visual order if desired, keeping Right for now as per design flow usually alternating) -> Design shows visual below text. Let's keep side-by-side for desktop. */}
+                        <div className="lg:col-span-7 order-2 lg:order-1">
+                            <div className="bg-white rounded-3xl p-8 border border-slate-200">
+                                <div className="bg-slate-200/50 rounded-2xl p-6 flex flex-col items-center justify-center min-h-[300px]">
+                                    <div className="bg-white w-full max-w-md aspect-[6/4] shadow-xl rounded-sm overflow-hidden relative group">
+                                        {/* Front Design */}
+                                        <div className="w-full h-full bg-[#1e3a8a] text-white p-8 flex flex-col items-center justify-center relative overflow-hidden">
+                                            <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                                            <h3 className="relative z-10 text-3xl font-serif font-bold leading-tight mb-2 text-center drop-shadow-md">
+                                                Thank You<br />For Standing<br />With Us.
+                                            </h3>
+                                            <div className="absolute bottom-0 left-0 right-0 px-4 py-2 z-20 bg-gradient-to-t from-[#1e3a8a]/80 to-transparent">
+                                                <p className="text-[7px] text-white uppercase leading-[1.2] tracking-tight text-center font-medium opacity-90">
+                                                    Paid for by Jane for SD.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Left Features (moved to Right col) */}
+                        <div className="lg:col-span-5 space-y-6 order-1 lg:order-2">
                             {[
                                 {
                                     icon: <ImageIcon size={24} />,
                                     title: "Upload Custom Art",
-                                    desc: "High-res support for crisp printing.",
+                                    desc: "High-res support for crisp printing. Use your campaign colors and logo.",
                                     bg: "bg-blue-100",
                                     color: "text-blue-600"
                                 },
                                 {
                                     icon: <Zap size={24} />,
                                     title: "Smart Variable Data",
-                                    desc: "Personalize every card with donor names.",
+                                    desc: "Personalize every card with donor names: \"Dear Sarah\" beats \"Dear Friend\".",
                                     bg: "bg-purple-100",
                                     color: "text-purple-600"
                                 },
                                 {
                                     icon: <Sparkles size={24} />,
                                     title: "AI Writing Assistant",
-                                    desc: "Draft perfect messages in seconds.",
+                                    desc: "Stuck on what to say? Our vetted AI writes high-conversion copy for you.",
                                     bg: "bg-orange-100",
                                     color: "text-orange-600"
                                 },
                                 {
                                     icon: <Eye size={24} />,
                                     title: "Live Preview",
-                                    desc: "See exactly what donors will hold in their hands.",
-                                    bg: "bg-blue-100",
-                                    color: "text-[#1F5EA9]"
+                                    desc: "See exactly what donors will hold in their hands before you spend a dime.",
+                                    bg: "bg-green-100",
+                                    color: "text-green-600"
                                 }
                             ].map((feature, i) => (
-                                <div key={i} className="flex gap-4">
-                                    <div className={`w-12 h-12 rounded-2xl ${feature.bg} ${feature.color} flex items-center justify-center flex-shrink-0`}>
+                                <div key={i} className="flex gap-4 p-4 rounded-xl hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-slate-100">
+                                    <div className={`w-10 h-10 rounded-xl ${feature.bg} ${feature.color} flex items-center justify-center flex-shrink-0`}>
                                         {feature.icon}
                                     </div>
                                     <div>
-                                        <h4 className="text-lg font-bold text-slate-900 mb-1">{feature.title}</h4>
-                                        <p className="text-slate-500 leading-relaxed">{feature.desc}</p>
+                                        <h4 className="text-sm font-bold text-slate-900 mb-0.5">{feature.title}</h4>
+                                        <p className="text-xs text-slate-500 leading-relaxed">{feature.desc}</p>
                                     </div>
                                 </div>
                             ))}
-
-                            <div className="pt-4">
-                                <button onClick={onSignup} className="bg-[#00204E] hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2">
-                                    Open Brand Settings <ArrowRight size={18} />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Right Preview Interaction */}
-                        <div className="lg:col-span-7">
-                            <div className="bg-white rounded-3xl p-8 border border-slate-200">
-                                <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-200">
-                                    <div className="flex items-center gap-4">
-                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Preview Mode</span>
-                                        <div className="flex gap-1.5">
-                                            <div className="w-3 h-3 rounded-full bg-[#1F5EA9]"></div>
-                                            <div className="w-3 h-3 rounded-full bg-amber-400"></div>
-                                            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                                        </div>
-                                    </div>
-                                    <div className="text-xs font-medium text-slate-400 flex items-center gap-2">
-                                        <RotateCcwIcon size={12} /> Autosaved
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-col md:flex-row gap-6">
-                                    {/* Controls */}
-
-
-                                    {/* Canvas Area */}
-                                    <div className="flex-1 bg-slate-200/50 rounded-2xl p-6 flex flex-col items-center justify-center min-h-[300px]">
-                                        <div className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
-                                            <Eye size={12} />
-                                            Live Front Preview
-                                        </div>
-                                        {/* Postcard Mockup - Front Only (Synced with Builder) */}
-                                        <div className="bg-white w-full max-w-md aspect-[6/4] shadow-xl rounded-sm overflow-hidden relative group">
-                                            {/* Front Design (Democratic Blue Theme) */}
-                                            <div className="w-full h-full bg-[#1e3a8a] text-white p-8 flex flex-col items-center justify-center relative overflow-hidden">
-                                                <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-
-
-
-                                                {/* Main Heading */}
-                                                <h3 className="relative z-10 text-3xl font-serif font-bold leading-tight mb-2 text-center drop-shadow-md">
-                                                    Thank You<br />For Standing<br />With Us.
-                                                </h3>
-
-                                                {/* Committee Disclaimer (Builder Implementation) */}
-                                                <div className="absolute bottom-0 left-0 right-0 px-4 py-2 z-20 bg-gradient-to-t from-[#1e3a8a]/80 to-transparent">
-                                                    <p className="text-[7px] text-white uppercase leading-[1.2] tracking-tight text-center font-medium opacity-90">
-                                                        Paid for by Jane for SD.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Stats Row */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16 pt-16 border-t border-slate-200">
-                        {[
-                            { label: "Seamless Integration", value: "ActBlue" },
-                            { label: "Turnaround Time", value: "48hr" },
-                            { label: "Recycled Paper", value: "100%" },
-                            { label: "First Class Mail", value: "USPS" },
-                        ].map((stat, i) => (
-                            <div key={i} className="text-center p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
-                                <div className="text-3xl font-bold text-slate-900 mb-1">{stat.value}</div>
-                                <div className="text-sm text-slate-500 font-medium">{stat.label}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Features Grid ("Scalable Gratitude") */}
-            <section className="py-24 bg-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center max-w-3xl mx-auto mb-20">
-                        <div className="inline-block px-3 py-1 bg-red-100 text-red-600 rounded-full text-xs font-bold uppercase tracking-widest mb-4">Platform Capabilities</div>
-                        <h2 className="text-4xl md:text-6xl font-serif font-bold text-[#00204E] tracking-tight mb-6">Everything you need to make <span className="text-[#1F5EA9] italic">gratitude scalable.</span></h2>
-                        <p className="text-xl text-slate-600">Stop manually handwriting cards. Turn ActBlue donations into personalized physical postcards automatically, without losing the personal touch.</p>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-8 mb-8">
-                        {/* Feature 1: AI Writing */}
-                        <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-slate-200/40 border border-slate-100">
-                            <div className="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mb-6">
-                                <SparklesIcon size={28} />
-                            </div>
-                            <h3 className="text-2xl font-bold text-slate-900 mb-4">AI-powered writing</h3>
-                            <p className="text-slate-600 mb-8 leading-relaxed">Never stare at a blank page again. Our model analyzes donor history and contribution amounts to draft heartfelt, unique messages that sound just like you wrote them yourself.</p>
-
-                            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
-                                <div className="flex gap-4">
-                                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">J</div>
-                                    <div className="flex-1">
-                                        <div className="h-2 w-24 bg-slate-200 rounded-full mb-3"></div>
-                                        <p className="font-handwriting text-lg text-slate-800 leading-relaxed mb-4">
-                                            "Dear Sarah, thank you so much for your generous donation of <span className="bg-green-100 text-green-700 px-1 rounded">$50</span>! Your support helps us keep fighting for clean water in our district. We couldn't do this without you."
-                                        </p>
-                                        <div className="flex gap-2">
-                                            <span className="px-2 py-1 bg-white border border-slate-200 rounded text-[10px] text-slate-500 font-medium">Warm Tone</span>
-                                            <span className="px-2 py-1 bg-white border border-slate-200 rounded text-[10px] text-slate-500 font-medium">Under 200 chars</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Feature 2: Analytics */}
-                        <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-slate-200/40 border border-slate-100">
-                            <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
-                                <Activity size={28} />
-                            </div>
-                            <h3 className="text-2xl font-bold text-slate-900 mb-4">Real-time analytics</h3>
-                            <p className="text-slate-600 mb-8 leading-relaxed">Track every dollar raised from your gratitude campaigns. See delivery statuses and ROI instantly.</p>
-
-                            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 relative overflow-hidden mt-auto">
-                                <div className="mb-6">
-                                    <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Total Raised</div>
-                                    <div className="flex items-end gap-3">
-                                        <div className="text-3xl font-bold text-slate-900">$12,450</div>
-                                        <div className="text-sm font-bold text-green-600 mb-1">+12%</div>
-                                    </div>
-                                </div>
-                                <div className="flex items-end gap-2 h-24">
-                                    <div className="w-1/5 bg-blue-100 rounded-t-lg h-[40%]"></div>
-                                    <div className="w-1/5 bg-blue-100 rounded-t-lg h-[60%]"></div>
-                                    <div className="w-1/5 bg-blue-100 rounded-t-lg h-[50%]"></div>
-                                    <div className="w-1/5 bg-blue-100 rounded-t-lg h-[75%]"></div>
-                                    <div className="w-1/5 bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-lg h-[90%] shadow-lg shadow-blue-500/30"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-8">
-                        {/* Feature 3: Automation */}
-                        <div className="bg-white rounded-3xl p-8 flex flex-col md:flex-row items-center gap-8 shadow-sm border border-slate-100">
-                            <div className="flex-1">
-                                <div className="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center mb-4">
-                                    <Zap size={20} />
-                                </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-2">Instant trigger automation</h3>
-                                <p className="text-sm text-slate-600 leading-relaxed">Connect ActBlue once. We listen for new donations and queue postcards instantly. No CSV exports, no manual uploads. It just works.</p>
-                            </div>
-                            <div className="flex items-center gap-3 opacity-90">
-                                <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white text-[10px] font-bold shadow-lg shadow-blue-500/30">ActBlue</div>
-                                <div className="h-0.5 w-12 bg-slate-200 relative">
-                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-300 rounded-full"></div>
-                                </div>
-                                <div className="w-12 h-12 rounded-full bg-[#1F5EA9] flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
-                                    <Mail size={16} />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Feature 4: Re-engagement */}
-                        <div className="bg-white rounded-3xl p-8 flex flex-col md:flex-row items-center gap-8 shadow-sm border border-slate-100">
-                            <div className="flex-1">
-                                <div className="w-10 h-10 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center mb-4">
-                                    <QrCode size={20} />
-                                </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-2">Smart re-engagement</h3>
-                                <p className="text-sm text-slate-600 leading-relaxed">Turn one-time donors into recurring supporters. Add dynamic QR codes to your postcards that link directly to a pre-filled donation page.</p>
-                            </div>
-                            <div className="relative">
-                                <div className="w-24 h-32 bg-slate-800 rounded-lg p-3 flex flex-col items-center justify-center shadow-xl">
-                                    <div className="w-12 h-12 bg-white rounded flex items-center justify-center mb-2">
-                                        <QrCode size={28} className="text-slate-900" />
-                                    </div>
-                                    <div className="w-10 h-1 bg-slate-600 rounded-full"></div>
-                                </div>
-                                <div className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="text-center mt-20">
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Trusted By Campaigns Using</p>
-                    <div className="flex flex-wrap justify-center gap-12 items-center opacity-40 grayscale">
-                        <div className="flex items-center gap-2 text-xl font-bold text-slate-600"><span className="w-6 h-6 rounded-full bg-slate-400"></span> ActBlue</div>
-                        <div className="flex items-center gap-2 text-xl font-bold text-slate-600"><span className="w-6 h-6 rounded-full bg-slate-400"></span> NGP VAN</div>
-                        <div className="flex items-center gap-2 text-xl font-bold text-slate-600"><span className="w-6 h-6 rounded-full bg-slate-400"></span> ActionNetwork</div>
-                    </div>
-                </div>
-            </section>
-
-            {/* FAQ Section */}
-            <section id="faq" className="py-24 bg-slate-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center max-w-2xl mx-auto mb-16">
-                        <h2 className="text-4xl md:text-5xl font-serif font-bold text-[#00204E] tracking-tight mb-6">Frequently Asked Questions</h2>
-                        <p className="text-lg text-slate-600 mb-8">Everything you need to know about automated gratitude, sending postcards, and managing your donor relationships.</p>
-
-                        <div className="relative max-w-lg mx-auto">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                            <input type="text" placeholder="Search for answers..." className="w-full pl-12 pr-4 py-4 rounded-full border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-[#1F5EA9] transition-all shadow-sm" />
-                        </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                        {[
-                            {
-                                question: "How fast are postcards sent after a donation?",
-                                answer: "Once a donation is processed via ActBlue, our system queues the postcard immediately. Printing and mailing typically happen within 24-48 hours. Depending on the destination, delivery usually takes 3-5 business days via USPS First Class Mail.",
-                                icon: <Clock size={20} />, text: "text-blue-600", bg: "bg-blue-50"
-                            },
-                            {
-                                question: "Can I approve messages before they are sent?",
-                                answer: "Yes! You can enable \"Manual Approval Mode\" in your settings. This holds all postcards in a \"Pending\" state until you review and approve them individually or in bulk. By default, smaller donations are often set to auto-send for efficiency.",
-                                icon: <ShieldCheck size={20} />, text: "text-green-600", bg: "bg-green-50"
-                            },
-                            {
-                                question: "Is the branding customizable?",
-                                answer: "Absolutely. You can upload your own campaign logo, choose your brand colors, and even upload custom background imagery for the front of the postcard. The \"Design\" tab allows for full previewing before you go live.",
-                                icon: <Palette size={20} />, text: "text-purple-600", bg: "bg-purple-50"
-                            },
-                            {
-                                question: "Can I set different messages for different donor levels?",
-                                answer: "Yes. You can create tiered rules. For example, send a standard \"Thank You\" to donors under $50, and a more detailed, premium card to donors giving over $100. You configure these triggers in the automation settings.",
-                                icon: <BarChart3 size={20} />, text: "text-amber-600", bg: "bg-amber-50"
-                            },
-                            {
-                                question: "How does the ActBlue integration work?",
-                                answer: "We use a secure webhook integration. Once you provide your ActBlue webhook credentials in the \"Settings\" tab, we automatically receive donation data in real-time. No manual CSV uploads are required.",
-                                icon: <Webhook size={20} />, text: "text-indigo-600", bg: "bg-indigo-50"
-                            },
-                            {
-                                question: "How secure is my donor data?",
-                                answer: "Security is our priority. We are SOC-2 compliant and use end-to-end encryption for all donor data. We never sell your donor lists and data is only used for the purpose of fulfilling your postcard orders.",
-                                icon: <Lock size={20} />, text: "text-red-600", bg: "bg-red-50"
-                            },
-                            {
-                                question: "What are the fees per postcard?",
-                                answer: "Pricing is all-inclusive (printing, postage, and platform fee). Rates start at $0.79 per card for standard volume. Bulk discounts are available for campaigns sending over 5,000 cards per month.",
-                                icon: <DollarSign size={20} />, text: "text-emerald-600", bg: "bg-emerald-50"
-                            },
-                            {
-                                question: "What happens if a postcard fails to deliver?",
-                                answer: "If an address is invalid, our system flags it before printing to save you money. These appear in your \"Failed\" queue. If USPS returns a card, we update the status in your dashboard so you can update your records.",
-                                icon: <AlertTriangle size={20} />, text: "text-orange-600", bg: "bg-orange-50"
-                            }
-                        ].map((faq, i) => (
-                            <div key={i} className="bg-white border border-slate-100 rounded-2xl p-8 hover:shadow-lg transition-all hover:border-blue-100 group">
-                                <div className="flex gap-4 items-start">
-                                    <div className={`w-10 h-10 ${faq.bg} ${faq.text} rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
-                                        {faq.icon}
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-slate-900 mb-3">{faq.question}</h3>
-                                        <p className="text-slate-500 text-sm leading-relaxed">{faq.answer}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="mt-16 bg-white rounded-3xl border border-slate-100 p-12 text-center shadow-sm">
-                        <h3 className="text-2xl font-serif font-bold text-[#00204E] tracking-tight mb-2">Still have questions?</h3>
-                        <p className="text-slate-500 mb-8">Can't find the answer you're looking for? Our support team is here to help.</p>
-                        <div className="flex justify-center gap-4">
-                            <button className="bg-[#1F5EA9] hover:bg-[#1F5EA9] text-white px-6 py-3 rounded-xl font-bold transition-colors flex items-center gap-2">
-                                <MessageSquare size={18} /> Contact Support
-                            </button>
-                            <button className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-6 py-3 rounded-xl font-bold transition-colors flex items-center gap-2">
-                                <FileText size={18} /> Documentation
-                            </button>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Footer */}
-            <footer className="bg-white border-t border-slate-100 py-12 md:py-20">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-8">
-                    <div className="text-center md:text-left">
-                        <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
-                            <div className="w-8 h-8 bg-[#1F5EA9] rounded-full flex items-center justify-center text-white">
-                                <Heart size={16} fill="currentColor" />
-                            </div>
-                            <div>
-                                <span className="text-lg font-serif font-bold text-slate-900 block leading-none">Thank Donors</span>
-                                <span className="text-[10px] uppercase tracking-widest text-slate-500 font-medium">Automated Gratitude</span>
-                            </div>
-                        </div>
-                        <p className="text-slate-400 text-sm max-w-xs leading-relaxed">
-                            Turning generic ActBlue notifications into personalized, physical postcards that build lasting relationships with your donors.
-                        </p>
+            {/* 5. Final CTA Section */}
+            <section className="py-24 bg-[#1F5EA9] text-white overflow-hidden relative">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+                    <h2 className="text-4xl md:text-5xl font-serif font-bold tracking-tight mb-6">
+                        Stop letting gratitude slip through the cracks.
+                    </h2>
+                    <p className="text-blue-100 text-lg mb-10 max-w-2xl mx-auto">
+                        Join 50+ progressive campaigns boosting retention with automated, high-impact mail.
+                    </p>
+                    <div className="flex flex-col sm:flex-row justify-center gap-4">
+                        <button
+                            onClick={onSignup}
+                            className="bg-white text-[#1F5EA9] hover:bg-blue-50 px-8 py-4 rounded-full text-base font-bold shadow-xl transition-all hover:scale-[1.05]"
+                        >
+                            Start mailing thank you's today
+                        </button>
+                        <a href="#pricing" className="bg-[#164E87] text-white hover:bg-[#0f3863] border border-blue-400 px-8 py-4 rounded-full text-base font-bold shadow-sm transition-all">
+                            See pricing
+                        </a>
                     </div>
+                    <p className="text-xs text-blue-300 mt-6">*No credit card required to setup. Free to connect account.</p>
+                </div>
+            </section>
 
-                    <div className="flex flex-wrap justify-center gap-8 text-sm font-medium text-slate-500">
-                        <button onClick={onLogin} className="hover:text-[#1F5EA9] transition-colors">Login</button>
+            {/* Footer (Minimal) */}
+            <footer className="bg-white border-t border-slate-100 py-12">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-400">
+                    <div className="flex items-center gap-2">
+                        <Heart size={12} className="text-[#1F5EA9]" fill="currentColor" />
+                        <span className="font-bold text-slate-600">Thank Donors</span>
+                        <span>© 2026</span>
+                    </div>
+                    <div className="flex gap-6">
                         <a href="#" className="hover:text-[#1F5EA9] transition-colors">Contact Support</a>
-                        <a href="#" className="hover:text-[#1F5EA9] transition-colors">Privacy Policy</a>
-                        <a href="#" className="hover:text-[#1F5EA9] transition-colors">Terms of Service</a>
-                    </div>
-                </div>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-400">
-                    <div>© 2026 Thank Donors Inc. All rights reserved.</div>
-                    <div className="flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
-                        <Heart size={10} className="text-[#1F5EA9]" fill="currentColor" />
-                        <span>Made for progressive campaigns & organizers</span>
+                        <a href="#" className="hover:text-[#1F5EA9] transition-colors">Privacy</a>
+                        <a href="#" className="hover:text-[#1F5EA9] transition-colors">Terms</a>
                     </div>
                 </div>
             </footer>

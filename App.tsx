@@ -10,6 +10,7 @@ import ProfileView from './components/ProfileView';
 import BillingView from './components/BillingView';
 import Auth from './components/Auth';
 import LandingPage from './components/LandingPage';
+import PricingPage from './components/PricingPage';
 import { supabase } from './services/supabaseClient';
 import { Loader2, Home, Sparkles, AlertTriangle, Lock, User, Webhook, FileText, CreditCard } from 'lucide-react';
 import { useToast } from './components/ToastContext';
@@ -661,6 +662,23 @@ id,
           setAuthInitialMode('signup');
           setView(ViewState.AUTH);
         }}
+        onPricingClick={() => setView(ViewState.PRICING_PAGE)}
+      />
+    );
+  }
+
+  if (view === ViewState.PRICING_PAGE) {
+    return (
+      <PricingPage
+        onLogin={() => {
+          setAuthInitialMode('login');
+          setView(ViewState.AUTH);
+        }}
+        onSignup={() => {
+          setAuthInitialMode('signup');
+          setView(ViewState.AUTH);
+        }}
+        onBack={() => setView(ViewState.LANDING_PAGE)}
       />
     );
   }
