@@ -98,329 +98,306 @@ const Dashboard: React.FC<DashboardProps> = ({ donations, onRefresh, onNavigate 
       if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
         setIsStatusDropdownOpen(false);
       }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+      const Dashboard: React.FC<DashboardProps> = ({ onViewChange, currentAccount }) => {
 
-  const StatCard = ({ title, value, icon: Icon, color, subtext }: any) => (
-    <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm flex items-start justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
-      <div>
-        <p className="text-stone-500 text-sm font-medium mb-1">{title}</p>
-        <h3 className="text-3xl font-bold text-stone-800">{value}</h3>
-        {subtext && <p className="text-xs text-stone-400 mt-2">{subtext}</p>}
-      </div>
-      <div className={`p-3 rounded-xl ${color}`}>
-        <Icon size={24} />
-      </div>
-    </div>
-  );
+        const stats = [
+          {
+            label: 'Total Donors',
+            value: '1,248',
+            change: '+12%',
+            trend: 'up',
+            icon: HandCoins,
+            color: 'text-emerald-600',
+            bg: 'bg-emerald-50'
+          },
+          {
+            label: 'Postcards Sent',
+            value: '856',
+            change: '+24%',
+            trend: 'up',
+            icon: Mail,
+            color: 'text-blue-600',
+            bg: 'bg-blue-50'
+          },
+          {
+            label: 'Response Rate',
+            value: '18.2%',
+            change: '+4.3%',
+            trend: 'up',
+            icon: ArrowUpRight,
+            color: 'text-violet-600',
+            bg: 'bg-violet-50'
+          },
+        ];
 
-  return (
-    <div className="relative min-h-[calc(100vh-theme(spacing.24))]">
-      {/* Main Content Area - shifts when panel is open */}
-      <div
-        className={`transition-all duration-300 ease-in-out ${selectedDonationId ? 'mr-0 lg:mr-[400px]' : ''
-          }`}
-      >
-        <div className="space-y-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-            <div>
-              <h2 className="text-3xl font-serif font-bold text-stone-800">Overview</h2>
-              <p className="text-stone-500 mt-2">Welcome back! Here's how your gratitude efforts are going.</p>
+        return (
+          <div className="space-y-8 animate-in fade-in duration-500">
+
+            {/* Welcome Section */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 font-sans">
+                  Welcome back, {currentAccount ? currentAccount.committee_name : 'Campaign Manager'}
+                </h1>
+                <p className="text-slate-500 mt-1">Here's what's happening with your donor engagement today.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-medium text-slate-500 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                  System Operational
+                </span>
+                <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                  <RefreshCw size={18} />
+                </button>
+              </div>
             </div>
-            <div className="relative" ref={statusDropdownRef}>
-              <button
-                onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors cursor-pointer gap-1"
-              >
-                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                Status
-                <ChevronDown size={12} className={`transition-transform ${isStatusDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
 
-              {isStatusDropdownOpen && (
-                <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-stone-100 z-50 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
-                  <div className="p-4">
-                    <h4 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">Status Legend</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-                        <div>
-                          <p className="text-sm font-bold text-stone-800">Live</p>
-                          <p className="text-xs text-stone-500">All systems operational</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-                        <div>
-                          <p className="text-sm font-bold text-stone-800">System Issues</p>
-                          <p className="text-xs text-stone-500">Partial service disruption</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-3 h-3 bg-rose-500 rounded-full"></div>
-                        <div>
-                          <p className="text-sm font-bold text-stone-800">System Down</p>
-                          <p className="text-xs text-stone-500">Service unavailable</p>
-                        </div>
-                      </div>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {stats.map((stat, index) => (
+                <div key={index} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`p-3 rounded-xl ${stat.bg} ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
+                      <stat.icon size={24} />
                     </div>
+                    <span className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${stat.trend === 'up' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                      {stat.change}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-sm font-medium mb-1">{stat.label}</p>
+                    <h3 className="text-3xl font-bold text-slate-900 font-sans tracking-tight">{stat.value}</h3>
                   </div>
                 </div>
-              )}
+              ))}
             </div>
-          </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard
-              title="Postcards Sent"
-              value={sentCount}
-              icon={CheckCircle2}
-              color="bg-emerald-100 text-emerald-600"
-              subtext="Total delivered"
-            />
-            <StatCard
-              title="Pending"
-              value={pendingCount}
-              icon={Clock}
-              color="bg-amber-100 text-amber-600"
-              subtext="In queue"
-            />
-            <StatCard
-              title="Failed"
-              value={failedCount}
-              icon={AlertCircle}
-              color="bg-rose-100 text-rose-600"
-              subtext="Requires attention"
-            />
-            <StatCard
-              title="Total Raised"
-              value={`$${totalRaised.toLocaleString()}`}
-              icon={TrendingUp}
-              color="bg-blue-100 text-blue-600"
-              subtext="From tracked donations"
-            />
-          </div>
-
-
-          {/* Search and Filter Controls */}
-          <div className="bg-white rounded-xl shadow-sm border border-stone-100 p-4 flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-grow">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="text-stone-400 w-5 h-5" />
+            {/* Recent Activity Section */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-slate-800">Recent Activity</h2>
+                <button className="text-sm font-bold text-[#00204E] hover:text-blue-700 flex items-center gap-1 transition-colors">
+                  View All <ArrowRight size={14} />
+                </button>
               </div>
-              <input
-                type="text"
-                placeholder="Search donors..."
-                className="block w-full pl-10 pr-3 py-2 border border-stone-200 rounded-lg leading-5 bg-white placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm text-stone-900"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+              <div className="p-0">
+                {/* Empty State placeholder for now */}
+                <div className="p-12 text-center">
+                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Mail className="text-slate-300" size={32} />
+                  </div>
+                  className="block w-full pl-10 pr-3 py-2 border border-stone-200 rounded-lg leading-5 bg-white placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm text-stone-900"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
               />
-            </div>
-            <div className="flex-shrink-0">
-              <select
-                className="block w-full pl-3 pr-10 py-2 text-base border-stone-200 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-lg bg-white text-stone-900"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="all">All Statuses</option>
-                <option value="sent">Sent</option>
-                <option value="pending">Pending</option>
-                <option value="failed">Failed</option>
-              </select>
-            </div>
-          </div>
+                </div>
+                <div className="flex-shrink-0">
+                  <select
+                    className="block w-full pl-3 pr-10 py-2 text-base border-stone-200 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-lg bg-white text-stone-900"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="sent">Sent</option>
+                    <option value="pending">Pending</option>
+                    <option value="failed">Failed</option>
+                  </select>
+                </div>
+              </div>
 
-          {/* Activity Feed */}
-          <div className="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-stone-100 flex items-center justify-between">
-              <h3 className="font-bold text-lg text-stone-800">Recent Activity</h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-stone-50">
-                  <tr>
-                    <th className="text-left py-3 px-6 text-xs font-semibold text-stone-500 uppercase">Date</th>
-                    <th className="text-left py-3 px-6 text-xs font-semibold text-stone-500 uppercase">Donor</th>
-                    <th className="text-left py-3 px-6 text-xs font-semibold text-stone-500 uppercase">Amount</th>
-                    <th className="text-left py-3 px-6 text-xs font-semibold text-stone-500 uppercase">Status</th>
-                    <th className="text-right py-3 px-6 text-xs font-semibold text-stone-500 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-100">
-                  {filteredDonations.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-12 text-center">
-                        <div className="flex flex-col items-center justify-center">
-                          <Activity className="w-12 h-12 text-stone-100 mb-4" />
-                          <p className="text-stone-400 text-sm">
-                            {searchTerm || statusFilter !== 'all'
-                              ? "No donations found matching your filters."
-                              : "Waiting for your first donation..."}
-                          </p>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredDonations.map((donation) => (
-                      <tr
-                        key={donation.id}
-                        className={`transition-colors group ${donation.status === 'failed'
-                          ? 'cursor-default'
-                          : `cursor-pointer hover:bg-stone-50 ${selectedDonationId === donation.id ? 'bg-indigo-50/50' : ''}`
-                          }`}
-                        onClick={() => {
-                          if (donation.status === 'failed') return;
-                          setSelectedDonationId(
-                            selectedDonationId === donation.id ? null : donation.id
-                          );
-                        }}
-                      >
-                        <td className="py-4 px-6 text-sm text-stone-600">
-                          {new Date(donation.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="py-4 px-6 text-sm font-medium text-stone-800">
-                          {donation.donor_firstname} {donation.donor_lastname}
-                        </td>
-                        <td className="py-4 px-6 text-sm text-stone-600">${donation.amount.toFixed(2)}</td>
-                        <td className="py-4 px-6">
-                          {['delivered'].includes(donation.status) && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                              Delivered
-                            </span>
-                          )}
-                          {['processed', 'mailed', 'in_transit', 'in_local_area', 'processed_for_delivery'].includes(donation.status) && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {donation.status.replace(/_/g, ' ')}
-                            </span>
-                          )}
-                          {['pending', 'processing'].includes(donation.status) && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                              {donation.status.charAt(0).toUpperCase() + donation.status.slice(1)}
-                            </span>
-                          )}
-                          {['failed', 'returned_to_sender'].includes(donation.status) && (
-                            <StatusTooltip content={donation.error_message} position="left">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800 cursor-help">
-                                {donation.status === 'failed' ? 'Failed' : 'Returned'}
-                              </span>
-                            </StatusTooltip>
-                          )}
-                        </td>
-                        <td className="py-4 px-6 text-right">
-                          <div className="flex items-center justify-end gap-3 transition-all">
-                            {['failed', 'returned_to_sender'].includes(donation.status) && (
-                              <div className="flex items-center gap-3">
-                                {isBalanceError(donation) ? (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onNavigate?.(ViewState.SETTINGS, 'billing');
-                                    }}
-                                    className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline uppercase tracking-tight whitespace-nowrap"
+              {/* Activity Feed */}
+              <div className="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden flex flex-col">
+                <div className="p-6 border-b border-stone-100 flex items-center justify-between">
+                  <h3 className="font-bold text-lg text-stone-800">Recent Activity</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-stone-50">
+                      <tr>
+                        <th className="text-left py-3 px-6 text-xs font-semibold text-stone-500 uppercase">Date</th>
+                        <th className="text-left py-3 px-6 text-xs font-semibold text-stone-500 uppercase">Donor</th>
+                        <th className="text-left py-3 px-6 text-xs font-semibold text-stone-500 uppercase">Amount</th>
+                        <th className="text-left py-3 px-6 text-xs font-semibold text-stone-500 uppercase">Status</th>
+                        <th className="text-right py-3 px-6 text-xs font-semibold text-stone-500 uppercase">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-100">
+                      {filteredDonations.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-12 text-center">
+                            <div className="flex flex-col items-center justify-center">
+                              <Activity className="w-12 h-12 text-stone-100 mb-4" />
+                              <p className="text-stone-400 text-sm">
+                                {searchTerm || statusFilter !== 'all'
+                                  ? "No donations found matching your filters."
+                                  : "Waiting for your first donation..."}
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredDonations.map((donation) => (
+                          <tr
+                            key={donation.id}
+                            className={`transition-colors group ${donation.status === 'failed'
+                              ? 'cursor-default'
+                              : `cursor-pointer hover:bg-stone-50 ${selectedDonationId === donation.id ? 'bg-indigo-50/50' : ''}`
+                              }`}
+                            onClick={() => {
+                              if (donation.status === 'failed') return;
+                              setSelectedDonationId(
+                                selectedDonationId === donation.id ? null : donation.id
+                              );
+                            }}
+                          >
+                            <td className="py-4 px-6 text-sm text-stone-600">
+                              {new Date(donation.created_at).toLocaleDateString()}
+                            </td>
+                            <td className="py-4 px-6 text-sm font-medium text-stone-800">
+                              {donation.donor_firstname} {donation.donor_lastname}
+                            </td>
+                            <td className="py-4 px-6 text-sm text-stone-600">${donation.amount.toFixed(2)}</td>
+                            <td className="py-4 px-6">
+                              {['delivered'].includes(donation.status) && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                  Delivered
+                                </span>
+                              )}
+                              {['processed', 'mailed', 'in_transit', 'in_local_area', 'processed_for_delivery'].includes(donation.status) && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  {donation.status.replace(/_/g, ' ')}
+                                </span>
+                              )}
+                              {['pending', 'processing'].includes(donation.status) && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                  {donation.status.charAt(0).toUpperCase() + donation.status.slice(1)}
+                                </span>
+                              )}
+                              {['failed', 'returned_to_sender'].includes(donation.status) && (
+                                <StatusTooltip content={donation.error_message} position="left">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800 cursor-help">
+                                    {donation.status === 'failed' ? 'Failed' : 'Returned'}
+                                  </span>
+                                </StatusTooltip>
+                              )}
+                            </td>
+                            <td className="py-4 px-6 text-right">
+                              <div className="flex items-center justify-end gap-3 transition-all">
+                                {['failed', 'returned_to_sender'].includes(donation.status) && (
+                                  <div className="flex items-center gap-3">
+                                    {isBalanceError(donation) ? (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onNavigate?.(ViewState.SETTINGS, 'billing');
+                                        }}
+                                        className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline uppercase tracking-tight whitespace-nowrap"
+                                      >
+                                        Add Balance
+                                      </button>
+                                    ) : isAddressError(donation) ? (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setAddressModalDonation(donation);
+                                        }}
+                                        className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline uppercase tracking-tight whitespace-nowrap"
+                                      >
+                                        Update Address
+                                      </button>
+                                    ) : isDesignError(donation) ? (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onNavigate?.(ViewState.POSTCARD_BUILDER);
+                                        }}
+                                        className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline uppercase tracking-tight whitespace-nowrap"
+                                      >
+                                        Design Postcard
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={(e) => handleRetryPostcard(e, donation.id)}
+                                        disabled={retryingId === donation.id}
+                                        className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline uppercase tracking-tight whitespace-nowrap flex items-center gap-1 disabled:opacity-50"
+                                      >
+                                        {retryingId === donation.id && <Loader2 size={10} className="animate-spin" />}
+                                        Retry
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                                {donation.lob_url && (
+                                  <a
+                                    href={donation.lob_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => handleViewProof(e, donation, toast)}
+                                    className="p-1.5 hover:bg-stone-100 rounded-lg text-rose-600 transition-colors"
+                                    title="View Proof"
                                   >
-                                    Add Balance
-                                  </button>
-                                ) : isAddressError(donation) ? (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setAddressModalDonation(donation);
-                                    }}
-                                    className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline uppercase tracking-tight whitespace-nowrap"
-                                  >
-                                    Update Address
-                                  </button>
-                                ) : isDesignError(donation) ? (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onNavigate?.(ViewState.POSTCARD_BUILDER);
-                                    }}
-                                    className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline uppercase tracking-tight whitespace-nowrap"
-                                  >
-                                    Design Postcard
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={(e) => handleRetryPostcard(e, donation.id)}
-                                    disabled={retryingId === donation.id}
-                                    className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline uppercase tracking-tight whitespace-nowrap flex items-center gap-1 disabled:opacity-50"
-                                  >
-                                    {retryingId === donation.id && <Loader2 size={10} className="animate-spin" />}
-                                    Retry
-                                  </button>
+                                    <ExternalLink size={16} />
+                                  </a>
                                 )}
                               </div>
-                            )}
-                            {donation.lob_url && (
-                              <a
-                                href={donation.lob_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => handleViewProof(e, donation, toast)}
-                                className="p-1.5 hover:bg-stone-100 rounded-lg text-rose-600 transition-colors"
-                                title="View Proof"
-                              >
-                                <ExternalLink size={16} />
-                              </a>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Sliding Panel */}
-      <div
-        className={`fixed top-0 right-0 h-full w-[400px] bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${selectedDonationId ? 'translate-x-0' : 'translate-x-full'
-          }`}
-      >
-        {selectedDonation ? (
-          <div className="h-full pt-4">
-            <PostcardTrackingCard
-              donation={selectedDonation}
-              onClose={() => setSelectedDonationId(null)}
-              onRetry={() => handleRetryPostcard(null, selectedDonation.id)}
-              onUpdateAddress={() => setAddressModalDonation(selectedDonation)}
-              onNavigate={onNavigate}
-              isRetrying={retryingId === selectedDonation.id}
-            />
-          </div>
-        ) : (
-          <div className="h-full flex items-center justify-center p-8 text-center text-stone-400">
-            <p>No donation selected</p>
-          </div>
-        )}
-      </div>
-
-      {/* Backdrop for mobile */}
-      {selectedDonationId && (
+      {/* Sliding Panel */ }
         <div
-          className="lg:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-in fade-in duration-200"
-          onClick={() => setSelectedDonationId(null)}
-        />
-      )}
+          className={`fixed top-0 right-0 h-full w-[400px] bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${selectedDonationId ? 'translate-x-0' : 'translate-x-full'
+            }`}
+        >
+          {selectedDonation ? (
+            <div className="h-full pt-4">
+              <PostcardTrackingCard
+                donation={selectedDonation}
+                onClose={() => setSelectedDonationId(null)}
+                onRetry={() => handleRetryPostcard(null, selectedDonation.id)}
+                onUpdateAddress={() => setAddressModalDonation(selectedDonation)}
+                onNavigate={onNavigate}
+                isRetrying={retryingId === selectedDonation.id}
+              />
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center p-8 text-center text-stone-400">
+              <p>No donation selected</p>
+            </div>
+          )}
+        </div>
 
-      {addressModalDonation && (
-        <AddressModal
-          donation={addressModalDonation}
-          onClose={() => setAddressModalDonation(null)}
-          onSaveSuccess={(addressData) => {
-            onRefresh?.();
-            handleRetryPostcard(null, addressModalDonation.id, addressData);
-          }}
-        />
-      )}
-    </div>
+        {/* Backdrop for mobile */ }
+        {
+          selectedDonationId && (
+            <div
+              className="lg:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-in fade-in duration-200"
+              onClick={() => setSelectedDonationId(null)}
+            />
+          )
+        }
+
+        {
+          addressModalDonation && (
+            <AddressModal
+              donation={addressModalDonation}
+              onClose={() => setAddressModalDonation(null)}
+              onSaveSuccess={(addressData) => {
+                onRefresh?.();
+                handleRetryPostcard(null, addressModalDonation.id, addressData);
+              }}
+            />
+          )
+        }
+    </div >
   );
 };
 
