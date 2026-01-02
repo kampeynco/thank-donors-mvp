@@ -33,9 +33,10 @@ import {
 interface LandingPageProps {
     onLogin: () => void;
     onSignup: () => void;
+    onPricingClick: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup, onPricingClick }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     return (
@@ -67,6 +68,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                         {/* Actions */}
                         <div className="hidden md:flex items-center gap-4">
                             <button
+                                onClick={onPricingClick}
+                                className="text-slate-600 hover:text-[#1F5EA9] font-medium text-sm transition-colors"
+                            >
+                                Pricing
+                            </button>
+                            <button
                                 onClick={onLogin}
                                 className="text-slate-600 hover:text-[#1F5EA9] font-medium text-sm transition-colors"
                             >
@@ -97,6 +104,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                         <a href="#pricing" className="block text-slate-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>Pricing</a>
                         <a href="#faq" className="block text-slate-600 font-medium" onClick={() => setIsMobileMenuOpen(false)}>FAQ</a>
                         <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
+                            <button
+                                onClick={() => { setIsMobileMenuOpen(false); onPricingClick(); }}
+                                className="w-full py-2 text-slate-600 font-bold border border-slate-200 rounded-xl"
+                            >
+                                Pricing
+                            </button>
                             <button onClick={onLogin} className="w-full py-2 text-slate-600 font-bold border border-slate-200 rounded-xl">Log in</button>
                             <button onClick={onSignup} className="w-full py-2 bg-[#1F5EA9] text-white font-bold rounded-xl shadow-lg shadow-blue-900/20">Connect ActBlue</button>
                         </div>
@@ -443,7 +456,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
 
                 <div className="text-center mt-20">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Trusted By Campaigns Using</p>
-                    <div className="flex flex-wrap justify-center gap-12 items-center opacity-40 grayscale">
+                    <div className="flex flex-wrap justify-center gap-12 items-center opacity-90 grayscale">
                         <div className="flex items-center gap-2 text-xl font-bold text-slate-600"><span className="w-6 h-6 rounded-full bg-slate-400"></span> ActBlue</div>
                         <div className="flex items-center gap-2 text-xl font-bold text-slate-600"><span className="w-6 h-6 rounded-full bg-slate-400"></span> NGP VAN</div>
                         <div className="flex items-center gap-2 text-xl font-bold text-slate-600"><span className="w-6 h-6 rounded-full bg-slate-400"></span> ActionNetwork</div>
@@ -683,6 +696,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                         Join 50+ progressive campaigns using automagical direct mail to boost retention.
                     </p>
                     <div className="flex flex-col sm:flex-row justify-center gap-4">
+                        <button onClick={onPricingClick} className="bg-[#164E87] text-white hover:bg-[#0f3863] border border-blue-400 px-8 py-4 rounded-full text-base font-bold shadow-sm transition-all">
+                            See pricing
+                        </button>
                         <button
                             onClick={onSignup}
                             className="bg-[#1F5EA9] hover:bg-[#164E87] text-white px-8 py-4 rounded-full text-lg font-bold shadow-xl shadow-blue-900/50 transition-all hover:scale-105"
