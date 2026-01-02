@@ -197,7 +197,7 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
             className="w-full bg-white text-rose-600 font-bold py-3 rounded-xl hover:bg-rose-50 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
           >
             {processing === 'topup' ? <Loader2 className="animate-spin" size={20} /> : <Zap size={18} />}
-            Add $50.00 Credits (Polar)
+            Add $50.00 Credits
           </button>
         </div>
 
