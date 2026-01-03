@@ -21,11 +21,35 @@ interface PricingPageProps {
     onBack: () => void;
 }
 
-type PricingTier = 'pay-as-you-go' | 'pro' | 'agency';
+type PricingContext = 'pro' | 'agency';
+
+const PRO_TIERS = [
+    { name: 'Starter', price: 99, cards: 125, perCard: 0.99 },
+    { name: 'Grow', price: 199, cards: 250, perCard: 0.89 },
+    { name: 'Scale', price: 399, cards: 500, perCard: 0.79 },
+    { name: 'High Volume', isCustom: true, price: 'Custom', cards: '500+', perCard: 'Custom' }
+];
+
+const AGENCY_TIERS = [
+    { name: 'Starter', price: 499, cards: 625, perCard: 0.99 },
+    { name: 'Grow', price: 995, cards: 1250, perCard: 0.89 },
+    { name: 'Scale', price: 1995, cards: 2500, perCard: 0.79 },
+    { name: 'High Volume', isCustom: true, price: 'Custom', cards: '2,500+', perCard: 'Custom' }
+];
 
 const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) => {
-    const [activeTier, setActiveTier] = useState<PricingTier>('pay-as-you-go');
+    const [activeContext, setActiveContext] = useState<PricingContext>('pro');
+    const [sliderValue, setSliderValue] = useState(1); // Default to 'Grow' (index 1)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    const currentTiers = activeContext === 'pro' ? PRO_TIERS : AGENCY_TIERS;
+    const selectedTier = currentTiers[sliderValue];
+    const isCustom = selectedTier.isCustom;
+
+    const handleContextChange = (context: PricingContext) => {
+        setActiveContext(context);
+        setSliderValue(1); // Reset to Grow tier on switch
+    };
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100 selection:text-[#00204E]">
@@ -54,18 +78,8 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
 
                         {/* Actions */}
                         <div className="hidden md:flex items-center gap-4">
-                            <button
-                                onClick={onLogin}
-                                className="text-slate-600 hover:text-[#1F5EA9] font-medium text-sm transition-colors"
-                            >
-                                Log in
-                            </button>
-                            <button
-                                onClick={onSignup}
-                                className="bg-[#1F5EA9] hover:bg-[#164E87] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-blue-900/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                Connect ActBlue
-                            </button>
+                            <button onClick={onLogin} className="text-slate-600 hover:text-[#1F5EA9] font-medium text-sm transition-colors">Log in</button>
+                            <button onClick={onSignup} className="bg-[#1F5EA9] hover:bg-[#164E87] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-blue-900/20 transition-all hover:scale-[1.02] active:scale-[0.98]">Connect ActBlue</button>
                         </div>
 
                         {/* Mobile Menu Button */}
@@ -104,36 +118,46 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                     </p>
                 </div>
 
-                {/* Toggle */}
+                {/* Toggle - Simplified */}
                 <div className="flex justify-center mb-16">
                     <div className="bg-white p-1.5 rounded-full border border-slate-200 shadow-sm inline-flex relative">
-                        {/* Sliding Background - Simplified for now with absolute positioning or Conditional Rendering */}
-                        {(['pay-as-you-go', 'pro', 'agency'] as const).map((tier) => (
-                            <button
-                                key={tier}
-                                onClick={() => setActiveTier(tier)}
-                                className={`
-                                    relative px-6 py-2.5 rounded-full text-sm font-bold transition-all z-10 capitalize whitespace-nowrap
-                                    ${activeTier === tier
-                                        ? 'bg-[#00204E] text-white shadow-md'
-                                        : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-                                    }
-                                `}
-                            >
-                                {tier.replace(/-/g, ' ')}
-                            </button>
-                        ))}
+                        <button
+                            onClick={() => handleContextChange('pro')}
+                            className={`
+                                relative px-8 py-2.5 rounded-full text-sm font-bold transition-all z-10 
+                                ${activeContext === 'pro'
+                                    ? 'bg-[#00204E] text-white shadow-md'
+                                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                                }
+                            `}
+                        >
+                            Standard
+                        </button>
+                        <button
+                            onClick={() => handleContextChange('agency')}
+                            className={`
+                                relative px-8 py-2.5 rounded-full text-sm font-bold transition-all z-10 flex items-center gap-2
+                                ${activeContext === 'agency'
+                                    ? 'bg-[#00204E] text-white shadow-md'
+                                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                                }
+                            `}
+                        >
+                            For Agencies
+                        </button>
                     </div>
                 </div>
 
                 {/* Content Area */}
                 <div className="transition-all duration-300 ease-in-out">
 
-                    {/* PAY AS YOU GO */}
-                    {activeTier === 'pay-as-you-go' && (
-                        <div className="max-w-md mx-auto">
-                            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl shadow-slate-200/50 relative">
-                                <div className="absolute top-0 right-0 p-6 opacity-5">
+                    {/* VIEW: PRO (Standard) */}
+                    {activeContext === 'pro' && (
+                        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8 items-start">
+
+                            {/* Card 1: Pay-as-you-go (Static) */}
+                            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-lg relative h-full flex flex-col">
+                                <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
                                     <Zap size={100} />
                                 </div>
                                 <div className="mb-8">
@@ -145,210 +169,205 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                                     <p className="text-slate-500 text-sm">No monthly fee. Just pay for what you send.</p>
                                 </div>
 
-                                <div className="space-y-4 mb-8">
-                                    <div className="flex items-center gap-3">
-                                        <CheckCircle2 size={18} className="text-green-600 flex-shrink-0" />
-                                        <span className="text-slate-700 font-medium">Postcard builder</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <CheckCircle2 size={18} className="text-green-600 flex-shrink-0" />
-                                        <span className="text-slate-700 font-medium">ActBlue integration</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <CheckCircle2 size={18} className="text-green-600 flex-shrink-0" />
-                                        <span className="text-slate-700 font-medium">Personalization</span>
-                                    </div>
+                                <div className="space-y-4 mb-8 flex-grow">
+                                    {['Postcard builder', 'ActBlue integration', 'Personalization'].map(f => (
+                                        <div key={f} className="flex items-center gap-3">
+                                            <CheckCircle2 size={18} className="text-green-600 flex-shrink-0" />
+                                            <span className="text-slate-700 font-medium">{f}</span>
+                                        </div>
+                                    ))}
                                 </div>
 
-                                <button onClick={onSignup} className="w-full py-4 bg-[#1F5EA9] hover:bg-[#164E87] text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-900/10 flex items-center justify-center gap-2">
-                                    Get Started <ArrowRight size={18} />
+                                <button onClick={onSignup} className="w-full py-4 bg-white border-2 border-slate-200 hover:border-[#1F5EA9] hover:text-[#1F5EA9] text-slate-600 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
+                                    Get Started
                                 </button>
                             </div>
-                        </div>
-                    )}
 
-                    {/* PRO PLANS */}
-                    {activeTier === 'pro' && (
-                        <div>
-                            {/* Pro Header Features */}
-                            <div className="bg-blue-50/50 rounded-2xl p-6 border border-blue-100 max-w-4xl mx-auto mb-10 text-center">
-                                <h4 className="text-[#00204E] font-bold mb-4 flex items-center justify-center gap-2">
-                                    <Sparkles size={18} className="text-amber-500" />
-                                    Pro includes everything in Pay-as-you-go, plus:
-                                </h4>
-                                <div className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-slate-700">
-                                    <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-blue-600" /> Remove branding</div>
-                                    <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-blue-600" /> First-class mailing</div>
-                                    <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-blue-600" /> Return mailbox</div>
-                                    <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-blue-600" /> Speedy delivery</div>
-                                    <div className="flex items-center gap-2 opacity-60"><CheckCircle2 size={14} className="text-slate-400" /> QR code (Coming soon)</div>
-                                    <div className="flex items-center gap-2 opacity-60"><CheckCircle2 size={14} className="text-slate-400" /> Variation testing (Coming soon)</div>
+                            {/* Card 2: Pro Dynamic (Interactive) */}
+                            <div className="bg-[#00204E] rounded-3xl p-8 border border-blue-900 shadow-xl relative text-white">
+                                <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
+                                    <Sparkles size={100} />
                                 </div>
-                            </div>
-
-                            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                {/* Starter */}
-                                <div className="bg-white rounded-3xl p-6 border border-slate-200 hover:border-blue-200 transition-all hover:shadow-lg">
-                                    <h3 className="text-lg font-bold text-[#00204E] mb-4">Starter</h3>
-                                    <div className="flex items-baseline gap-1 mb-1">
-                                        <span className="text-3xl font-serif font-bold text-[#00204E]">$99</span>
-                                        <span className="text-slate-400 text-xs text-medium">/mo</span>
-                                    </div>
-                                    <div className="text-sm text-[#1F5EA9] font-bold mb-4">+ $0.99 / postcard</div>
-
-                                    <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100 mb-6">
-                                        First <strong className="text-slate-700">125 cards/mo</strong> at this rate
-                                        <div className="mt-1 text-slate-400 font-medium">$1.99/card thereafter</div>
-                                    </div>
-                                    <button onClick={onSignup} className="w-full py-3 bg-white border border-slate-200 hover:border-blue-500 hover:text-blue-700 text-slate-700 rounded-xl font-bold transition-all text-sm">
-                                        Start Starter
-                                    </button>
+                                <div className="absolute -top-4 left-8 bg-amber-400 text-[#00204E] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                                    Most Popular
                                 </div>
 
-                                {/* Grow */}
-                                <div className="bg-white rounded-3xl p-6 border-2 border-[#1F5EA9] shadow-xl relative transform md:-translate-y-4">
-                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1F5EA9] text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full whitespace-nowrap">
-                                        Most Popular
+                                {/* Slider Section */}
+                                <div className="mb-10 w-full">
+                                    <label className="text-sm font-bold text-blue-200 mb-4 block uppercase tracking-wide">
+                                        Monthly Volume
+                                    </label>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="3"
+                                        step="1"
+                                        value={sliderValue}
+                                        onChange={(e) => setSliderValue(Number(e.target.value))}
+                                        className="w-full h-2 bg-blue-900 rounded-lg appearance-none cursor-pointer accent-amber-400 hover:accent-amber-300 transition-all"
+                                    />
+                                    <div className="flex justify-between text-[10px] items-center mt-3 text-blue-300/50 font-medium px-1">
+                                        <span>125</span>
+                                        <span>250</span>
+                                        <span>500</span>
+                                        <span>500+</span>
                                     </div>
-                                    <h3 className="text-lg font-bold text-[#00204E] mb-4">Grow</h3>
-                                    <div className="flex items-baseline gap-1 mb-1">
-                                        <span className="text-3xl font-serif font-bold text-[#1F5EA9]">$199</span>
-                                        <span className="text-slate-400 text-xs text-medium">/mo</span>
-                                    </div>
-                                    <div className="text-sm text-[#1F5EA9] font-bold mb-4">+ $0.89 / postcard</div>
-
-                                    <div className="text-xs text-slate-500 bg-blue-50 p-3 rounded-lg border border-blue-100 mb-6">
-                                        First <strong className="text-blue-900">250 cards/mo</strong> at this rate
-                                        <div className="mt-1 text-blue-800/60 font-medium">$1.99/card thereafter</div>
-                                    </div>
-                                    <button onClick={onSignup} className="w-full py-3 bg-[#1F5EA9] hover:bg-[#164E87] text-white rounded-xl font-bold transition-all text-sm shadow-lg shadow-blue-900/20">
-                                        Start Grow
-                                    </button>
                                 </div>
 
-                                {/* Scale */}
-                                <div className="bg-white rounded-3xl p-6 border border-slate-200 hover:border-blue-200 transition-all hover:shadow-lg">
-                                    <h3 className="text-lg font-bold text-[#00204E] mb-4">Scale</h3>
-                                    <div className="flex items-baseline gap-1 mb-1">
-                                        <span className="text-3xl font-serif font-bold text-[#00204E]">$399</span>
-                                        <span className="text-slate-400 text-xs text-medium">/mo</span>
-                                    </div>
-                                    <div className="text-sm text-[#1F5EA9] font-bold mb-4">+ $0.79 / postcard</div>
+                                {/* Dynamic Content */}
+                                <div className="mb-8">
+                                    <h3 className="text-xl font-medium text-blue-200 mb-1">{selectedTier.name}</h3>
 
-                                    <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100 mb-6">
-                                        First <strong className="text-slate-700">500 cards/mo</strong> at this rate
-                                        <div className="mt-1 text-slate-400 font-medium">$1.99/card thereafter</div>
-                                    </div>
-                                    <button onClick={onSignup} className="w-full py-3 bg-white border border-slate-200 hover:border-blue-500 hover:text-blue-700 text-slate-700 rounded-xl font-bold transition-all text-sm">
-                                        Start Scale
-                                    </button>
+                                    {isCustom ? (
+                                        <div className="flex items-baseline gap-1 mb-2">
+                                            <span className="text-5xl font-serif font-bold text-white">Custom</span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-baseline gap-1 mb-2">
+                                            <span className="text-5xl font-serif font-bold text-white">${selectedTier.price}</span>
+                                            <span className="text-blue-300 text-sm font-medium">/ mo</span>
+                                        </div>
+                                    )}
+
+                                    {isCustom ? (
+                                        <div className="text-blue-300 text-sm font-medium h-5">Contact us for pricing</div>
+                                    ) : (
+                                        <div className="text-amber-400 text-sm font-bold h-5">+ ${selectedTier.perCard} / postcard</div>
+                                    )}
                                 </div>
 
-                                {/* Custom */}
-                                <div className="bg-slate-50 rounded-3xl p-6 border border-slate-200 opacity-90 hover:opacity-100 transition-all">
-                                    <h3 className="text-lg font-bold text-[#00204E] mb-4">High Volume</h3>
-                                    <div className="flex items-baseline gap-1 mb-1">
-                                        <span className="text-3xl font-serif font-bold text-slate-700">Custom</span>
-                                    </div>
-                                    <div className="text-sm text-slate-500 font-medium mb-4">Contact us for pricing</div>
+                                <div className="bg-blue-900/30 rounded-xl p-4 border border-blue-800/50 mb-8 backdrop-blur-sm">
+                                    {isCustom ? (
+                                        <div className="text-sm text-blue-100">
+                                            For high-volume campaigns needing <strong className="text-white">500+ cards/mo</strong>
+                                        </div>
+                                    ) : (
+                                        <div className="text-sm text-blue-100">
+                                            First <strong className="text-white">{selectedTier.cards} cards/mo</strong> at this rate
+                                            <div className="mt-1 text-blue-300/80 text-xs">$1.99/card thereafter</div>
+                                        </div>
+                                    )}
+                                </div>
 
-                                    <div className="text-xs text-slate-500 bg-white p-3 rounded-lg border border-slate-200 mb-6">
-                                        For <strong className="text-slate-700">500+ cards/mo</strong>
-                                    </div>
-                                    <button onClick={() => window.location.href = 'mailto:sales@thankdonors.com'} className="w-full py-3 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl font-bold transition-all text-sm">
+                                <div className="space-y-4 mb-8">
+                                    <div className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-2">Everything in Pay-as-you-go, plus:</div>
+                                    {['Remove branding', 'First-class mailing', 'Return mailbox', 'Speedy delivery'].map(f => (
+                                        <div key={f} className="flex items-center gap-3">
+                                            <CheckCircle2 size={18} className="text-amber-400 flex-shrink-0" />
+                                            <span className="text-blue-50 font-medium">{f}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {isCustom ? (
+                                    <button onClick={() => window.location.href = 'mailto:sales@thankdonors.com'} className="w-full py-4 bg-white hover:bg-blue-50 text-[#00204E] rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2">
                                         Contact Sales
                                     </button>
-                                </div>
+                                ) : (
+                                    <button onClick={onSignup} className="w-full py-4 bg-[#1F5EA9] hover:bg-[#3475c1] text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2 border border-blue-400/30">
+                                        Start Pro Plan <ArrowRight size={18} />
+                                    </button>
+                                )}
                             </div>
                         </div>
                     )}
 
-                    {/* AGENCY PLANS */}
-                    {activeTier === 'agency' && (
-                        <div>
-                            <div className="bg-purple-50/50 rounded-2xl p-6 border border-purple-100 max-w-4xl mx-auto mb-10 text-center">
-                                <h4 className="text-[#00204E] font-bold mb-4 flex items-center justify-center gap-2">
-                                    <ShieldCheck size={18} className="text-purple-600" />
-                                    Agency includes everything in Pro, plus:
-                                </h4>
-                                <div className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-slate-700">
-                                    <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-purple-600" /> Multiple accounts</div>
-                                    <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-purple-600" /> Priority Support</div>
+
+
+                    {/* VIEW: AGENCY */}
+                    {activeContext === 'agency' && (
+                        <div className="max-w-2xl mx-auto">
+                            <div className="bg-white rounded-3xl p-8 border-2 border-purple-100 shadow-xl relative">
+                                <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
+                                    <ShieldCheck size={120} className="text-purple-600" />
                                 </div>
-                            </div>
-
-                            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                {/* Agency Starter */}
-                                <div className="bg-white rounded-3xl p-6 border border-slate-200 hover:border-purple-200 transition-all hover:shadow-lg">
-                                    <h3 className="text-lg font-bold text-[#00204E] mb-4">Starter</h3>
-                                    <div className="flex items-baseline gap-1 mb-1">
-                                        <span className="text-3xl font-serif font-bold text-[#00204E]">$499</span>
-                                        <span className="text-slate-400 text-xs text-medium">/mo</span>
-                                    </div>
-                                    <div className="text-sm text-[#1F5EA9] font-bold mb-4">+ $0.99 / postcard</div>
-
-                                    <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100 mb-6">
-                                        First <strong className="text-slate-700">625 cards/mo</strong> at this rate
-                                        <div className="mt-1 text-slate-400 font-medium">$1.99/card thereafter</div>
-                                    </div>
-                                    <button onClick={onSignup} className="w-full py-3 bg-white border border-slate-200 hover:border-purple-500 hover:text-purple-700 text-slate-700 rounded-xl font-bold transition-all text-sm">
-                                        Start Agency
-                                    </button>
+                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg shadow-purple-900/20">
+                                    Agency Partners
                                 </div>
 
-                                {/* Agency Grow */}
-                                <div className="bg-white rounded-3xl p-6 border-2 border-purple-600 shadow-xl relative transform md:-translate-y-4">
-                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-purple-600 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full whitespace-nowrap">
-                                        Recommended
+                                {/* Slider Section */}
+                                <div className="mb-12 mt-4 px-4">
+                                    <div className="flex justify-between items-end mb-6">
+                                        <label className="text-sm font-bold text-slate-500 uppercase tracking-wide">
+                                            Monthly Volume
+                                        </label>
+                                        <div className="text-2xl font-bold text-purple-700 font-serif">
+                                            {selectedTier.cards} <span className="text-sm font-sans text-slate-400 font-medium">cards</span>
+                                        </div>
                                     </div>
-                                    <h3 className="text-lg font-bold text-[#00204E] mb-4">Grow</h3>
-                                    <div className="flex items-baseline gap-1 mb-1">
-                                        <span className="text-3xl font-serif font-bold text-purple-700">$995</span>
-                                        <span className="text-slate-400 text-xs text-medium">/mo</span>
-                                    </div>
-                                    <div className="text-sm text-[#1F5EA9] font-bold mb-4">+ $0.89 / postcard</div>
 
-                                    <div className="text-xs text-slate-500 bg-purple-50 p-3 rounded-lg border border-purple-100 mb-6">
-                                        First <strong className="text-purple-900">1,250 cards/mo</strong> at this rate
-                                        <div className="mt-1 text-purple-800/60 font-medium">$1.99/card thereafter</div>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="3"
+                                        step="1"
+                                        value={sliderValue}
+                                        onChange={(e) => setSliderValue(Number(e.target.value))}
+                                        className="w-full h-3 bg-purple-50 rounded-lg appearance-none cursor-pointer accent-purple-600 hover:accent-purple-700 transition-all border border-purple-100"
+                                    />
+                                    <div className="flex justify-between text-[10px] items-center mt-3 text-slate-400 font-medium px-1">
+                                        <span>625</span>
+                                        <span>1,250</span>
+                                        <span>2,500</span>
+                                        <span>2,500+</span>
                                     </div>
-                                    <button onClick={onSignup} className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold transition-all text-sm shadow-lg shadow-purple-900/20">
-                                        Start Agency Grow
-                                    </button>
                                 </div>
 
-                                {/* Agency Scale */}
-                                <div className="bg-white rounded-3xl p-6 border border-slate-200 hover:border-purple-200 transition-all hover:shadow-lg">
-                                    <h3 className="text-lg font-bold text-[#00204E] mb-4">Scale</h3>
-                                    <div className="flex items-baseline gap-1 mb-1">
-                                        <span className="text-3xl font-serif font-bold text-[#00204E]">$1,995</span>
-                                        <span className="text-slate-400 text-xs text-medium">/mo</span>
-                                    </div>
-                                    <div className="text-sm text-[#1F5EA9] font-bold mb-4">+ $0.79 / postcard</div>
+                                <div className="flex flex-col md:flex-row gap-8 items-center border-t border-slate-100 pt-8">
+                                    <div className="flex-1 text-center md:text-left">
+                                        <h3 className="text-xl font-bold text-[#00204E] mb-2">{selectedTier.name}</h3>
 
-                                    <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100 mb-6">
-                                        First <strong className="text-slate-700">2,500 cards/mo</strong> at this rate
-                                        <div className="mt-1 text-slate-400 font-medium">$1.99/card thereafter</div>
+                                        {isCustom ? (
+                                            <div className="flex items-baseline justify-center md:justify-start gap-1 mb-2">
+                                                <span className="text-4xl font-serif font-bold text-slate-700">Custom</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-baseline justify-center md:justify-start gap-1 mb-2">
+                                                <span className="text-4xl font-serif font-bold text-[#00204E]">${selectedTier.price}</span>
+                                                <span className="text-slate-400 text-sm font-medium">/ mo</span>
+                                            </div>
+                                        )}
+
+                                        {isCustom ? (
+                                            <div className="text-purple-600 text-sm font-bold">Contact for pricing</div>
+                                        ) : (
+                                            <div className="text-purple-600 text-sm font-bold">+ ${selectedTier.perCard} / postcard</div>
+                                        )}
                                     </div>
-                                    <button onClick={onSignup} className="w-full py-3 bg-white border border-slate-200 hover:border-purple-500 hover:text-purple-700 text-slate-700 rounded-xl font-bold transition-all text-sm">
-                                        Start Agency Scale
-                                    </button>
+
+                                    <div className="flex-1 w-full">
+                                        <div className="bg-purple-50 rounded-xl p-4 border border-purple-100 mb-6">
+                                            {isCustom ? (
+                                                <div className="text-sm text-slate-600">
+                                                    For agencies needing <strong className="text-purple-900">2,500+ cards/mo</strong>. includes multiple accounts.
+                                                </div>
+                                            ) : (
+                                                <div className="text-sm text-slate-600">
+                                                    First <strong className="text-purple-900">{selectedTier.cards} cards/mo</strong> at this rate
+                                                    <div className="mt-1 text-slate-400 text-xs">$1.99/card thereafter</div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {isCustom ? (
+                                            <button onClick={() => window.location.href = 'mailto:sales@thankdonors.com'} className="w-full py-3 bg-white border border-slate-200 hover:border-purple-300 hover:text-purple-700 text-slate-600 rounded-xl font-bold transition-all shadow-sm">
+                                                Contact Sales
+                                            </button>
+                                        ) : (
+                                            <button onClick={onSignup} className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-purple-900/20">
+                                                Start Agency Plan
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
-                                {/* Custom */}
-                                <div className="bg-slate-50 rounded-3xl p-6 border border-slate-200 opacity-90 hover:opacity-100 transition-all">
-                                    <h3 className="text-lg font-bold text-[#00204E] mb-4">High Volume</h3>
-                                    <div className="flex items-baseline gap-1 mb-1">
-                                        <span className="text-3xl font-serif font-bold text-slate-700">Custom</span>
+                                <div className="mt-8 pt-6 border-t border-slate-100">
+                                    <div className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-slate-600">
+                                        <div className="flex items-center gap-2"><CheckCircle2 size={16} className="text-purple-600" /> Multiple accounts</div>
+                                        <div className="flex items-center gap-2"><CheckCircle2 size={16} className="text-purple-600" /> Priority Support</div>
+                                        <div className="flex items-center gap-2"><CheckCircle2 size={16} className="text-purple-600" /> API Access</div>
+                                        <div className="flex items-center gap-2"><CheckCircle2 size={16} className="text-purple-600" /> White-labeling</div>
                                     </div>
-                                    <div className="text-sm text-slate-500 font-medium mb-4">Contact us for pricing</div>
-
-                                    <div className="text-xs text-slate-500 bg-white p-3 rounded-lg border border-slate-200 mb-6">
-                                        For <strong className="text-slate-700">2,500+ cards/mo</strong>
-                                    </div>
-                                    <button onClick={() => window.location.href = 'mailto:sales@thankdonors.com'} className="w-full py-3 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl font-bold transition-all text-sm">
-                                        Contact Sales
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -376,11 +395,11 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                                     { name: 'Personalization', desc: 'Use variables like %FirstName% to customize each card.', free: true, pro: true, agency: true },
                                     { name: 'Remove branding', desc: 'Send postcards with no Thank Donors logo.', free: false, pro: true, agency: true },
                                     { name: 'First-class mailing', desc: '3 to 5 business days delivery via USPS.', free: false, pro: true, agency: true },
-                                    { name: 'Return handling', desc: 'We manage undeliverable mail and update your database.', free: false, pro: true, agency: true },
-                                    { name: 'Priority printing', desc: 'Your order skips the queue and prints within 24 hours.', free: false, pro: true, agency: true },
+                                    { name: 'Return handling', desc: 'We manage undeliverable mail and update your database.', free: false, pro: false, agency: true },
+                                    { name: 'Priority printing', desc: 'Your order skips the queue and prints within 24 hours.', free: false, pro: false, agency: true },
                                     { name: 'Multiple accounts', desc: 'Manage multiple campaigns from a single dashboard.', free: false, pro: false, agency: true },
                                     { name: 'QR code', desc: 'Add scannable codes to link donors back to your site.', free: false, pro: 'Coming soon', agency: 'Coming soon' },
-                                    { name: 'Variations', desc: 'A/B test different designs to optimize engagement.', free: false, pro: 'Coming soon', agency: 'Coming soon' },
+                                    { name: 'Postcard Variations', desc: 'A/B test different designs to optimize engagement.', free: false, pro: 'Coming soon', agency: 'Coming soon' },
                                 ].map((feature, i) => (
                                     <tr key={i} className="hover:bg-slate-50/50 transition-colors">
                                         <td className="py-4 pl-4 font-medium text-slate-700 relative group cursor-help w-[fit-content]">
