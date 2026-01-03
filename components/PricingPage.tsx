@@ -197,7 +197,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                                     <div className="text-sm text-[#1F5EA9] font-bold mb-4">+ $0.99 / postcard</div>
 
                                     <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100 mb-6">
-                                        Includes <strong className="text-slate-700">125 cards/mo</strong>
+                                        First <strong className="text-slate-700">125 cards/mo</strong> at this rate
                                         <div className="mt-1 text-slate-400 font-medium">$1.99/card thereafter</div>
                                     </div>
                                     <button onClick={onSignup} className="w-full py-3 bg-white border border-slate-200 hover:border-blue-500 hover:text-blue-700 text-slate-700 rounded-xl font-bold transition-all text-sm">
@@ -218,7 +218,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                                     <div className="text-sm text-[#1F5EA9] font-bold mb-4">+ $0.89 / postcard</div>
 
                                     <div className="text-xs text-slate-500 bg-blue-50 p-3 rounded-lg border border-blue-100 mb-6">
-                                        Includes <strong className="text-blue-900">250 cards/mo</strong>
+                                        First <strong className="text-blue-900">250 cards/mo</strong> at this rate
                                         <div className="mt-1 text-blue-800/60 font-medium">$1.99/card thereafter</div>
                                     </div>
                                     <button onClick={onSignup} className="w-full py-3 bg-[#1F5EA9] hover:bg-[#164E87] text-white rounded-xl font-bold transition-all text-sm shadow-lg shadow-blue-900/20">
@@ -236,7 +236,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                                     <div className="text-sm text-[#1F5EA9] font-bold mb-4">+ $0.79 / postcard</div>
 
                                     <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100 mb-6">
-                                        Includes <strong className="text-slate-700">500 cards/mo</strong>
+                                        First <strong className="text-slate-700">500 cards/mo</strong> at this rate
                                         <div className="mt-1 text-slate-400 font-medium">$1.99/card thereafter</div>
                                     </div>
                                     <button onClick={onSignup} className="w-full py-3 bg-white border border-slate-200 hover:border-blue-500 hover:text-blue-700 text-slate-700 rounded-xl font-bold transition-all text-sm">
