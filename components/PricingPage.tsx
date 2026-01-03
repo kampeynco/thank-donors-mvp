@@ -14,6 +14,8 @@ import {
     Sparkles,
     ShieldCheck
 } from 'lucide-react';
+import Cal, { getCalApi } from "@calcom/embed-react";
+import { useEffect } from "react";
 
 interface PricingPageProps {
     onSignup: () => void;
@@ -41,6 +43,17 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
     const [activeContext, setActiveContext] = useState<PricingContext>('pro');
     const [sliderValue, setSliderValue] = useState(1); // Default to 'Grow' (index 1)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [bookingType, setBookingType] = useState<'pro' | 'agency' | null>(null);
+
+    useEffect(() => {
+        (async function () {
+            const cal = await getCalApi({ "namespace": "pro-custom-pricing-quote" });
+            cal("ui", { "theme": "dark", "hideEventTypeDetails": false, "layout": "month_view" });
+
+            const calAgency = await getCalApi({ "namespace": "agency-custom-pricing-quote" });
+            calAgency("ui", { "hideEventTypeDetails": false, "layout": "month_view" });
+        })();
+    }, []);
 
     const currentTiers = activeContext === 'pro' ? PRO_TIERS : AGENCY_TIERS;
     const selectedTier = currentTiers[sliderValue];
@@ -251,7 +264,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
 
                                 <div className="space-y-4 mb-8">
                                     <div className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-2">Everything in Pay-as-you-go, plus:</div>
-                                    {['Remove branding', 'First-class mailing', 'Return mailbox', 'Speedy delivery'].map(f => (
+                                    {['Remove branding', 'First-class mailing', 'Return mail handling'].map(f => (
                                         <div key={f} className="flex items-center gap-3">
                                             <CheckCircle2 size={18} className="text-amber-400 flex-shrink-0" />
                                             <span className="text-blue-50 font-medium">{f}</span>
@@ -260,7 +273,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                                 </div>
 
                                 {isCustom ? (
-                                    <button onClick={() => window.location.href = 'mailto:sales@thankdonors.com'} className="w-full py-4 bg-white hover:bg-blue-50 text-[#00204E] rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2">
+                                    <button onClick={() => setBookingType('pro')} className="w-full py-4 bg-white hover:bg-blue-50 text-[#00204E] rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2">
                                         Contact Sales
                                     </button>
                                 ) : (
@@ -350,7 +363,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                                         </div>
 
                                         {isCustom ? (
-                                            <button onClick={() => window.location.href = 'mailto:sales@thankdonors.com'} className="w-full py-3 bg-white border border-slate-200 hover:border-purple-300 hover:text-purple-700 text-slate-600 rounded-xl font-bold transition-all shadow-sm">
+                                            <button onClick={() => setBookingType('agency')} className="w-full py-3 bg-white border border-slate-200 hover:border-purple-300 hover:text-purple-700 text-slate-600 rounded-xl font-bold transition-all shadow-sm">
                                                 Contact Sales
                                             </button>
                                         ) : (
@@ -490,6 +503,42 @@ const PricingPage: React.FC<PricingPageProps> = ({ onSignup, onLogin, onBack }) 
                     </div>
                 </div>
             </footer>
+
+            {/* Booking Modal */}
+            {bookingType && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white w-full max-w-5xl h-[85vh] rounded-3xl shadow-2xl relative overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border border-slate-200">
+                        <div className="flex justify-between items-center p-4 border-b border-slate-100 bg-white">
+                            <span className="text-sm font-bold text-slate-500 uppercase tracking-widest pl-2">
+                                {bookingType === 'pro' ? 'Schedule a Demo' : 'Agency Consultation'}
+                            </span>
+                            <button
+                                onClick={() => setBookingType(null)}
+                                className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors text-slate-500"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="flex-grow bg-slate-50">
+                            {bookingType === 'pro' ? (
+                                <Cal
+                                    namespace="pro-custom-pricing-quote"
+                                    calLink="thank-donors/pro-custom-pricing-quote"
+                                    style={{ width: "100%", height: "100%", overflow: "scroll" }}
+                                    config={{ "layout": "month_view", "theme": "light" }}
+                                />
+                            ) : (
+                                <Cal
+                                    namespace="agency-custom-pricing-quote"
+                                    calLink="thank-donors/agency-custom-pricing-quote"
+                                    style={{ width: "100%", height: "100%", overflow: "scroll" }}
+                                    config={{ "layout": "month_view" }}
+                                />
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 };

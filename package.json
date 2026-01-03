@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@calcom/embed-react": "^1.5.3",
     "@google/genai": "^1.33.0",
     "@google/generative-ai": "0.21.0",
     "@supabase/supabase-js": "2.39.7",
