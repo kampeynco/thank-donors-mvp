@@ -127,9 +127,9 @@ const BillingView: React.FC<BillingViewProps> = ({ profile, account, onUpdateAcc
     'pro_starter': { name: 'Pro Starter', price: 9900, per_postcard: 99, included_cards: 125, features: ['125 cards included', 'Remove branding'] },
     'pro_grow': { name: 'Pro Grow', price: 19900, per_postcard: 89, included_cards: 250, features: ['250 cards included', 'Lower cost per card'] },
     'pro_scale': { name: 'Pro Scale', price: 39900, per_postcard: 79, included_cards: 500, features: ['500 cards included', 'Lowest Pro rate'] },
-    'agency_starter': { name: 'Agency Starter', price: 49900, per_postcard: 89, included_cards: 625, features: ['625 cards included', '5 accounts included + Priority Support'] },
-    'agency_grow': { name: 'Agency Grow', price: 99500, per_postcard: 79, included_cards: 1250, features: ['1,250 cards included', '10 accounts included + Priority Support'] },
-    'agency_scale': { name: 'Agency Scale', price: 199500, per_postcard: 74, included_cards: 2500, features: ['2,500 cards included', '20 accounts included + Priority Support'] }
+    'agency_starter': { name: 'Agency Starter', price: 49900, per_postcard: 99, included_cards: 625, features: ['625 cards included', '5 accounts included + Priority Support'] },
+    'agency_grow': { name: 'Agency Grow', price: 99500, per_postcard: 89, included_cards: 1250, features: ['1,250 cards included', '10 accounts included + Priority Support'] },
+    'agency_scale': { name: 'Agency Scale', price: 199500, per_postcard: 79, included_cards: 2500, features: ['2,500 cards included', '20 accounts included + Priority Support'] }
   };
 
   const currentPlan = PLAN_DETAILS[tier] || PLAN_DETAILS['pay_as_you_go'];
