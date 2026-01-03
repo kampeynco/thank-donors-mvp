@@ -373,7 +373,7 @@ const AppContent: React.FC = () => {
 
         const createdAccount = hookdeckData.account;
         setAccounts(prev => [createdAccount, ...prev]);
-        navigate(`/e/${createdAccount.id}/dashboard`);
+        navigate(`/entities/${createdAccount.id}/dashboard`);
         toast("New account created!", "success");
       }
     } catch (e: any) {
@@ -389,7 +389,7 @@ const AppContent: React.FC = () => {
       setAccounts(remaining);
       toast("Account deleted", "info");
       if (remaining.length > 0) {
-        navigate(`/e/${remaining[0].id}/dashboard`);
+        navigate(`/entities/${remaining[0].id}/dashboard`);
       } else {
         navigate('/pending-entity');
       }
@@ -423,7 +423,7 @@ const AppContent: React.FC = () => {
   }
 
   const handleSwitchAccount = (account: ActBlueAccount) => {
-    navigate(`/e/${account.id}/dashboard`);
+    navigate(`/entities/${account.id}/dashboard`);
   };
 
   const handleAddAccountReq = () => {
@@ -437,7 +437,7 @@ const AppContent: React.FC = () => {
       return;
     }
 
-    const basePath = `/e/${currentAccount.id}`;
+    const basePath = `/entities/${currentAccount.id}`;
 
     switch (view) {
       case ViewState.DASHBOARD:
@@ -465,11 +465,11 @@ const AppContent: React.FC = () => {
 
       {/* Root Dashboard Redirect */}
       <Route path="/dashboard" element={
-        accounts.length > 0 ? <Navigate to={`/e/${accounts[0].id}/dashboard`} replace /> : <Navigate to="/pending-entity" replace />
+        accounts.length > 0 ? <Navigate to={`/entities/${accounts[0].id}/dashboard`} replace /> : <Navigate to="/pending-entity" replace />
       } />
 
       {/* Account Context Routes */}
-      <Route path="/e/:entityId" element={
+      <Route path="/entities/:entityId" element={
         <ProtectedLayout
           profile={profile} accounts={accounts} currentAccount={currentAccount}
           onLogout={handleLogout} onSwitchAccount={handleSwitchAccount} onAddAccount={handleAddAccountReq}
