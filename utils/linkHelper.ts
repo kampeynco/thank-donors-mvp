@@ -1,3 +1,4 @@
+import React from 'react';
 import { Donation } from '../types';
 
 export const handleViewProof = (

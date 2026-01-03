@@ -13,6 +13,7 @@ import Auth from './components/Auth';
 import LandingPage from './components/LandingPage';
 import PricingPage from './components/PricingPage';
 import AccountLayout from './components/AccountLayout';
+import SubscriptionFlow from './components/SubscriptionFlow';
 import { supabase } from './services/supabaseClient';
 import { Loader2, Home, Sparkles, AlertTriangle, Lock, User, Webhook, FileText, CreditCard } from 'lucide-react';
 import { useToast, ToastProvider } from './components/ToastContext';
@@ -373,8 +374,8 @@ const AppContent: React.FC = () => {
 
         const createdAccount = hookdeckData.account;
         setAccounts(prev => [createdAccount, ...prev]);
-        // Navigate to the new account!
-        navigate(`/entities/${createdAccount.entity_id}/dashboard`);
+        // Navigate to the new account checkout flow!
+        navigate(`/entities/${createdAccount.entity_id}/checkout`);
         toast("New account created!", "success");
       }
     } catch (e: any) {
@@ -526,6 +527,9 @@ const AppContent: React.FC = () => {
       <Route path="/create-profile" element={
         <UserOnboarding profile={profile} onUpdateProfile={handleUpdateProfile} onComplete={() => navigate('/pending-entity')} />
       } />
+
+      {/* Subscription / Checkout Flow */}
+      <Route path="/entities/:entityId/checkout" element={<SubscriptionFlow />} />
 
       {/* Added Profile Route */}
       <Route path="/profile" element={
