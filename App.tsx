@@ -187,7 +187,7 @@ const App: React.FC = () => {
         setCurrentAccount(targetAccount);
         await fetchDonations(userId, targetAccount.id);
 
-        if (view === ViewState.AUTH) {
+        if (view === ViewState.AUTH || view === ViewState.LANDING_PAGE) {
           setView(ViewState.DASHBOARD);
         }
       } else {
