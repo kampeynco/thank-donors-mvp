@@ -73,9 +73,9 @@ export async function processLineItem(
         'pro_starter': { per_postcard: 99, included_cards: 125 },
         'pro_grow': { per_postcard: 89, included_cards: 250 },
         'pro_scale': { per_postcard: 79, included_cards: 500 },
-        'agency_starter': { per_postcard: 89, included_cards: 500 },
-        'agency_grow': { per_postcard: 79, included_cards: 1000 },
-        'agency_scale': { per_postcard: 74, included_cards: 2500 }
+        'agency_starter': { per_postcard: 99, included_cards: 625 },
+        'agency_grow': { per_postcard: 89, included_cards: 1250 },
+        'agency_scale': { per_postcard: 79, included_cards: 2500 }
     } as const;
 
     const tier = (entity.tier || 'pay_as_you_go') as keyof typeof TIER_CONFIG;
