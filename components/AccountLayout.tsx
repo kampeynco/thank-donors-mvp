@@ -40,20 +40,29 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
             return;
         }
 
-        const targetAccount = accounts.find(a => a.id === entityId);
+        const parsedEntityId = parseInt(entityId, 10);
+        if (isNaN(parsedEntityId)) {
+            console.warn(`[AccountLayout] Invalid Entity ID in URL: ${entityId}`);
+            if (accounts.length > 0) {
+                navigate(`/entities/${accounts[0].entity_id}/dashboard`, { replace: true });
+            }
+            return;
+        }
+
+        const targetAccount = accounts.find(a => a.entity_id === parsedEntityId);
 
         if (targetAccount) {
             // Sync URL -> State
             if (currentAccount?.id !== targetAccount.id) {
-                console.log(`[AccountLayout] Switching to account from URL: ${targetAccount.committee_name} (${targetAccount.id})`);
+                console.log(`[AccountLayout] Switching to account from URL: ${targetAccount.committee_name} (${targetAccount.entity_id})`);
                 onSwitchAccount(targetAccount);
             }
         } else {
             // Invalid Entity ID in URL
-            console.warn(`[AccountLayout] Account ID ${entityId} not found in user's accounts. Redirecting.`);
+            console.warn(`[AccountLayout] Account Entity ID ${parsedEntityId} not found in user's accounts. Redirecting.`);
             // Redirect to the first available account's dashboard to "fix" the URL
             if (accounts.length > 0) {
-                navigate(`/entities/${accounts[0].id}/dashboard`, { replace: true });
+                navigate(`/entities/${accounts[0].entity_id}/dashboard`, { replace: true });
             }
         }
     }, [entityId, accounts, isLoading, currentAccount, navigate, onSwitchAccount]);

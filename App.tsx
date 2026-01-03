@@ -373,7 +373,8 @@ const AppContent: React.FC = () => {
 
         const createdAccount = hookdeckData.account;
         setAccounts(prev => [createdAccount, ...prev]);
-        navigate(`/entities/${createdAccount.id}/dashboard`);
+        // Navigate to the new account!
+        navigate(`/entities/${createdAccount.entity_id}/dashboard`);
         toast("New account created!", "success");
       }
     } catch (e: any) {
@@ -389,7 +390,7 @@ const AppContent: React.FC = () => {
       setAccounts(remaining);
       toast("Account deleted", "info");
       if (remaining.length > 0) {
-        navigate(`/entities/${remaining[0].id}/dashboard`);
+        navigate(`/entities/${remaining[0].entity_id}/dashboard`);
       } else {
         navigate('/pending-entity');
       }
@@ -422,8 +423,10 @@ const AppContent: React.FC = () => {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-rose-600" size={40} /></div>;
   }
 
+  // --- Views Helpers ---
+  // We need to pass "onSwitchAccount" that actually Navigates.
   const handleSwitchAccount = (account: ActBlueAccount) => {
-    navigate(`/entities/${account.id}/dashboard`);
+    navigate(`/entities/${account.entity_id}/dashboard`);
   };
 
   const handleAddAccountReq = () => {
@@ -437,7 +440,8 @@ const AppContent: React.FC = () => {
       return;
     }
 
-    const basePath = `/entities/${currentAccount.id}`;
+    const baseEntityId = currentAccount.entity_id;
+    const basePath = `/entities/${baseEntityId}`;
 
     switch (view) {
       case ViewState.DASHBOARD:
@@ -465,7 +469,7 @@ const AppContent: React.FC = () => {
 
       {/* Root Dashboard Redirect */}
       <Route path="/dashboard" element={
-        accounts.length > 0 ? <Navigate to={`/entities/${accounts[0].id}/dashboard`} replace /> : <Navigate to="/pending-entity" replace />
+        accounts.length > 0 ? <Navigate to={`/entities/${accounts[0].entity_id}/dashboard`} replace /> : <Navigate to="/pending-entity" replace />
       } />
 
       {/* Account Context Routes */}
