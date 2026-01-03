@@ -53,7 +53,7 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
             console.warn(`[AccountLayout] Account ID ${entityId} not found in user's accounts. Redirecting.`);
             // Redirect to the first available account's dashboard to "fix" the URL
             if (accounts.length > 0) {
-                navigate(`/e/${accounts[0].id}/dashboard`, { replace: true });
+                navigate(`/entities/${accounts[0].id}/dashboard`, { replace: true });
             }
         }
     }, [entityId, accounts, isLoading, currentAccount, navigate, onSwitchAccount]);
